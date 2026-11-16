@@ -3,6 +3,9 @@
 以虛構政策流派角色為主題的 3D Arena 格鬥原型。角色全部以 Three.js 基礎幾何體即時組合，不需要外部模型或貼圖。
 本作品為虛構遊戲，角色、外觀與招式均為創意設定。
 
+🎮 **線上試玩**：https://leetcode-golang-classroom.github.io/taiwan-policy-brawl/
+（推送到 `main` 後由 GitHub Actions 自動建置並部署到 GitHub Pages）
+
 ## 環境與啟動
 
 需要 Node.js 20.19+ 或 22.12+，以及 pnpm。
