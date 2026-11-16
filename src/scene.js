@@ -34,7 +34,7 @@ const shaft=new THREE.Mesh(new THREE.BoxGeometry(.65,4.4,.65),mat(0x536b9b,.45,.
 for(let i=0;i<4;i++){const deck=new THREE.Mesh(new THREE.BoxGeometry(1.05-i*.12,.22,1.05-i*.12),gold);deck.position.y=1.2+i*.85;tower.add(deck);}
 tower.position.set(6,0,-7);scene.add(tower);
 export function initResize(){
-  function resize(){const w=mount.clientWidth,h=mount.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(mount);resize();
+  function resize(){const w=mount.clientWidth,h=mount.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(mount);resize();
 }
 let shake={t:0,dur:1,mag:0},shakeOff=new THREE.Vector3();
 export function addCameraShake(mag,dur=.3){if(mag>=shake.mag*Math.max(0,shake.t/shake.dur))shake={t:dur,dur,mag};}

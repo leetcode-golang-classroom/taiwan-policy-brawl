@@ -1,4 +1,4 @@
-import {scene,camera,renderer,updateCamera} from './scene.js';
+import {scene,camera,renderer,mount,updateCamera} from './scene.js';
 import {stepWorld} from './systems/index.js';
 import {syncViews} from './presentation/renderSync.js';
 import {updateAnimations} from './presentation/animation.js';
@@ -26,7 +26,7 @@ export function initGame(world,keys){
     if(hitStop>0)hitStop-=dt;else stepWorld(world,dt,keys);
     syncViews(world);updateAnimations(world,dt);updateVfx(dt);updateEventVfx();updateDefenseView(dt);
     updateHud(world);updateComboCounter();updateCamera(world,dt);
-    renderer.render(scene,camera);
+    if(mount.clientWidth>0)renderer.render(scene,camera);   // battle screen hidden: skip drawing
   }
   updateHud(world);requestAnimationFrame(loop);
 }

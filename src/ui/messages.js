@@ -15,5 +15,6 @@ export function initMessages(world){
     show(`<strong>${win.name} 獲得總冠軍！</strong><span>🏆 ${who(e.winner)}｜${win.code}</span><span>三回合戰績 ${e.playerRounds} : ${e.cpuRounds} · ${e.reason} · 擊敗 ${lose.name}</span><button id="restart-button">重新開始三回合</button>`);
     $('#restart-button').addEventListener('click',()=>startMatch(world));
   });
-  $('#start-button').addEventListener('click',()=>startMatch(world));
+  const ready=()=>{show('<strong>READY?</strong><span>角色已就位，按下開始對戰！</span><button id="start-button">開始對戰</button>');$('#start-button').addEventListener('click',()=>startMatch(world));};
+  world.events.on('ready',ready);ready();
 }
