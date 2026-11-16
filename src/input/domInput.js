@@ -16,6 +16,34 @@ export function initInput(world){
     if(e.code==='ShiftLeft'||e.code==='ShiftRight')pressDodge(world,'player',keys);
   });
   window.addEventListener('keyup',e=>keys[e.code]=false);
+  // Touch / mouse: the skill cards are buttons that feed the same Control entry points as the keys.
+  const cardActions={'card-basic':()=>pressAttack(world,'player','basic'),'card-skill':()=>pressAttack(world,'player','skill'),'card-ult':()=>pressAttack(world,'player','ult'),'card-defense':()=>pressDefend(world,'player')};
+  for(const [id,fn] of Object.entries(cardActions)){
+    const card=document.getElementById(id);if(!card)continue;
+    card.addEventListener('pointerdown',e=>{e.preventDefault();fn();});
+  }
+  // On-screen d-pad / jump / dodge: same entry points as the keyboard (hold = key down, so double-tap rush still works).
+  // Ring joystick: drag the knob; the offset is quantised to W/A/S/D (8 directions) and fed as held keys.
+  const stick=document.getElementById('stick'),knob=document.getElementById('stick-knob');
+  if(stick&&knob){
+    const dirs={KeyW:[0,-1],KeyS:[0,1],KeyA:[-1,0],KeyD:[1,0]};
+    const release=()=>{for(const c in dirs)keys[c]=false;knob.style.transform='translate(-50%,-50%)';};
+    const drive=e=>{
+      const r=stick.getBoundingClientRect(),R=r.width/2;
+      let dx=e.clientX-(r.left+R),dy=e.clientY-(r.top+R);const l=Math.hypot(dx,dy);
+      if(l>R){dx*=R/l;dy*=R/l;}
+      knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+      const t=R*.3;
+      const want={KeyW:dy<-t,KeyS:dy>t,KeyA:dx<-t,KeyD:dx>t};
+      for(const c in dirs){const was=!!keys[c];keys[c]=want[c];if(want[c]&&!was)pressMoveKey(world,'player',c,keys);}
+    };
+    stick.addEventListener('pointerdown',e=>{e.preventDefault();stick.setPointerCapture(e.pointerId);drive(e);});
+    stick.addEventListener('pointermove',e=>{if(stick.hasPointerCapture(e.pointerId))drive(e);});
+    for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,release);
+  }
+  for(const b of document.querySelectorAll('#touch-pad [data-act]')){
+    b.addEventListener('pointerdown',e=>{e.preventDefault();if(b.dataset.act==='jump')pressJump(world,'player');else pressDodge(world,'player',keys);});
+  }
   const el=renderer.domElement;
   el.addEventListener('pointerdown',e=>{camState.drag=true;camState.last={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);});
   el.addEventListener('pointermove',e=>{if(!camState.drag)return;camState.yaw-=(e.clientX-camState.last.x)*.004;camState.pitch=Math.max(-.05,Math.min(.65,camState.pitch+(e.clientY-camState.last.y)*.002));camState.last={x:e.clientX,y:e.clientY};keys.camYaw=camState.yaw;});

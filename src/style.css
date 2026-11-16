@@ -113,3 +113,15 @@
 .back-button{padding:6px 12px;margin-right:12px;font-size:11px}
 .roster-card.locked::after{content:'🔒';margin-left:4px}
 @media(max-width:900px){.select-body{grid-template-columns:1fr}.preview{height:300px}}
+/* Skill cards double as touch buttons (J / K / L / I). */
+.skill-row .skill-card{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.skill-row .skill-card:active{transform:scale(.96);border-color:#ffc15c}
+@media(max-width:640px){.skill-row .skill-card{min-height:84px}}
+/* On-screen movement pad: shown on touch / narrow screens only. */
+.touch-pad{display:none;position:absolute;left:0;right:0;bottom:10px;padding:0 12px;justify-content:space-between;align-items:flex-end;pointer-events:none;z-index:5}
+.touch-pad button{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;border:1px solid #ffffff44;background:#10152bb0;color:#fff;font-weight:900;border-radius:50%}
+.stick{pointer-events:auto;touch-action:none;position:relative;width:132px;height:132px;border-radius:50%;border:2px solid #ffffff55;background:radial-gradient(circle,#10152b55 0,#10152bb0 100%)}
+.stick .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;transform:translate(-50%,-50%);background:#ffbd58dd;box-shadow:0 0 14px #ff8d55aa}
+.touch-pad button.on,.touch-pad button:active{background:#ffbd58cc;color:#1a1730}
+.actpad{display:flex;flex-direction:column;gap:8px}.actpad button{width:60px;height:60px;font-size:13px}
+@media(pointer:coarse),(max-width:640px){.touch-pad{display:flex}}
