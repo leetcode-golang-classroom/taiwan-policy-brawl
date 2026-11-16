@@ -41,6 +41,13 @@ export function initInput(world){
     stick.addEventListener('pointermove',e=>{if(stick.hasPointerCapture(e.pointerId))drive(e);});
     for(const ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,release);
   }
+  // On-screen attack buttons reuse the card actions and mirror each card's state (cooling / available / guarding).
+  for(const b of document.querySelectorAll('#touch-pad [data-card]')){
+    const card=document.getElementById(b.dataset.card),fn=cardActions[b.dataset.card];if(!card)continue;
+    b.addEventListener('pointerdown',e=>{e.preventDefault();fn();});
+    const sync=()=>{for(const c of ['cooling','available','guarding'])b.classList.toggle(c,card.classList.contains(c));};
+    new MutationObserver(sync).observe(card,{attributes:true,attributeFilter:['class']});sync();
+  }
   for(const b of document.querySelectorAll('#touch-pad [data-act]')){
     b.addEventListener('pointerdown',e=>{e.preventDefault();if(b.dataset.act==='jump')pressJump(world,'player');else pressDodge(world,'player',keys);});
   }

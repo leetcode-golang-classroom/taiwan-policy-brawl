@@ -123,5 +123,12 @@
 .stick{pointer-events:auto;touch-action:none;position:relative;width:132px;height:132px;border-radius:50%;border:2px solid #ffffff55;background:radial-gradient(circle,#10152b55 0,#10152bb0 100%)}
 .stick .knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;transform:translate(-50%,-50%);background:#ffbd58dd;box-shadow:0 0 14px #ff8d55aa}
 .touch-pad button.on,.touch-pad button:active{background:#ffbd58cc;color:#1a1730}
-.actpad{display:flex;flex-direction:column;gap:8px}.actpad button{width:60px;height:60px;font-size:13px}
+.actpad{display:grid;grid-template-columns:repeat(3,64px);grid-auto-rows:64px;gap:8px;direction:ltr}
+.actpad button{width:64px;height:64px;font-size:13px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#10152bc0}
+.actpad button small{font-size:10px;color:#ffd27b;font-weight:700}
+.actpad .b-basic{width:76px;height:76px;margin:-6px;font-size:15px;border-color:#ffbd58}
+.actpad .b-skill,.actpad .b-ult,.actpad .b-def{border-color:#ffffff66}
+.actpad button.cooling{opacity:.45;border-color:#ffc15c88}
+.actpad button.available{border-color:#64dfb0;box-shadow:0 0 12px #64dfb077}
+.actpad button.guarding{border-color:#6fd3ff;box-shadow:0 0 12px #6fd3ff99}
 @media(pointer:coarse),(max-width:640px){.touch-pad{display:flex}}
