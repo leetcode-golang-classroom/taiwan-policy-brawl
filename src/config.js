@@ -1,0 +1,55 @@
+// Centralised tuning values (spec: values must be managed in one place).
+export const chargeDurations={basic:.22,skill:.62,ult:1.05};
+
+export const ARENA={halfX:7,halfZ:5};
+export const AIRBORNE_BONUS=4;          // extra damage when the attacker is airborne
+// I-key exclusive defense. Projectiles/homing are fully blocked; melee/area/dash are reduced by `reduction`.
+// cooldown starts when the guard ends. layers: characters whose barrier breaks after N absorbed hits.
+export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3}};
+
+// Unified skill data (spec 6.2). type: melee | projectile | homing | area | dash
+// range    = max reach (melee/area/dash-hit) or max flight distance (projectile/homing)
+// speed    = flight speed (units/s); radius = projectile collision radius
+// knockback= horizontal push; launch = upward velocity; stun = seconds
+const SKILL_DEFAULTS={
+  basic:{name:'basic',type:'melee',damage:9,range:2.5,speed:0,cooldown:.34,radius:0,knockback:.78,launch:0,stun:.18,tracking:false,blockable:true,stepIn:0},
+  skill:{name:'skill',type:'melee',damage:19,range:5.2,speed:0,cooldown:3.4,radius:0,knockback:1.85,launch:3.8,stun:.58,tracking:false,blockable:true,stepIn:1.0},
+  ult:{name:'ult',type:'area',damage:36,range:8.5,speed:0,cooldown:9,radius:0,knockback:2.65,launch:5.4,stun:.82,tracking:false,blockable:true,stepIn:0}
+};
+// Per-character overrides. Characters not listed use the defaults.
+const SKILL_OVERRIDES={
+  mech:{basic:{type:'projectile',speed:9,range:7,radius:.7},skill:{type:'projectile',speed:7.8,range:8,radius:1.0}},
+  leopard:{basic:{name:'豹之撲擊',type:'dash',range:1.7,dashSpeed:17,dashMax:3.8,knockback:1.55,launch:4.4,stun:.58},skill:{type:'projectile',speed:9.4,range:7,radius:.9}},
+  admiral:{basic:{type:'projectile',speed:8.5,range:7,radius:.9},skill:{type:'projectile',speed:8.2,range:6.5,radius:.8},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
+  mage:{basic:{type:'projectile',speed:7.2,range:6,radius:.9},skill:{type:'projectile',speed:7.6,range:7,radius:.9},ult:{range:8}},
+  cleric:{basic:{range:3.1},skill:{type:'homing',speed:8,range:8,radius:.6,tracking:true,turnRate:3.5,trackRange:7,stepIn:0},ult:{range:8}},
+  brawler:{basic:{name:'重拳出擊',type:'projectile',speed:10,range:6.5,radius:.85},skill:{type:'dash',range:2.3,dashSpeed:16,dashMax:4.5,stepIn:0}},
+  nun:{basic:{type:'projectile',speed:9.2,range:7,radius:.9},
+    // 電光火球 (spec 6.2): fully replaces the old excavator skill. Real projectile, blockable, strong knockback, no launch.
+    skill:{name:'電光火球',type:'projectile',damage:10,range:15,speed:12,cooldown:5,radius:1.2,knockback:5,launch:0,stun:.45,tracking:false,blockable:true,stepIn:0},ult:{name:'神之震怒',type:'area',range:8,knockback:6,launch:6.5,stun:1}}
+};
+export function getSkill(id,tier){
+  return {...SKILL_DEFAULTS[tier],...(SKILL_OVERRIDES[id]?.[tier]||{}),tier,id};
+}
+export const cooldownFor=(charId,tier)=>getSkill(charId,tier).cooldown;   // per-character cooldown (電光火球 has 5s)
+export const cooldownDurations={basic:SKILL_DEFAULTS.basic.cooldown,skill:SKILL_DEFAULTS.skill.cooldown,ult:SKILL_DEFAULTS.ult.cooldown};
+
+// ---- Gameplay constants shared by systems (kept here so balance is tuned in one place) ----
+export const DODGE={duration:.68,invuln:.42,cooldown:1.1,defaultDistance:2.1,
+  distance:{mech:2.55,leopard:2.25,admiral:1.9,mage:2.35,cleric:2.2,brawler:2.0,nun:1.9,yu:2.15,'bubble':2.2}};
+export const HIT={reactTime:.38,baseStun:.28,airborneThreshold:.25};
+export const GRAVITY=20;
+export const ATTACK_TIME={basic:.32,skill:.48,ult:.72};
+// Six-phase attack (spec 3.3): windup -> charge -> strike | impact (hit / launch frame) -> recovery -> idle.
+// windup+charge+strike = chargeDurations[tier] (so total time-to-hit is unchanged); impact+recovery = ATTACK_TIME[tier].
+export const PHASES={windup:{basic:.05,skill:.1,ult:.15},strike:{basic:.04,skill:.06,ult:.08},impact:{basic:.05,skill:.07,ult:.1}};
+// Quick rush (double-tap a direction): short, fast, grounded, no invulnerability (that is the dodge's job).
+export const RUSH={duration:.24,speed:13,cooldown:.7,doubleTap:.28,aiRate:.6,aiMinDist:4.5};
+export const HIT_REACT={landTime:.32,powerRef:36,airborneSpin:.9};
+export const COMBO={window:.92,step2Stun:.42,step3Stun:.62,step3Launch:3.3,step3ChargeBonus:.12};
+export const SKILL_ENERGY_BONUS=8;
+// forward lunge while an attack animation plays: units/second (per character, per tier)
+export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};
+export const MATCH={roundTime:99,transition:2.8,maxRounds:3,winsNeeded:2};
+export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasic:2.45,meleeSkill:4.4,rangedMax:6,
+  jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,dodgeChance:.12,defendRange:5.5,defendRate:5,projectileWarn:4.5};

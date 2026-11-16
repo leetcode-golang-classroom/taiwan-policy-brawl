@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+:root{font-family:'Noto Sans TC',system-ui,sans-serif;color:#f5f7ff;background:#0c1022;font-synthesis:none}*{box-sizing:border-box}body{margin:0;min-width:320px;background:radial-gradient(ellipse at 50% 0%,#242a52 0,#0c1022 62%)}.topbar{height:76px;padding:0 clamp(16px,4vw,56px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff18;background:#0c1022cc}.brand,.fighter-name{display:flex;align-items:center;gap:12px}.brand-mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#ffb34e,#ff5d83);display:grid;place-items:center;font-weight:900;color:#17152b}.brand strong{display:block;font-size:16px}.brand small,.fighter-name small,.skill-row small{display:block;color:#9da8d0;font-size:9px;letter-spacing:1.5px}.round{font-size:11px;letter-spacing:2px;color:#aab4dc}.round b{color:#ffb34e;margin-left:8px}.game-shell{max-width:1120px;margin:24px auto;padding:0 18px}.hud{display:grid;grid-template-columns:1fr 64px 1fr;gap:18px;align-items:center;margin-bottom:14px}.fighter-card{padding:14px 16px;border:1px solid #ffffff1c;border-radius:15px;background:#171d38e8;box-shadow:0 12px 32px #0003}.fighter-name{justify-content:space-between;margin-bottom:12px}.fighter-name strong{font-size:15px}.role-icon{font-size:27px}.health-track,.meter-track{height:12px;background:#080b18;border-radius:20px;overflow:hidden;margin:7px 0}.health-track i,.meter-track i{display:block;width:100%;height:100%;border-radius:20px;transition:width .18s}.player-card .health-track i{background:linear-gradient(90deg,#ff9b4d,#ff557e)}.cpu-card .health-track i{background:linear-gradient(90deg,#5de1a0,#3aa7d9)}.meter-track{height:5px}.meter-track i{background:linear-gradient(90deg,#f9d45c,#ff8b47);width:0}.hud-status{color:#a6b0d3;font-size:9px;letter-spacing:1.4px}.versus{text-align:center;font-weight:900;font-style:italic;color:#ffcb68;font-size:19px;text-shadow:0 0 18px #ff8d55}.arena-wrap{position:relative;height:min(59vw,570px);min-height:360px;border:1px solid #ffffff24;border-radius:20px;overflow:hidden;background:#121936;box-shadow:0 25px 70px #0007}#arena{position:absolute;inset:0}#arena canvas{display:block;width:100%;height:100%}.arena-label{position:absolute;left:18px;right:18px;top:15px;display:flex;justify-content:space-between;pointer-events:none;color:#d9e3ff;font-size:10px;letter-spacing:2px;text-shadow:0 2px 8px #000}.arena-label #timer{font-size:18px;font-weight:900;color:#ffcf70}.center-message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;background:#080d20a8;backdrop-filter:blur(3px);text-align:center;transition:opacity .25s}.center-message.hidden{opacity:0;pointer-events:none}.center-message strong{font-size:clamp(38px,7vw,68px);font-weight:900;font-style:italic;color:#ffcb68;text-shadow:0 5px 0 #a43e68,0 0 30px #ff8c59}.center-message span{font-size:13px;color:#dce4ff}.center-message button{margin-top:12px;border:0;border-radius:99px;padding:12px 30px;background:linear-gradient(100deg,#ffbd58,#ff647c);color:#1a1730;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 8px 24px #ff6b7155}.center-message button:hover{transform:translateY(-2px)}.bottom-panel{margin-top:14px;padding:16px;border:1px solid #ffffff1c;border-radius:15px;background:#171d38e8}.controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:11px;color:#c4cce8}.controls strong{color:#fff;margin-right:6px}.controls span{white-space:nowrap}kbd{padding:4px 7px;border-radius:5px;background:#30395e;color:#fff;font:700 10px inherit;border:1px solid #64709a}.skill-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px}.skill-row>div{padding:10px 12px;border-radius:10px;background:#0e142c;border:1px solid #ffffff12}.skill-row b{display:block;font-size:12px;margin-top:4px}.skill-row small{font-size:9px}footer{text-align:center;color:#7883a9;font-size:10px;padding:16px 0 28px}.hit-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.hit-flash.active{animation:flash .16s ease-out}@keyframes flash{0%{opacity:.25}100%{opacity:0}}@media(max-width:640px){.topbar{height:64px}.round{font-size:9px}.game-shell{margin-top:14px;padding:0 10px}.hud{grid-template-columns:1fr 30px 1fr;gap:7px}.fighter-card{padding:10px}.fighter-name{gap:4px}.fighter-name strong{font-size:11px}.fighter-name small{font-size:8px}.role-icon{font-size:20px}.arena-wrap{height:64vh;min-height:350px}.controls{gap:8px}.controls strong{width:100%}.skill-row{gap:6px}.skill-row>div{padding:8px}.skill-row b{font-size:10px}.skill-row small{font-size:8px}}
+
+/* V2 character roster */
+.roster-panel{margin:0 0 14px;padding:15px 16px;border:1px solid #ffffff1c;border-radius:15px;background:linear-gradient(120deg,#1c2445ed,#171d38ed);box-shadow:0 12px 32px #0003}.roster-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:11px}.roster-heading small{display:block;color:#9da8d0;font-size:9px;letter-spacing:1.7px}.roster-heading strong{display:block;font-size:14px;margin-top:3px}.roster-heading>span{font-size:10px;color:#9da8d0}.roster-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.roster-card{display:flex;align-items:center;gap:9px;min-width:0;padding:9px;border:1px solid #ffffff18;border-radius:12px;background:#0e142c;color:#f5f7ff;text-align:left;cursor:pointer;transition:border-color .18s,transform .18s,background .18s}.roster-card:hover{transform:translateY(-2px);border-color:#ffbd58aa}.roster-card.selected{border-color:#ffc15c;background:#302744;box-shadow:0 0 0 1px #ffc15c33}.roster-avatar{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:12px;background:radial-gradient(circle at 35% 25%,#ffffff55,var(--fighter),#121a35);font-size:22px;box-shadow:inset 0 0 0 1px #ffffff35}.roster-copy{min-width:0;flex:1}.roster-copy b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.roster-copy small{display:block;margin-top:3px;color:#aab4dc;font-size:9px}.roster-check{display:none;color:#ffcb68;font-weight:900}.roster-card.selected .roster-check{display:block}@media(max-width:720px){.roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}.roster-heading{align-items:start;flex-direction:column;gap:3px}.roster-card{padding:8px}.roster-avatar{width:34px;height:34px;flex-basis:34px}}
+
+
+/* Combat move-name callout: show the exact move whenever either fighter attacks. */
+.move-callout{position:absolute;left:50%;bottom:22%;z-index:4;min-width:210px;max-width:82%;padding:10px 22px 12px;text-align:center;border:1px solid #ffffff55;border-radius:14px;background:linear-gradient(110deg,#111a36ef,#202b50ef);box-shadow:0 10px 34px #0008;opacity:0;pointer-events:none;transform:translate(-50%,18px) scale(.88);backdrop-filter:blur(8px)}
+.move-callout small{display:block;margin-bottom:3px;color:#b9c8ed;font-size:9px;font-weight:900;letter-spacing:2px}
+.move-callout strong{display:block;color:#fff;font-size:clamp(19px,3.2vw,30px);font-weight:900;letter-spacing:1px;text-shadow:0 2px 0 #1b2447,0 0 18px #ffbf64aa;white-space:nowrap}
+.move-callout.player-move{border-color:#ffc15caa}
+.move-callout.cpu-move{border-color:#70d8caaa}
+.move-callout.show{animation:move-callout-pop 1.05s cubic-bezier(.2,.8,.2,1) both}
+@keyframes move-callout-pop{0%{opacity:0;transform:translate(-50%,18px) scale(.82)}12%{opacity:1;transform:translate(-50%,0) scale(1.04)}22%{transform:translate(-50%,0) scale(1)}78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-12px) scale(.98)}}
+@media(max-width:640px){.move-callout{bottom:18%;min-width:170px;padding:8px 14px}.move-callout strong{font-size:19px}}
+
+/* V2.2 arena feedback and jump-ready visual polish */
+#arena canvas{touch-action:none}.arena-wrap{isolation:isolate}.move-callout{filter:drop-shadow(0 0 16px #72cfff55)}
+
+/* V2.4 charge, cooldown and combo feedback */
+.skill-row em{display:block;margin-top:7px;color:#ffc86a;font-size:10px;font-style:normal;font-weight:900;letter-spacing:.5px}.combo-status{margin-top:10px;padding:8px 12px;border-radius:9px;background:#0b1128;border:1px solid #ffc15c44;color:#ffd27b;font-size:11px;font-weight:900;letter-spacing:.5px}.skill-row>div{position:relative;overflow:hidden}.skill-row>div:after{content:'';position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,#ffb84e,#ff6f78);opacity:.5}
+
+/* V2.5: nine Twin-City candidate-inspired fictional fighters */
+.roster-list{grid-template-columns:repeat(3,minmax(0,1fr))}.roster-card{min-height:66px}.roster-copy small+small{color:#7f91bf;font-size:8px}.roster-detail{display:grid;gap:4px;margin-top:10px;padding:10px 12px;border-radius:10px;background:#0c132b;border:1px solid #ffffff12}.roster-detail b{font-size:11px;color:#ffd27b}.roster-detail span{font-size:10px;line-height:1.6;color:#d0d9f2}.roster-detail small{font-size:9px;color:#8f9fc8}@media(max-width:720px){.roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.roster-list{grid-template-columns:1fr}}
+
+/* V2.6: explicit two-side fighter draft for all nine selectable fighters */
+.pick-switch{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 11px}.pick-tab{border:1px solid #ffffff24;border-radius:9px;padding:8px 14px;background:#0e142c;color:#cbd5f2;font:700 11px inherit;cursor:pointer}.pick-tab.active{border-color:#ffc15c;background:#3a2b38;color:#ffdb91;box-shadow:0 0 0 1px #ffc15c33}.pick-switch span{margin-left:auto;color:#aab4dc;font-size:10px}.roster-card.player-picked{border-color:#ffb84e;box-shadow:inset 0 0 0 1px #ffb84e55}.roster-card.cpu-picked{border-color:#65d9c0;box-shadow:inset 0 0 0 1px #65d9c055}.roster-card.player-picked .roster-check{color:#ffc15c}.roster-card.cpu-picked .roster-check{color:#72e0c5}.roster-card.selected .roster-check{display:block;font-size:9px;white-space:nowrap}.roster-detail{grid-template-columns:1fr 1fr;column-gap:16px}.roster-detail b{grid-column:1/-1}.roster-detail span,.roster-detail small{min-width:0}@media(max-width:640px){.pick-switch span{width:100%;margin-left:0}.roster-detail{grid-template-columns:1fr}}
+/* V2.8 victory card: make winner and seat unmistakable. */
+.center-message span:first-of-type{font-size:15px;font-weight:900;color:#ffda86;letter-spacing:.04em}.center-message span+span{font-size:12px;color:#d3dcf7}
+
+/* V3.0 cooldown rings and ultimate instructions */
+.skill-row .skill-card{min-height:104px;padding:11px 12px 10px 58px;position:relative;display:flex;flex-direction:column;justify-content:center;gap:2px;transition:border-color .2s,background .2s}
+.cooldown-wheel{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;color:#f5f7ff;background:conic-gradient(#ffbd58 var(--cooldown-progress,0%),#384363 0);box-shadow:0 0 0 2px #ffffff15,inset 0 0 0 5px #111831}
+.cooldown-wheel:after{content:'';position:absolute;inset:-4px;border:2px solid #65749b55;border-top-color:#ffc15c;border-radius:50%;opacity:0}
+.skill-card.cooling .cooldown-wheel:after{opacity:1;animation:cooldown-spin 1s linear infinite}
+.skill-card.cooling{border-color:#ffc15c88;background:#171d38}
+.skill-card.available .cooldown-wheel{background:conic-gradient(#64dfb0 100%,#384363 0);box-shadow:0 0 15px #64dfb055,inset 0 0 0 5px #111831}
+.skill-card.available .cooldown-wheel:after{opacity:1;border-color:#64dfb0;animation:none}
+.skill-card.available em{color:#75e7bc}
+@keyframes cooldown-spin{to{transform:rotate(360deg)}}
+.ultimate-guide{display:flex;gap:10px;align-items:flex-start;margin-top:11px;padding:10px 12px;border:1px solid #ffc15c44;border-radius:10px;background:linear-gradient(100deg,#33284488,#111831cc);font-size:10px;line-height:1.7;color:#cbd5f2}
+.ultimate-guide strong{flex:0 0 auto;color:#ffd27b;font-size:11px}.ultimate-guide span{display:block}
+@media(max-width:640px){.skill-row .skill-card{min-height:108px;padding:9px 7px 9px 43px}.cooldown-wheel{left:7px;width:29px;height:29px;font-size:10px}.ultimate-guide{display:block}.ultimate-guide strong{display:block;margin-bottom:3px}}
+
+/* V3.2 symbolic policy cards and readable combat feedback */
+.policy-symbols{display:block;margin-top:3px;font-size:15px!important;letter-spacing:3px;color:#f5d98b!important;line-height:1.35}
+.roster-detail i{font-style:normal;color:#8fa6d7;margin-right:6px}
+.combat-feedback{position:absolute;left:50%;top:35%;z-index:5;opacity:0;pointer-events:none;transform:translate(-50%,-8px) scale(.78);padding:10px 22px;border-radius:999px;font-size:clamp(18px,3vw,28px);font-weight:1000;letter-spacing:2px;text-shadow:0 2px 8px #0009;white-space:nowrap;border:2px solid #fff8;background:#18223feF;box-shadow:0 8px 28px #0007}
+.combat-feedback.hit{color:#fff1e6;border-color:#ff8e76;background:linear-gradient(100deg,#9d3449ee,#e65b54ee)}
+.combat-feedback.evade{color:#e5fbff;border-color:#7fe4ff;background:linear-gradient(100deg,#176a9bee,#31b9d4ee)}
+.combat-feedback.show{animation:combat-feedback-pop .78s cubic-bezier(.2,.8,.2,1) both}
+@keyframes combat-feedback-pop{0%{opacity:0;transform:translate(-50%,-8px) scale(.72)}15%{opacity:1;transform:translate(-50%,0) scale(1.08)}28%{transform:translate(-50%,0) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-18px) scale(.96)}}
+
+.combat-feedback.root{color:#efffe2;border-color:#91d46b;background:linear-gradient(100deg,#315d32ee,#609b3fee)}
+
+/* V3.4: three-round match scoreboard and live numeric combat HUD */
+.hud-numbers{display:flex;justify-content:space-between;gap:5px;margin:1px 0 3px;color:#aebbe0;font-size:9px;font-variant-numeric:tabular-nums}
+.hud-numbers b{color:#fff;font-size:11px;font-weight:900;margin-left:3px}
+.round{display:flex;align-items:center;gap:10px}.round b{display:inline-block;padding:6px 10px;border-radius:8px;border:1px solid #ffc15c66;background:#302744;color:#ffdb91;font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+/* V3.9 stage 2: damage numbers, combo counter, HP states */
+#damage-layer{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+.damage-number{position:absolute;transform:translate(-50%,-50%);font-weight:1000;color:#fff;white-space:nowrap;text-shadow:0 2px 0 #000a,0 0 8px #000c;animation:dmg-float 1s cubic-bezier(.2,.8,.2,1) both}
+.damage-number.small{font-size:20px;color:#fff3d6}
+.damage-number.mid{font-size:27px;color:#ffc15c}
+.damage-number.big{font-size:36px;color:#ff8a52}
+.damage-number.huge{font-size:48px;color:#ff4d4d;letter-spacing:2px}
+.damage-number.reduced{filter:saturate(.4) brightness(.9)}
+.damage-number.player{text-shadow:0 2px 0 #000a,0 0 10px #4aa0ff}
+@keyframes dmg-float{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}12%{opacity:1;transform:translate(-50%,-60%) scale(1.45)}28%{transform:translate(-50%,-80%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-190%) scale(.9)}}
+.combo-counter{position:absolute;top:22%;z-index:5;opacity:0;pointer-events:none;font-weight:1000;font-size:clamp(18px,2.4vw,26px);color:#ffd27b;text-shadow:0 2px 8px #000c;letter-spacing:2px}
+.combo-counter b{font-size:1.9em;color:#fff}
+.combo-counter.player{left:4%}.combo-counter.cpu{right:4%}
+.combo-counter.show{opacity:1}
+.combo-counter.pop{animation:combo-pop .28s ease-out}
+@keyframes combo-pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+.combat-feedback.block{color:#fffbe0;border-color:#ffe27a;background:linear-gradient(100deg,#8a6a1cee,#d9ac3aee)}
+.health-track.low i{background:linear-gradient(90deg,#ff9a3c,#ffcf4d)!important}
+.health-track.critical i{background:linear-gradient(90deg,#d42a3a,#ff5a5a)!important;animation:hp-blink .5s infinite alternate}
+.health-track.hurt{animation:hp-hurt .3s}
+@keyframes hp-blink{to{filter:brightness(1.5)}}
+@keyframes hp-hurt{0%,60%{box-shadow:0 0 0 2px #fff,0 0 14px #ff5a5a}100%{box-shadow:none}}
+.skill-card.guarding{border-color:#6fd3ff;background:#12304a}.skill-card.guarding em{color:#9be4ff}
+.skill-card.guarding .cooldown-wheel{background:conic-gradient(#6fd3ff 100%,#384363 0);box-shadow:0 0 16px #6fd3ff88,inset 0 0 0 5px #111831}
+@media(max-width:640px){.skill-row{grid-template-columns:repeat(2,1fr)}}
+
+/* V3.9: both fighters' HP and energy are overlaid on the arena so they stay visible during the fight */
+.arena-wrap .hud{position:absolute;z-index:6;top:36px;left:12px;right:12px;margin:0;gap:10px;grid-template-columns:1fr 44px 1fr;pointer-events:none}
+.arena-wrap .fighter-card{padding:8px 11px;background:#0d1228cc;backdrop-filter:blur(3px)}
+.arena-wrap .health-track{height:16px;margin:5px 0}
+.arena-wrap .hud-numbers{font-size:11px}
+.arena-wrap .hud-numbers b{font-size:13px}
+.arena-wrap .meter-track{height:8px;margin:4px 0}
+.arena-wrap .cpu-card .health-track i{margin-left:auto}
+.arena-wrap .cpu-card .hud-numbers,.arena-wrap .cpu-card .fighter-name{text-align:right}
+@media(max-width:700px){.arena-wrap .hud{grid-template-columns:1fr 26px 1fr;gap:5px}.arena-wrap .fighter-card{padding:5px 7px}.arena-wrap .hud-status,.arena-wrap .fighter-name small{display:none}}
+.arena-wrap .hud-status,.arena-wrap .fighter-name small{display:none}
+.arena-wrap .fighter-card{padding:6px 10px}
+.arena-wrap .role-icon{font-size:20px}
+.arena-wrap .health-track{height:14px;margin:3px 0}

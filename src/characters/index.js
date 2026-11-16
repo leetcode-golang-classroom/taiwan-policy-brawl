@@ -1,0 +1,10 @@
+import {buildMech} from './mech.js';
+import {buildLeopard} from './leopard.js';
+import {buildAdmiral} from './admiral.js';
+import {buildMage} from './mage.js';
+import {buildCleric} from './cleric.js';
+import {buildBrawler} from './brawler.js';
+import {buildNun} from './nun.js';
+import {buildYu} from './yu.js';
+import {buildBubble} from './bubble.js';
+export const characterBuilders={'mech':buildMech,'leopard':buildLeopard,'admiral':buildAdmiral,'mage':buildMage,'cleric':buildCleric,'brawler':buildBrawler,'nun':buildNun,'yu':buildYu,'bubble':buildBubble};
