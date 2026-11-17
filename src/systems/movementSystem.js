@@ -58,6 +58,9 @@ export function movementSystem(world,dt){
       b.movePhase+=dt*(f.side==='player'?12:9);b.moving=true;
     }
     const opp=opponentOf(world,id);if(opp!==undefined)face(world,id,opp);
+    // While charging the fighter stays planted, but held move input still drives small footwork (animation reads chargeFwd/chargeSide/stepPhase).
+    b.chargeFwd=0;b.chargeSide=0;
+    if(a.charge&&mag>0&&s.stun<=0&&s.rootTrap<=0){const sr=Math.sin(t.rotY),cr=Math.cos(t.rotY);b.chargeFwd=(it.moveX*sr+it.moveZ*cr)/mag;b.chargeSide=(-it.moveX*cr+it.moveZ*sr)/mag;b.stepPhase+=dt*9;}
     if(b.moving){ // direction relative to the facing: +fwd toward the opponent, +side to the fighter's right (animation reads these)
       const l=Math.hypot(dirX,dirZ)||1,sr=Math.sin(t.rotY),cr=Math.cos(t.rotY);
       b.moveFwd=(dirX*sr+dirZ*cr)/l;b.moveSide=(-dirX*cr+dirZ*sr)/l;

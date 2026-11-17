@@ -26,14 +26,19 @@ export function makeFighter(profile){
   const mouth=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),toonMat(0x9b5362));mouth.position.set(0,1.99,.493);mouth.scale.set(1.35,.48,.35);root.add(mouth);
   for(const x of [-.31,.31]){const blush=new THREE.Mesh(new THREE.SphereGeometry(.065,10,8),new THREE.MeshBasicMaterial({color:0xf39a9b,transparent:true,opacity:.42}));blush.position.set(x,2.02,.415);blush.scale.set(1,.45,.18);root.add(blush);}
   const scarf=new THREE.Mesh(new THREE.TorusGeometry(.29,.09,8,24),accentMat);scarf.position.y=1.78;scarf.rotation.x=Math.PI/2;root.add(scarf);
+  // Limbs pivot at the shoulder/hip (geometry hangs below the origin) so they swing like real arms and legs.
+  // Fists and boots are children of the limbs, so hands and feet follow every swing.
+  const LIMB_H=.37;
   const armGeo=new THREE.CapsuleGeometry(.13,.48,4,8), legGeo=new THREE.CapsuleGeometry(.16,.42,4,8);
+  armGeo.translate(0,-LIMB_H,0);legGeo.translate(0,-LIMB_H,0);
   const limbs=[];
   for(const side of [-1,1]){
-    const arm=new THREE.Mesh(armGeo,bodyMat);arm.position.set(side*.52,1.35,.02);arm.rotation.z=side*-.45;arm.castShadow=true;root.add(arm);limbs.push(arm);
-    const fist=new THREE.Mesh(new THREE.SphereGeometry(.18,12,10),accentMat);fist.position.set(side*.59,1.08,.08);root.add(fist);
-    const leg=new THREE.Mesh(legGeo,bootMat);leg.position.set(side*.23,.48,0);leg.castShadow=true;root.add(leg);limbs.push(leg);
-    const boot=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),accentMat);boot.position.set(side*.23,.22,.1);boot.scale.set(1.2,.55,1.5);root.add(boot);
+    const arm=new THREE.Mesh(armGeo,bodyMat);arm.position.set(side*.52,1.72,.02);arm.rotation.z=side*.12;arm.castShadow=true;root.add(arm);limbs.push(arm);
+    const fist=new THREE.Mesh(new THREE.SphereGeometry(.18,12,10),accentMat);fist.position.set(0,-.68,.05);arm.add(fist);
+    const leg=new THREE.Mesh(legGeo,bootMat);leg.position.set(side*.23,.85,0);leg.castShadow=true;root.add(leg);limbs.push(leg);
+    const boot=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),accentMat);boot.position.set(0,-.63,.1);boot.scale.set(1.2,.55,1.5);leg.add(boot);
   }
+  const limbBase=limbs.map(l=>l.children.length);
   // A tiny emblem and a floating nameplate.
   const emblem=new THREE.Mesh(new THREE.OctahedronGeometry(.17),gold);emblem.position.set(0,1.25,.43);root.add(emblem);
   const aura=new THREE.Mesh(new THREE.TorusGeometry(.66,.025,6,32),accentMat);aura.rotation.x=Math.PI/2;aura.position.y=.06;root.add(aura);
@@ -72,6 +77,8 @@ export function makeFighter(profile){
     parts.weapons.push({obj:mesh,axis,speed});return mesh;
   };
   characterBuilders[id]?.({root,body,head,hair,add,makeCap,accentMat,bodyMat,hairMat,limbs,parts,weapon});
+  // Builders place limb props relative to the limb's centre; shift them to the new top-of-limb pivot.
+  limbs.forEach((l,i)=>{for(let c=limbBase[i];c<l.children.length;c++)l.children[c].position.y-=LIMB_H;});
   if(['mage','brawler'].includes(id)){hair.visible=false;root.children.forEach(part=>{if(part.position.y>2.38&&part.position.y<2.48&&part.geometry?.type==='SphereGeometry')part.visible=false;});}
   root.userData={id,name,kind,icon,limbs,parts,body,head,aura,chargeRig,glowLight,chargeHalo,chargeCore,baseY:0,attackTime:0,hitFlash:0,velocityY:0,grounded:true,jumpPhase:0,movePhase:0,stun:0,rootTrap:0,hitReact:0,dodgeTimer:0,dodgeInvuln:0,dodgeCooldown:0,dodgeDirection:new THREE.Vector3(),moveSpeed:profile.moveSpeed||5,jumpPower:kind==='heavy'||kind==='engineer'?7.5:8.2};
   scene.add(root);return root;

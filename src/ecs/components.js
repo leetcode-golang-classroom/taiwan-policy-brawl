@@ -1,6 +1,6 @@
 // Component factories: PURE DATA ONLY (no methods, no Three.js, no DOM).
 export const Transform=(x=0,z=0,rotY=0)=>({x,y:0,z,rotY});
-export const Body=({moveSpeed=5,jumpPower=8.2}={})=>({vy:0,grounded:true,moveSpeed,jumpPower,movePhase:0,moving:false,moveFwd:0,moveSide:0});
+export const Body=({moveSpeed=5,jumpPower=8.2}={})=>({vy:0,grounded:true,moveSpeed,jumpPower,movePhase:0,moving:false,moveFwd:0,moveSide:0,chargeFwd:0,chargeSide:0,stepPhase:0});
 export const Health=(max=100)=>({hp:max,max});
 export const Energy=({regen=1,gain=.5}={})=>({value:0,regen,gain});
 export const Fighter=({side,charId})=>({side,charId});

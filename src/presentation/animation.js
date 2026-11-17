@@ -5,7 +5,7 @@ import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT} from '../config.js';
 function stateOf(world,id,f){
   const u=Object.create(f.userData),st=world.get(id,'status'),b=world.get(id,'body'),at=world.get(id,'attacker'),ch=at.charge;
   u.stun=st.stun;u.hitReact=st.hitReact;u.hitSide=st.hitSide;u.dodgeTimer=st.dodgeTimer;u.dodgeDirection=st.dodgeDir;
-  u.grounded=b.grounded;u.movePhase=b.movePhase;u.moving=b.moving;
+  u.grounded=b.grounded;u.movePhase=b.movePhase;u.chargeFwd=b.chargeFwd;u.chargeSide=b.chargeSide;u.stepPhase=b.stepPhase;u.moving=b.moving;
   u.guarding=!!world.get(id,'defense')?.active;
   u.phase=at.phase;u.moveFwd=b.moveFwd;u.moveSide=b.moveSide;u.rushTimer=st.rushTimer;u.hitDir=st.hitDir;u.hitPower=st.hitPower;u.airHit=st.airHit;u.landTimer=st.landTimer;
   u.rotY=world.get(id,'transform').rotY;
@@ -32,9 +32,18 @@ function updateGlow(u,time,dt){
   if(u.parts?.tail)u.parts.tail.rotation.y=Math.sin(time*3)*.35+(u.moving?Math.sin(u.movePhase)*.2:0);
   if(u.glowLight){u.glowLight.intensity=THREE.MathUtils.damp(u.glowLight.intensity,level*TIER_GLOW[tier],18,dt);}
 }
+const SIGNATURE={
+  mech:{basic:[[-1.5,-.2,-1.5,.2,-.15],[-1.55,-.1,-1.55,.1,-.2]],skill:[[-.6,-.9,-2.6,.3,-.3],[-1.5,-.2,-1.5,.2,.1]],ult:[[-2.8,-.3,-2.8,.3,-.25],[-.4,-1.2,-.4,1.2,.3]]},
+  admiral:{basic:[[-1.4,-.15,-1.4,.15,-.1],[-1.6,-.1,-1.6,.1,-.15]],skill:[[-1.2,-1.0,-.4,.4,.05],[-.4,-.4,-1.4,.9,-.1]],ult:[[-2.6,-.6,-2.6,.6,-.2],[-.8,-1.6,-.8,1.6,.2]]},
+  mage:{basic:[[-.3,-.3,-1.6,.15,-.05],[-.3,-.3,-1.7,.1,-.1]],skill:[[-1.8,-.3,-.5,.3,-.1],[-.6,-.3,-1.8,.3,-.15]],ult:[[-3,-.4,-3,.4,-.25],[-1.2,-.2,-1.2,.2,.3]]},
+  cleric:{basic:[[-1.2,-.1,-1.2,.1,-.05],[-1.4,-.05,-1.4,.05,-.1]],skill:[[.3,-.5,.3,.5,.12],[-2.2,-1.6,-2.2,1.6,-.25]],ult:[[-.2,-.6,-3.1,.3,.05],[-.2,-.6,-3.1,.1,-.3]]},
+  nun:{basic:[[-1.2,-.3,-1.2,.3,-.1],[-1.5,-.2,-1.5,.2,-.15]],skill:[[-.5,-.5,-2.9,.2,.1],[-.5,-.5,-1.5,.15,-.25]],ult:[[-3,-.5,-3,.5,-.2],[-1.1,-.3,-1.1,.3,.35]]},
+  yu:{basic:[[-.3,-.3,-2.9,.2,.1],[-.3,-.3,-.7,.2,.3]],skill:[[-1.5,-.8,-1.5,.8,-.1],[-1.5,-.3,-1.5,.3,-.2]],ult:[[-3,-.8,-3,.8,-.2],[-1.6,-.2,-1.6,.2,.3]]},
+  bubble:{basic:[[-.4,-.4,-1.6,.5,-.05],[-.4,-.4,-1.7,.6,-.1]],skill:[[-1.2,-.9,-1.2,.9,0],[-1.4,-.6,-1.4,.6,-.1]],ult:[[-2.8,-.5,-2.8,.5,-.2],[-1.0,-.5,-1.0,.5,.25]]}
+};
 export function updateAnimations(world,dt){
   for(const id of world.query('view','fighter','status','body','attacker')){const f=world.get(id,'view').obj;const u=stateOf(world,id,f);
-    if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
+    if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
     // Character-specific walk cycles. Limb order: left arm, left leg, right arm, right leg.
     if(u.limbs.length>=4){const arms=[u.limbs[0],u.limbs[2]],legs=[u.limbs[1],u.limbs[3]];let stride=.58,bob=0,lean=0,armSwing=.55;
       switch(u.id){
@@ -42,10 +51,10 @@ export function updateAnimations(world,dt){
         case 'leopard': stride=.85;bob=Math.abs(step)*.06;lean=Math.sin(gait)*.05;armSwing=.8;break; // leopard: low, stalking, diagonal-pair gait (body pitched forward below)
         case 'admiral': stride=.34;bob=Math.abs(step)*.15;lean=Math.sin(gait)*.09;armSwing=.24;legs[0].rotation.z=-.09;legs[1].rotation.z=.09;break; // broad mahjong-uncle waddle
         case 'mage': stride=.62;bob=Math.abs(step)*.065;lean=-.035;armSwing=.48;arms[0].rotation.z=-.9+alt*.12;arms[1].rotation.z=.18+step*.18;break; // teacher's brisk march and pointer hand
-        case 'cleric': stride=.3;bob=Math.sin(gait*2)*.035;lean=Math.sin(gait)*.045;armSwing=.2;arms[0].rotation.z=-.38+alt*.08;arms[1].rotation.z=.38-alt*.08;break; // dignified ceremonial procession
+        case 'cleric': stride=.5;bob=Math.abs(step)*.04;lean=Math.sin(gait)*.045;armSwing=.2;arms[0].rotation.z=-.38+alt*.08;arms[1].rotation.z=.38-alt*.08;break; // dignified ceremonial procession
         case 'brawler': stride=.82;bob=Math.abs(step)*.16;lean=-.1;armSwing=.88;legs[0].rotation.z=-.13;legs[1].rotation.z=.13;break; // bodybuilder power stomp
         case 'nun': stride=.7;bob=Math.abs(step)*.18;lean=-.13;armSwing=.7;arms[0].rotation.z=-.25+alt*.18;arms[1].rotation.z=.65-step*.25;break; // demolition-site heavy boots
-        case 'yu': stride=.48;bob=Math.abs(step)*.045;lean=-.045;armSwing=.32;arms[0].rotation.z=-.22+alt*.1;arms[1].rotation.z=.22-alt*.1;break; // measured engineer walk
+        case 'yu': stride=.34;bob=Math.abs(step)*.018;lean=0;armSwing=.2;arms[0].rotation.z=-.22+alt*.1;arms[1].rotation.z=.22-alt*.1;break; // measured engineer walk
         case 'bubble': stride=.4;bob=Math.abs(step)*.055;lean=Math.sin(gait)*.07;armSwing=.28;arms[0].rotation.z=-.55+alt*.1;arms[1].rotation.z=.12-step*.12;break; // careful presentation walk
         default: break;
       }
@@ -58,8 +67,19 @@ export function updateAnimations(world,dt){
         u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,(rushing?.42*Math.max(0,u.moveFwd)-(u.moveFwd<-.25?.1:0):0)+(u.id==='leopard'?.22:0),12,dt);   // lean into a forward rush
         u.body.rotation.y=THREE.MathUtils.damp(u.body.rotation.y,-sd*.38,10,dt);u.head.rotation.y=THREE.MathUtils.damp(u.head.rotation.y,-sd*.2,10,dt); // torso turns toward the move direction, head follows a little
         u.body.position.y=1.25+bob-(rushing?.1:0);u.head.position.y=2.12+bob*.72-(rushing?.08:0);
+        if(u.id==='leopard'){ // quadruped gait: forelimbs reach forward, the head rides on the pitched shoulders, a rush becomes a bounding gallop
+          const pitch=u.body.rotation.x,g=Math.sin(gait),sw=rushing?.95:.6;
+          if(rushing){ // fast bound: left/right limbs always alternate, hind legs lag the forelimbs
+            const hind=Math.sin(gait+Math.PI*.8)*sw*1.1;
+            arms[0].rotation.x=-1.15+g*sw;arms[1].rotation.x=-1.15-g*sw;legs[0].rotation.x=hind*sgn;legs[1].rotation.x=-hind*sgn;
+            u.body.position.y=1.2+Math.abs(g)*.2;
+          } else {     // trot: forelimbs carried forward, diagonal pairs
+            arms[0].rotation.x=-.75-step*sw*sgn;arms[1].rotation.x=-.75+step*sw*sgn;
+          }
+          u.head.position.set(0,1.25+Math.cos(pitch)*.87+(u.body.position.y-1.25)*.9,Math.sin(pitch)*.87);u.head.rotation.x=THREE.MathUtils.damp(u.head.rotation.x,-pitch*.7,12,dt);
+        }
       }
-      else if(u.grounded){u.body.rotation.y=THREE.MathUtils.damp(u.body.rotation.y,0,10,dt);legs[0].rotation.x=THREE.MathUtils.damp(legs[0].rotation.x,0,12,dt);legs[1].rotation.x=THREE.MathUtils.damp(legs[1].rotation.x,0,12,dt);arms[0].rotation.x=THREE.MathUtils.damp(arms[0].rotation.x,0,12,dt);arms[1].rotation.x=THREE.MathUtils.damp(arms[1].rotation.x,0,12,dt);arms[0].rotation.z=THREE.MathUtils.damp(arms[0].rotation.z,.45,12,dt);arms[1].rotation.z=THREE.MathUtils.damp(arms[1].rotation.z,-.45,12,dt);legs[0].rotation.z=THREE.MathUtils.damp(legs[0].rotation.z,0,12,dt);legs[1].rotation.z=THREE.MathUtils.damp(legs[1].rotation.z,0,12,dt);u.head.rotation.z=THREE.MathUtils.damp(u.head.rotation.z,0,12,dt);u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,0,10,dt);}
+      else if(u.grounded){u.body.rotation.y=THREE.MathUtils.damp(u.body.rotation.y,0,10,dt);legs[0].rotation.x=THREE.MathUtils.damp(legs[0].rotation.x,0,12,dt);legs[1].rotation.x=THREE.MathUtils.damp(legs[1].rotation.x,0,12,dt);arms[0].rotation.x=THREE.MathUtils.damp(arms[0].rotation.x,0,12,dt);arms[1].rotation.x=THREE.MathUtils.damp(arms[1].rotation.x,0,12,dt);arms[0].rotation.z=THREE.MathUtils.damp(arms[0].rotation.z,-.12,12,dt);arms[1].rotation.z=THREE.MathUtils.damp(arms[1].rotation.z,.12,12,dt);legs[0].rotation.z=THREE.MathUtils.damp(legs[0].rotation.z,0,12,dt);legs[1].rotation.z=THREE.MathUtils.damp(legs[1].rotation.z,0,12,dt);u.head.rotation.z=THREE.MathUtils.damp(u.head.rotation.z,0,12,dt);u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,0,10,dt);}
     }
     if(u.guarding&&!dodging){ // guard pose: lin crosses his arms, everyone else raises a forearm guard
       u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,-.08,16,dt);u.body.position.y=1.2;
@@ -105,14 +125,18 @@ export function updateAnimations(world,dt){
       u.body.position.y=1.25;u.head.position.y=2.12;
       u.limbs[0].rotation.z=THREE.MathUtils.damp(u.limbs[0].rotation.z,-.42-q*.16,12,dt);
       u.limbs[2].rotation.z=THREE.MathUtils.damp(u.limbs[2].rotation.z,.34+q*.13,12,dt);
-      u.limbs[1].rotation.x=THREE.MathUtils.damp(u.limbs[1].rotation.x,0,12,dt);
-      u.limbs[3].rotation.x=THREE.MathUtils.damp(u.limbs[3].rotation.x,0,12,dt);
+      {const D=THREE.MathUtils.damp,cm=u.chargeFwd!==0||u.chargeSide!==0,cs=Math.sin(u.stepPhase);   // planted feet; held direction adds a small alternating shuffle
+       u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,cm?cs*.22:0,14,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,cm?-cs*.22:0,14,dt);}
       if(u.id==='leopard'){ // leopard gathers power: belly low, shoulders up, forepaws planted ahead, quivering
         const D=THREE.MathUtils.damp,sh=Math.sin(world.time*38)*.012*q;
         u.body.position.y=1.0-q*.12+sh;u.head.position.y=1.7-q*.1;u.body.rotation.x=D(u.body.rotation.x,.62+q*.2,12,dt);u.head.rotation.x=D(u.head.rotation.x,-.5,12,dt);
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.2-q*.3,12,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.2-q*.3,12,dt);
         u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.15,12,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.15,12,dt);
-        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.7,12,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,.7,12,dt);
+        // crouch with one foot forward and one back; held direction shuffles the feet (reversed stance when backing off) and splays them sideways
+        const cm=u.chargeFwd!==0||u.chargeSide!==0,cs=cm?Math.sin(u.stepPhase)*.35:0,dir=u.chargeFwd<-.25?-1:1,base=-.8*dir;
+        u.limbs[1].position.y=.6;u.limbs[3].position.y=.6;u.limbs[0].position.y=1.47;u.limbs[2].position.y=1.47;
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,base+cs,16,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-base-cs,16,dt);
+        u.limbs[1].rotation.z=D(u.limbs[1].rotation.z,u.chargeSide*.3,14,dt);u.limbs[3].rotation.z=D(u.limbs[3].rotation.z,u.chargeSide*.3,14,dt);
       }
     }
     else if(u.phase==='strike'||u.phase==='impact'){ // 3. strike (arm snaps out) and 4. impact (hit / launch frame, held)
@@ -163,6 +187,12 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,up?-.9:-.2,24,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,up?.9:.2,24,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,up?-.2:.6,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,up?-.2:.6,24,dt);
       }
+      // Signature strike poses per character: [leftArmX,leftArmZ,rightArmX,rightArmZ,bodyLean]. x<0 raises the arm forward/up; z<0 (left) and z>0 (right) swing outward.
+      const sig=SIGNATURE[u.id]?.[tier];
+      if(sig){const P=sig[u.phase==='strike'?0:1],D=THREE.MathUtils.damp;
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,P[0],26,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,P[1],26,dt);
+        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,P[2],26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,P[3],26,dt);
+        u.body.rotation.x=D(u.body.rotation.x,P[4],22,dt);}
       // per-character flavour on top of the tier pose (kept from V3.8)
       if(u.id==='nun')u.body.rotation.z=Math.sin(t*Math.PI)*.35;
       if(u.id==='brawler'||u.id==='admiral')u.body.position.y-=.06;
