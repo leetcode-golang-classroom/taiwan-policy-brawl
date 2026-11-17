@@ -22,7 +22,7 @@ const SKILL_OVERRIDES={
   leopard:{basic:{name:'豹之撲擊',type:'dash',range:1.7,dashSpeed:17,dashMax:3.8,knockback:1.55,launch:4.4,stun:.58},skill:{type:'projectile',speed:9.4,range:7,radius:.9}},
   admiral:{basic:{type:'projectile',speed:8.5,range:7,radius:.9},skill:{type:'projectile',speed:8.2,range:6.5,radius:.8},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
   mage:{basic:{type:'projectile',speed:7.2,range:6,radius:.9},skill:{type:'projectile',speed:7.6,range:7,radius:.9},ult:{range:8}},
-  cleric:{basic:{range:3.1},skill:{type:'homing',speed:8,range:8,radius:.6,tracking:true,turnRate:3.5,trackRange:7,stepIn:0},ult:{range:8}},
+  cleric:{basic:{range:3.1},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
   brawler:{basic:{name:'重拳出擊',type:'projectile',speed:10,range:6.5,radius:.85},skill:{type:'dash',range:2.3,dashSpeed:16,dashMax:4.5,stepIn:0}},
   nun:{basic:{type:'projectile',speed:9.2,range:7,radius:.9},
     // 電光火球 (spec 6.2): fully replaces the old excavator skill. Real projectile, blockable, strong knockback, no launch.

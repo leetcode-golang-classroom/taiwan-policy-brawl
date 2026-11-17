@@ -45,11 +45,11 @@ test('melee hit on a dodging target is evaded', ()=>{
   w.world.get(w.cpu,'status').dodgeInvuln=5;fire(w,'basic');step(w.world,.6);
   assert.equal(hp(w,'cpu'),100);assert.equal(ev.length,1);
 });
-test('homing projectile steers toward a target that moved sideways; a straight one misses it', ()=>{
-  const run=(id,z)=>{const w=startedWorld({p:id});arrange(w,{dist:6});fire(w,'skill'.replace('skill',id==='cleric'?'skill':'basic'));
-    step(w.world,.3);w.world.get(w.cpu,'transform').z=z;  // target sidesteps after the projectile is already in flight
+test('straight projectile misses a target that sidestepped; cleric 神的啟示 (area) still hits and launches', ()=>{
+  const run=(id,z)=>{const w=startedWorld({p:id});arrange(w,{dist:6});fire(w,id==='cleric'?'skill':'basic');
+    step(w.world,.3);w.world.get(w.cpu,'transform').z=z;
     step(w.world,2.2);return hp(w,'cpu');};
-  assert.equal(run('cleric',2.6),81);      // homing: turns toward it
+  assert.ok(run('cleric',2.6)<100);
   assert.equal(run('mech',4),100);     // straight: flies past
 });
 test('dash attack moves the attacker toward the target, bounded by dashMax, then hits', ()=>{

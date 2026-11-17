@@ -9,6 +9,8 @@ import {syncView} from './renderSync.js';
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
 const DODGE_COLORS={mech:0x8beaff,leopard:0x8eea9a,admiral:0xffd36c,mage:0xffc4a5,cleric:0xfff1c7,brawler:0xffbd69,nun:0xffa34a,yu:0x9dc7ef,'bubble':0xe8b6dc};
+const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
+function fireBurst(c,n=3){for(let i=0;i<n;i++)burst(c,FIRE[i%3],24);}
 const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};
 
 export function initVfxEvents(world){
@@ -60,6 +62,15 @@ export function initVfxEvents(world){
       burst(up(T.position,1.3),side(e.targetId)==='cpu'?0xffc15c:0x8de8a9,18);
       const flash=$('#hit-flash');flash.classList.remove('active');void flash.offsetWidth;flash.classList.add('active');
       hitBurst(T,e.skill.tier);
+    }
+    if(e.skill.id==='cleric'&&e.amount>0){   // 神的啟示 / 火箭工程 impact: burning blast
+      const c=up(T.position,1.2);fireBurst(c,e.skill.tier==='ult'?5:3);
+      if(e.skill.tier==='ult'){
+        for(let i=0;i<10;i++){const f=new THREE.Mesh(new THREE.SphereGeometry(.2+Math.random()*.15,8,6),new THREE.MeshBasicMaterial({color:FIRE[i%3],transparent:true,opacity:.95,depthWrite:false}));f.position.copy(up(T.position,4+Math.random()*2));throwProjectile(f,new THREE.Vector3((Math.random()-.5)*6,(Math.random()-.2)*4,(Math.random()-.5)*6),.9,0,-2);}
+        addCameraShake(.6,.5);
+      } else {
+        for(let i=0;i<6;i++){const f=new THREE.Mesh(new THREE.ConeGeometry(.16,.6,6),new THREE.MeshBasicMaterial({color:FIRE[i%3],transparent:true,opacity:.9,depthWrite:false}));f.position.copy(up(T.position,.4+Math.random()*1.6)).add(new THREE.Vector3((Math.random()-.5)*.8,0,(Math.random()-.5)*.8));throwProjectile(f,new THREE.Vector3((Math.random()-.5)*.6,1.6,(Math.random()-.5)*.6),1.6,0,0);}
+      }
     }
     if(e.skill.id==='nun'&&e.skill.tier==='skill'){   // 電光火球 impact: electric blast
       const c=up(T.position,1.2);burst(c,0x9fe8ff,34);burst(c,0xffa63d,22);addCameraShake(.3,.3);
