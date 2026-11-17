@@ -1,11 +1,21 @@
 import {renderer,camState} from '../scene.js';
-import {pressAttack,pressJump,pressDodge,pressDefend,pressMoveKey} from '../systems/playerControl.js';
+import * as ctl from '../systems/playerControl.js';
+import {fighterOf} from '../ecs/entities.js';
 
 // DOM -> Control layer. Only records raw input; all decisions are made by the Control systems.
 export function initInput(world){
   const keys={};
+  // Local actions: act on the local side and, in an online match, forward the command to the peer.
+  const side=()=>ctl.localSide(world),send=c=>world.net?.send({t:'cmd',...c});
+  const intent=()=>world.get(fighterOf(world,side()),'intent');
+  const pressAttack=(w,_s,tier)=>{ctl.pressAttack(world,side(),tier);send({k:'a',v:tier});};
+  const pressJump=()=>{ctl.pressJump(world,side());send({k:'j'});};
+  const pressDefend=()=>{ctl.pressDefend(world,side());send({k:'f'});};
+  const pressDodge=(w,_s,k)=>{ctl.pressDodge(world,side(),k);const it=intent();send({k:'d',dir:it.dodgeDir});};
+  const pressMoveKey=(w,_s,code,k)=>{if(ctl.pressMoveKey(world,side(),code,k)){const r=intent().rush;if(r)send({k:'r',dir:r});}};
   const attackKeys={KeyJ:'basic',KeyK:'skill',KeyL:'ult'};
   window.addEventListener('keydown',e=>{
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;   // typing a connection code
     keys[e.code]=true;
     if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
     if(e.repeat)return;

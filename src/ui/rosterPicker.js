@@ -7,12 +7,14 @@ let active='player';
 const picked={player:null,cpu:null};
 const locked={player:false,cpu:false};
 let preview,onEnter=()=>{};
+let net=null;   // online match: {local,remote,send}; each seat only picks its own fighter
 
 const other=s=>s==='player'?'cpu':'player';
 function refreshPickUI(){
   $('#pick-player').classList.toggle('active',active==='player');
   $('#pick-cpu').classList.toggle('active',active==='cpu');
-  $('#pick-hint').textContent=`目前選擇：${SIDE_LABEL[active]}${locked[active]?'（已鎖定，點角色可重選）':''}`;
+  $('#pick-hint').textContent=net?`線上對戰：你是 ${SIDE_LABEL[net.local].replace(' 對手 CPU','')}${locked[net.local]?'（已鎖定，等待對方）':''}${locked[net.remote]?'・對方已鎖定':''}`:`目前選擇：${SIDE_LABEL[active]}${locked[active]?'（已鎖定，點角色可重選）':''}`;
+  for(const s of ['player','cpu'])$('#pick-'+s).disabled=!!net&&s!==net.local;
   preview.setActive(active);
   $('#roster-list').querySelectorAll('[data-roster]').forEach(card=>{
     const id=card.dataset.roster,p=picked.player?.id===id,c=picked.cpu?.id===id;
@@ -31,7 +33,8 @@ function refreshPickUI(){
 function applyHud(side,profile){
   const k=side==='player'?'player':'cpu';
   $('#'+k+'-icon').textContent=profile.icon;$('#'+k+'-name').textContent=profile.name;
-  if(side==='player'){$('#skill-basic').textContent=profile.basic;$('#skill-special').textContent=profile.skill;$('#skill-ultimate').textContent=profile.ult;$('#skill-defense').textContent=profile.defense;$('#player-style').textContent=profile.style;}
+  if(side===(net?net.local:'player')){$('#skill-basic').textContent=profile.basic;$('#skill-special').textContent=profile.skill;$('#skill-ultimate').textContent=profile.ult;$('#skill-defense').textContent=profile.defense;}
+  if(side==='player')$('#player-style').textContent=profile.style;
 }
 function renderRoster(){
   const list=$('#roster-list');
@@ -40,6 +43,7 @@ function renderRoster(){
     const profile=roster.find(r=>r.id===button.dataset.roster);
     if(!profile)return;
     picked[active]=profile;locked[active]=false;preview.show(active,profile);   // preview updates immediately
+    net?.send({t:'pick',id:profile.id,locked:false});
     refreshPickUI();
   }));
 }
@@ -48,7 +52,16 @@ function enterBattle(){
   onEnter(picked.player,picked.cpu);
 }
 // Call when returning to the select screen: both sides must lock in again.
-export function resetLocks(){locked.player=locked.cpu=false;active='player';refreshPickUI();}
+export function resetLocks(){locked.player=locked.cpu=false;active=net?net.local:'player';refreshPickUI();}
+// Switch between vs-CPU (net=null) and online (net={local,remote,send}).
+export function setNetMode(n){net=n;locked.player=locked.cpu=false;active=n?n.local:'player';refreshPickUI();}
+// The peer picked / locked a fighter.
+export function setRemotePick(id,isLocked){
+  if(!net)return;
+  const profile=roster.find(r=>r.id===id);if(!profile)return;
+  picked[net.remote]=profile;locked[net.remote]=!!isLocked;preview.show(net.remote,profile);refreshPickUI();
+  if(locked.player&&locked.cpu)enterBattle();
+}
 export function initRosterPicker(enterCallback){
   onEnter=enterCallback;
   preview=initPreview($('#preview'));
@@ -56,8 +69,12 @@ export function initRosterPicker(enterCallback){
   $('#lock-button').addEventListener('click',()=>{
     if(!picked[active])return;
     locked[active]=true;
+    net?.send({t:'pick',id:picked[active].id,locked:true});
     if(locked.player&&locked.cpu){refreshPickUI();enterBattle();return;}
-    active=other(active);refreshPickUI();
+    if(!net)active=other(active);
+    refreshPickUI();
   });
   renderRoster();refreshPickUI();
 }
+
+export const currentPick=side=>picked[side];

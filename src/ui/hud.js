@@ -1,6 +1,7 @@
 import {$} from '../utils/dom.js';
 import {cooldownDurations,cooldownFor,DEFENSE} from '../config.js';
 import {fighterOf} from '../ecs/entities.js';
+import {localSide} from '../systems/playerControl.js';
 import {rosterById} from '../roster.js';
 
 export function setCooldownCard(key,remaining,total,readyLabel){
@@ -14,12 +15,12 @@ export function setCooldownCard(key,remaining,total,readyLabel){
 const lastHp={};
 // Read-only view of the world -> DOM.
 export function updateHud(world){
-  const P=fighterOf(world,'player'),C=fighterOf(world,'cpu'),m=world.match;
-  const pa=world.get(P,'attacker'),ph=world.get(P,'health'),ch=world.get(C,'health'),pm=world.get(P,'energy').value,cm=world.get(C,'energy').value;
+  const L=fighterOf(world,localSide(world)),P=fighterOf(world,'player'),C=fighterOf(world,'cpu'),m=world.match;   // L = the seat this browser controls (skill cards)
+  const pa=world.get(L,'attacker'),ph=world.get(P,'health'),ch=world.get(C,'health'),pm=world.get(P,'energy').value,cm=world.get(C,'energy').value,lm=world.get(L,'energy').value;
   setCooldownCard('basic',pa.cooldowns.basic,cooldownDurations.basic,'READY');
-  setCooldownCard('skill',pa.cooldowns.skill,cooldownFor(world.get(P,'fighter').charId,'skill'),'READY');
-  setCooldownCard('ult',pa.cooldowns.ult,cooldownDurations.ult,pm>=100?'READY':`能量 ${Math.floor(pm)}%`);
-  const pd=world.get(P,'defense');
+  setCooldownCard('skill',pa.cooldowns.skill,cooldownFor(world.get(L,'fighter').charId,'skill'),'READY');
+  setCooldownCard('ult',pa.cooldowns.ult,cooldownDurations.ult,lm>=100?'READY':`能量 ${Math.floor(lm)}%`);
+  const pd=world.get(L,'defense');
   setCooldownCard('defense',pd.cooldown,DEFENSE.cooldown,'READY');
   $('#card-defense').classList.toggle('guarding',pd.active);
   if(pd.active)$('#cool-defense').textContent=`防禦中 ${pd.timer.toFixed(1)}s`;
@@ -40,7 +41,7 @@ export function updateHud(world){
   $('#round-label').textContent=`ROUND ${m.roundNumber} / 3　${m.playerRounds} : ${m.cpuRounds}`;
 }
 export function showCombatFeedback(side,kind){
-  const node=$('#combat-feedback');const who=side==='player'?'P1':'CPU';
+  const node=$('#combat-feedback');const who=side==='player'?'P1':'P2';
   node.textContent=kind==='hit'?`${who}　被擊中！`:kind==='block'?`${who}　防禦成功！`:kind==='root'?`${who}　被老樹盤根纏住！`:`${who}　閃避成功！`;
   node.className=`combat-feedback ${kind} show`;
   void node.offsetWidth;

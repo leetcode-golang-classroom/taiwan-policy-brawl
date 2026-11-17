@@ -132,3 +132,19 @@
 .actpad button.available{border-color:#64dfb0;box-shadow:0 0 12px #64dfb077}
 .actpad button.guarding{border-color:#6fd3ff;box-shadow:0 0 12px #6fd3ff99}
 @media(pointer:coarse),(max-width:640px){.touch-pad{display:flex}}
+
+/* V4.0 online play: mode switch + connection dialog (code / QR) */
+.mode-switch{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 9px}.mode-switch #net-state{margin-left:auto;color:#8fe3b4;font-size:10px}.pick-tab:disabled{opacity:.4;cursor:not-allowed}
+.net-overlay{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:14px;background:#060916cc;backdrop-filter:blur(4px)}.net-overlay[hidden]{display:none}
+.net-dialog{position:relative;width:min(680px,100%);max-height:92vh;overflow:auto;padding:20px 22px;border:1px solid #ffffff2a;border-radius:16px;background:#141a35;box-shadow:0 24px 70px #000a}
+.net-x{position:absolute;right:12px;top:10px;border:0;background:none;color:#aab4dc;font-size:18px;cursor:pointer}.net-body h3{margin:0 0 10px;font-size:17px}
+.net-hint{margin:0 0 14px;font-size:12px;line-height:1.7;color:#b8c3e6}.net-steps{margin:0 0 12px;padding-left:20px;font-size:12px;line-height:1.8;color:#cbd5f2}
+.net-menu{display:grid;grid-template-columns:1fr 1fr;gap:12px}.net-btn{border:0;border-radius:10px;padding:10px 16px;background:linear-gradient(100deg,#ffbd58,#ff647c);color:#1a1730;font:900 13px inherit;cursor:pointer}.net-btn.ghost{background:#252d52;color:#e7ecff;border:1px solid #ffffff2a}.net-btn:disabled{opacity:.45;cursor:default}
+.net-btn.big{padding:18px 12px;font-size:15px}.net-btn.big small{display:block;margin-top:5px;font-size:10px;font-weight:500}
+.net-code{display:flex;gap:14px;align-items:flex-start;margin:6px 0 14px}.net-qr{flex:0 0 min(46%,240px);padding:8px;border-radius:10px;background:#fff}.net-qr svg{display:block;width:100%;height:auto}
+.net-code-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}.net-code-side b,.net-reply b{font-size:12px;color:#ffd27b}
+.net-dialog textarea{width:100%;resize:vertical;padding:9px;border-radius:9px;border:1px solid #ffffff2a;background:#0b1128;color:#dfe6ff;font:11px/1.4 ui-monospace,monospace;word-break:break-all}
+.net-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.net-reply{display:flex;flex-direction:column;gap:6px}.net-out{margin-top:12px}
+.net-status{min-height:18px;margin:10px 0 0;font-size:12px;color:#8fe3b4}.net-status.bad{color:#ff8e8e}
+.net-scan{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;border-radius:16px;background:#0a0e22f2}.net-scan video{width:min(100%,420px);aspect-ratio:1;object-fit:cover;border-radius:12px;border:2px solid #ffc15c;background:#000}.net-scan p{margin:0;font-size:12px;color:#cbd5f2}
+@media(max-width:560px){.net-menu{grid-template-columns:1fr}.net-code{flex-direction:column}.net-qr{flex-basis:auto;width:min(100%,280px);align-self:center}}

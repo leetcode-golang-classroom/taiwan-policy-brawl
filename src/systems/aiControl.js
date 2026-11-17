@@ -4,6 +4,7 @@ import {dist as dist3} from '../ecs/math.js';
 
 // CONTROL (CPU): reads world state, writes the CPU's Intent component. Uses world.rng so tests can seed it.
 export function aiControl(world,dt){
+  if(world.net)return;   // online match: both sides are human
   const m=world.match;
   const id=fighterOf(world,'cpu');if(id===undefined)return;
   const it=world.get(id,'intent');it.moveX=0;it.moveZ=0;

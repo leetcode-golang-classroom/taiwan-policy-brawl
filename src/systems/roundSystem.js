@@ -46,6 +46,7 @@ export function roundSystem(world,dt){
   if(!m.running||m.ended)return;
   const ph=world.get(fighterOf(world,'player'),'health'),ch=world.get(fighterOf(world,'cpu'),'health');
   m.timeLeft-=dt;
+  if(world.net?.role==='guest')return;   // the host decides KO / time-up and tells the guest
   if(ph.hp<=0||ch.hp<=0)endRound(world,ph.hp>0?'player':'cpu','KO');
   else if(m.timeLeft<=0)endRound(world,ph.hp>=ch.hp?'player':'cpu','時間結束');
 }

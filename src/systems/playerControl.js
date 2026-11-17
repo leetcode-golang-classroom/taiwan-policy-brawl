@@ -10,9 +10,27 @@ export function moveFromKeys(keys){
   return {x:nx*c+nz*s,z:-nx*s+nz*c};
 }
 const DIR_KEYS=new Set(['KeyW','KeyA','KeyS','KeyD']);
+// Online match (world.net): the local keys drive the local side; the remote side is driven by the peer's last move vector.
+export const localSide=world=>world.net?world.net.local:'player';
 export function playerControl(world,keys){
-  const id=fighterOf(world,'player');if(id===undefined)return;
+  const id=fighterOf(world,localSide(world));if(id===undefined)return;
   const it=world.get(id,'intent'),mv=moveFromKeys(keys);it.moveX=mv.x;it.moveZ=mv.z;
+  const net=world.net;if(!net)return;
+  const rid=fighterOf(world,net.remote);if(rid===undefined)return;
+  const ri=world.get(rid,'intent');ri.moveX=net.remoteMove.x;ri.moveZ=net.remoteMove.z;
+}
+// Apply a command received from the peer to the remote fighter.
+export function applyRemoteCommand(world,c){
+  const net=world.net;if(!net)return;
+  const id=fighterOf(world,net.remote);if(id===undefined)return;
+  const it=world.get(id,'intent');
+  switch(c.k){
+    case 'a':if(['basic','skill','ult'].includes(c.v))it.attack=c.v;break;
+    case 'j':it.jump=true;break;
+    case 'd':it.dodge=true;it.dodgeDir=c.dir||null;break;
+    case 'f':it.defend=true;break;
+    case 'r':if(c.dir)it.rush=c.dir;break;
+  }
 }
 // Edge-triggered commands (called from keydown handlers)
 export function pressAttack(world,side,tier){world.get(fighterOf(world,side),'intent').attack=tier;}

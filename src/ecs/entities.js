@@ -2,7 +2,7 @@ import {Transform,Body,Health,Energy,Fighter,Status,Attacker,Intent,Brain,Defens
 
 export const SPAWN={player:{x:-3,z:1,rotY:0},cpu:{x:3,z:-1,rotY:Math.PI}};
 // Per-side energy tuning (player gets slightly faster energy than CPU, as in V3.8).
-const ENERGY={player:{regen:1.2,gain:.65},cpu:{regen:.8,gain:.5}};
+export const ENERGY={player:{regen:1.2,gain:.65},cpu:{regen:.8,gain:.5}};
 
 // Fighter entity: identical component set for P1 and CPU. Optional `view` is presentation-only.
 export function createFighter(world,{side,charId,moveSpeed=5,jumpPower=8.2,view=null}){
