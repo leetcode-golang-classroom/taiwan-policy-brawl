@@ -1,6 +1,7 @@
 import qrcode from 'qrcode-generator';
 import jsQR from 'jsqr';
 import {hostCreate,guestJoin,extractCode} from './signal.js';
+const hint=i=>i.relay?'':i.srflx?'（未設定 TURN：行動網路或嚴格 NAT 可能連不上）':'⚠ 沒取得公網位址（STUN 被擋），只有同一個區網能連線';
 
 // Online-connection dialog: host shows an invite code (text + QR), guest answers with a reply code (text + QR).
 // Either code can be moved by copy & paste or by scanning the QR with the camera. Result: onConnect(peer,role).
@@ -84,6 +85,7 @@ export function initNetUI({onConnect}){
       <div class="net-reply"><b>② 對方的回覆碼</b><textarea class="net-in" rows="3" placeholder="貼上對方的回覆碼（PB1A.…）"></textarea>
         <div class="net-row"><button type="button" class="net-btn" data-a="go">連線</button><button type="button" class="net-btn ghost" data-a="scan">📷 掃描對方 QR</button></div></div>
       <p class="net-status"></p>`;
+    status(hint(h.info));
     const box=body.querySelector('.net-code'),inp=body.querySelector('.net-in');
     box.querySelector('[data-copy=code]').addEventListener('click',e=>copy(h.code,e.target));
     box.querySelector('[data-copy=link]').addEventListener('click',e=>copy(link(h.code),e.target));
@@ -112,7 +114,7 @@ export function initNetUI({onConnect}){
         body.querySelector('.net-out').innerHTML=codeBlock(g.code,'你的回覆碼（傳給房主）');
         const box=body.querySelector('.net-code');box.querySelector('[data-copy=code]').addEventListener('click',e=>copy(g.code,e.target));
         body.querySelector('[data-a=make]').disabled=true;
-        status('等待房主輸入你的回覆碼…連線成功會自動進入遊戲');
+        status('等待房主輸入你的回覆碼…連線成功會自動進入遊戲 '+hint(g.info));
         await g.peer.opened;done(g.peer,'guest');
       }catch(e){busy=false;status(e.message||'連線失敗',true);}
     };

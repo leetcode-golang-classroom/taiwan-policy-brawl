@@ -1,6 +1,20 @@
 // Serverless WebRTC signalling: the offer / answer SDP is squeezed into a short text code that players
 // exchange by hand (copy & paste) or by QR code. No server: STUN only (public), data goes peer-to-peer.
-const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+// STUN is enough for friendly NATs only. Phones on cellular (CGNAT) or symmetric NATs need a TURN relay:
+// set VITE_TURN_URL / VITE_TURN_USER / VITE_TURN_CRED at build time, or at runtime
+// localStorage.setItem('pb-turn', JSON.stringify({urls:'turn:host:3478',username:'u',credential:'p'})).
+function iceServers(){
+  const list=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}];
+  const env=import.meta.env||{};
+  if(env.VITE_TURN_URL)list.push({urls:env.VITE_TURN_URL.split(','),username:env.VITE_TURN_USER,credential:env.VITE_TURN_CRED});
+  try{const t=JSON.parse(localStorage.getItem('pb-turn')||'null');if(t?.urls)list.push(t);}catch{}
+  return list;
+}
+// Which candidate kinds ended up in the SDP (diagnostics shown in the UI).
+export function candidateInfo(sdp){
+  const k=t=>new RegExp('a=candidate:.* typ '+t).test(sdp);
+  return {host:k('host'),srflx:k('srflx'),relay:k('relay')};
+}
 const CODE_RE=/PB1([OA])\.([A-Za-z0-9_-]+)/;
 
 const toB64u=bytes=>{let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
@@ -23,7 +37,7 @@ export async function decodeCode(text){
 }
 export const extractCode=text=>CODE_RE.exec(String(text||''))?.[0]||null;
 
-function gathered(pc,timeout=4000){
+function gathered(pc,timeout=6000){
   return new Promise(res=>{
     if(pc.iceGatheringState==='complete')return res();
     const done=()=>{pc.removeEventListener('icegatheringstatechange',on);clearTimeout(t);res();};
@@ -43,7 +57,7 @@ function makePeer(pc){
   pc.addEventListener('connectionstatechange',()=>{if(['failed','closed','disconnected'].includes(pc.connectionState))setTimeout(()=>{if(pc.connectionState!=='connected')fire();},pc.connectionState==='disconnected'?4000:0);});
   const opened=new Promise((res,rej)=>{
     ctl.onopen=()=>res();
-    pc.addEventListener('connectionstatechange',()=>{if(pc.connectionState==='failed')rej(new Error('連線失敗（可能是防火牆或 NAT 限制）'));});
+    pc.addEventListener('connectionstatechange',()=>{if(pc.connectionState==='failed')rej(new Error('連線失敗：雙方網路無法直連（常見於手機行動網路或嚴格 NAT）。請改連同一個 Wi-Fi，或設定 TURN 中繼'));});
   });
   return {
     pc,opened,
@@ -57,7 +71,7 @@ function makePeer(pc){
 
 // Host: create the offer code, later feed it the guest's answer code.
 export async function hostCreate(){
-  const pc=new RTCPeerConnection({iceServers:ICE}),peer=makePeer(pc);
+  const pc=new RTCPeerConnection({iceServers:iceServers()}),peer=makePeer(pc);
   await pc.setLocalDescription(await pc.createOffer());
   await gathered(pc);
   const code=await encodeCode('O',pc.localDescription.sdp);
@@ -66,15 +80,15 @@ export async function hostCreate(){
     if(d.kind!=='A')throw new Error('這是邀請碼，請貼上對方產生的「回覆碼」');
     await pc.setRemoteDescription({type:'answer',sdp:d.sdp});
   };
-  return {peer,code,accept};
+  return {peer,code,accept,info:candidateInfo(pc.localDescription.sdp)};
 }
 // Guest: take the host's offer code, produce the answer code.
 export async function guestJoin(text){
   const d=await decodeCode(text);
   if(d.kind!=='O')throw new Error('這是回覆碼，請貼上房主的「邀請碼」');
-  const pc=new RTCPeerConnection({iceServers:ICE}),peer=makePeer(pc);
+  const pc=new RTCPeerConnection({iceServers:iceServers()}),peer=makePeer(pc);
   await pc.setRemoteDescription({type:'offer',sdp:d.sdp});
   await pc.setLocalDescription(await pc.createAnswer());
   await gathered(pc);
-  return {peer,code:await encodeCode('A',pc.localDescription.sdp)};
+  return {peer,code:await encodeCode('A',pc.localDescription.sdp),info:candidateInfo(pc.localDescription.sdp)};
 }
