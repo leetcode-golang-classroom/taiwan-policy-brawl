@@ -17,6 +17,11 @@ export function buildNun({root,body,head,hair,add,makeCap,accentMat,bodyMat,hair
     add(new THREE.SphereGeometry(.38,16,10,0,Math.PI*2,0,Math.PI/2),habit,[0,2.4,-.02]);        // white veil
     add(new THREE.BoxGeometry(.78,.9,.08),habit,[0,1.95,-.4],[.12,0,0]);                       // veil falling behind
     add(new THREE.BoxGeometry(.5,.1,.06),trim,[0,2.46,.3]);                                   // white headband
+    // Full-length habit: flared white skirt to just above the ground (feet peek out), hem trim, belt, wide sleeves.
+    add(new THREE.CylinderGeometry(.5,.8,1.05,24),habit,[0,.84,0]);
+    add(new THREE.TorusGeometry(.8,.035,6,32),trim,[0,.32,0],[Math.PI/2,0,0]);
+    add(new THREE.TorusGeometry(.5,.06,8,24),trim,[0,1.04,0],[Math.PI/2,0,0]);
+    for(const side of [-1,1])add(new THREE.CylinderGeometry(.17,.26,.7,14),habit,[side*.6,1.2,.04],[0,0,side*-.45]);
     add(new THREE.CylinderGeometry(.03,.03,1.5,8),gold,[.9,1.1,.2],[0,0,-.1]);                  // crosier staff
     weapon(add(new THREE.SphereGeometry(.17,14,10),mat(0xfff6c8),[.93,1.92,.2]),{axis:'y',speed:1.5,glow:0xfff1a8});            // light orb on the staff
 }
