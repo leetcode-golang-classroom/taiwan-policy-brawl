@@ -3,7 +3,7 @@ import {mat,toonMat,gold,dark,white} from '../materials.js';
 
 // 01 AI promoter, redesigned as a blue retro-robot hero (Mega-Man-style visual language):
 // armored body/limbs, helmet with crest, arm cannon, mechanical legs, and a golden Buddhist 卍 on the chest plate.
-const BLUE=0x2f6fd6, DEEP=0x1f4fa8, LIGHT=0x6db8ff, CYAN=0x7df3ff;
+const LEATHER=0x15151a, SHINE=0x3a3a46, JEANS=0x23283a, SILVER=0xc9ced8;
 
 // Buddhist 卍 (counter-clockwise, hooks: top→left, left→down, bottom→right, right→up) built from boxes.
 // Coordinates are given as seen by the viewer; the character faces +z so world x is mirrored.
@@ -12,39 +12,37 @@ export function addManji(add,material,[cx,cy,cz],L=.2,w=.07){
   return bars.map(([x,y,bw,bh])=>add(new THREE.BoxGeometry(bw,bh,.05),material,[cx-x,cy+y,cz]));
 }
 export function buildMech({root,body,head,hair,add,limbs,parts,weapon}){
-  hair.visible=false;
-  body.material=toonMat(BLUE);
+  // 01 reimagined as a man in a black leather jacket: jacket with popped collar and zipper, jeans, boots,
+  // slicked-back hair, sunglasses, and the golden 卍 kept as a badge on the chest.
+  hair.material=toonMat(0x0c0c10);
+  body.material=toonMat(LEATHER);
   const [armL,legL,armR,legR]=limbs;
-  for(const a of [armL,armR])a.material=toonMat(BLUE);
+  for(const a of [armL,armR]){a.material=toonMat(LEATHER);
+    const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.08,10),toonMat(SHINE));cuff.position.set(0,-.26,0);a.add(cuff);
+    const zip=new THREE.Mesh(new THREE.BoxGeometry(.03,.3,.03),toonMat(SILVER));zip.position.set(0,-.05,.13);a.add(zip);}
   for(const l of [legL,legR]){
-    l.material=toonMat(DEEP);
-    const knee=new THREE.Mesh(new THREE.BoxGeometry(.34,.17,.32),toonMat(LIGHT));knee.position.set(0,.06,.04);l.add(knee);   // knee guard follows the leg
-    const shin=new THREE.Mesh(new THREE.BoxGeometry(.1,.3,.06),toonMat(CYAN));shin.position.set(0,-.12,.17);l.add(shin);        // mechanical shin light
+    l.material=toonMat(JEANS);
+    const boot=new THREE.Mesh(new THREE.CylinderGeometry(.18,.2,.2,10),toonMat(LEATHER));boot.position.set(0,-.18,0);l.add(boot);
   }
-  // helmet: dome, ear pads, crest fin, visor rim
-  add(new THREE.SphereGeometry(.58,24,16,0,Math.PI*2,0,Math.PI*.56),toonMat(BLUE),[0,2.2,-.02]);
-  for(const x of [-.56,.56])add(new THREE.CylinderGeometry(.15,.15,.12,14),toonMat(CYAN),[x,2.12,0],[0,0,Math.PI/2]);
-  add(new THREE.BoxGeometry(.09,.42,.55),toonMat(LIGHT),[0,2.78,-.06],[-.15,0,0]);
-  add(new THREE.BoxGeometry(.74,.075,.1),toonMat(CYAN),[0,2.4,.43]);
-  // chest plate with the 卍 mark
-  add(new THREE.BoxGeometry(.86,.88,.13),toonMat(BLUE),[0,1.3,.47]);
-  add(new THREE.BoxGeometry(.86,.07,.14),toonMat(LIGHT),[0,1.7,.47]);
-  add(new THREE.BoxGeometry(.86,.07,.14),toonMat(LIGHT),[0,.9,.47]);
-  addManji(add,gold,[0,1.3,.55]);
-  for(const x of [-.6,.6])add(new THREE.SphereGeometry(.2,14,10),toonMat(LIGHT),[x,1.66,0]);   // shoulder armor
-  // arm cannon on the right forearm: barrel + glowing muzzle ring
-  const cannon=new THREE.Mesh(new THREE.CylinderGeometry(.17,.2,.42,14),toonMat(DEEP));cannon.position.set(0,-.3,.06);armR.add(cannon);
-  const muzzle=new THREE.Mesh(new THREE.TorusGeometry(.17,.045,8,18),toonMat(CYAN));muzzle.position.set(0,-.52,.06);muzzle.rotation.x=Math.PI/2;armR.add(muzzle);
-  weapon(muzzle,{axis:'z',speed:0,glow:CYAN});
-  // AI promoter kit: glowing GPU board (spins while charging), stylized dome and fresh-milk carton.
-  const gpu=new THREE.Group();gpu.position.set(-.72,1.22,.12);root.add(gpu);
-  const board=new THREE.Mesh(new THREE.BoxGeometry(.5,.42,.1),toonMat(0x183a2b));gpu.add(board);
-  const chip=new THREE.Mesh(new THREE.BoxGeometry(.34,.26,.045),toonMat(0x76d96b));chip.position.set(0,.01,.07);gpu.add(chip);
-  for(let i=0;i<4;i++){const f=new THREE.Mesh(new THREE.BoxGeometry(.035,.12,.025),toonMat(0xffc15c));f.position.set(-.16+i*.105,.01,.1);gpu.add(f);}
-  weapon(chip,{axis:'z',speed:0,glow:0x76d96b});
-  parts.weapons.push({obj:gpu,axis:'y',speed:.9});
-  add(new THREE.SphereGeometry(.42,20,12,0,Math.PI*2,0,Math.PI/2),mat(0xb7d9e9,.3,.15),[.68,1.7,-.02]);
-  add(new THREE.BoxGeometry(.34,.52,.28),white,[.7,.92,.16]);
-  add(new THREE.BoxGeometry(.22,.08,.02),mat(0x3c83bf),[.7,1.05,.31]);
-  add(new THREE.CylinderGeometry(.06,.06,.05,8),white,[.7,1.21,.16]);
+  // jacket: asymmetric front zipper, wide lapels, popped collar, shoulder epaulets, belt, hem
+  add(new THREE.BoxGeometry(.9,.95,.12),toonMat(LEATHER),[0,1.3,.46]);
+  add(new THREE.BoxGeometry(.04,.9,.03),toonMat(SILVER),[.12,1.3,.54],[0,0,-.1]);
+  for(const x of [-1,1]){
+    add(new THREE.BoxGeometry(.3,.62,.06),toonMat(SHINE),[x*.27,1.5,.54],[0,0,x*.35]);          // lapel
+    add(new THREE.BoxGeometry(.3,.3,.1),toonMat(LEATHER),[x*.3,1.84,.1],[-.2,0,x*.2]);            // popped collar
+    add(new THREE.BoxGeometry(.4,.07,.3),toonMat(SHINE),[x*.58,1.72,0],[0,0,x*.4]);               // epaulet
+  }
+  add(new THREE.BoxGeometry(.95,.08,.5),toonMat(SHINE),[0,.82,.3]);
+  add(new THREE.BoxGeometry(.12,.08,.04),toonMat(SILVER),[0,.82,.56]);
+  add(new THREE.CylinderGeometry(.5,.5,.1,20),toonMat(LEATHER),[0,.86,0]);
+  // slicked-back hair and sunglasses
+  add(new THREE.SphereGeometry(.56,20,14,0,Math.PI*2,0,Math.PI*.55),toonMat(0x0c0c10),[0,2.2,-.04]);
+  add(new THREE.BoxGeometry(.78,.13,.08),toonMat(0x050507),[0,2.14,.5]);
+  for(const x of [-.19,.19])add(new THREE.BoxGeometry(.3,.18,.07),toonMat(0x050507),[x,2.13,.52]);
+  // golden 卍 badge on the chest
+  add(new THREE.CylinderGeometry(.26,.26,.04,18),toonMat(SHINE),[0,1.3,.545],[Math.PI/2,0,0]);
+  addManji(add,gold,[0,1.3,.58],.15,.05);
+  // pointed index finger weapon-focus: a chain at the belt that glows when charging
+  const chain=new THREE.Mesh(new THREE.TorusGeometry(.14,.025,6,16),toonMat(SILVER));chain.position.set(.66,.9,.25);chain.rotation.y=Math.PI/2;root.add(chain);
+  weapon(chain,{axis:'x',speed:1,glow:0xffe9a0});
 }
