@@ -148,3 +148,10 @@
 .net-status{min-height:18px;margin:10px 0 0;font-size:12px;color:#8fe3b4}.net-status.bad{color:#ff8e8e}
 .net-scan{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;border-radius:16px;background:#0a0e22f2}.net-scan video{width:min(100%,420px);aspect-ratio:1;object-fit:cover;border-radius:12px;border:2px solid #ffc15c;background:#000}.net-scan p{margin:0;font-size:12px;color:#cbd5f2}
 @media(max-width:560px){.net-menu{grid-template-columns:1fr}.net-code{flex-direction:column}.net-qr{flex-basis:auto;width:min(100%,280px);align-self:center}}
+
+/* Mobile: no double-tap / pinch zoom, long-press callout or overscroll while fighting. */
+html,body{touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+.arena-wrap{touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.touch-pad,.actpad{touch-action:none;-webkit-touch-callout:none}
+.actpad{pointer-events:auto}
+.skill-row .skill-card{-webkit-touch-callout:none}

@@ -61,9 +61,19 @@ export function initInput(world){
   for(const b of document.querySelectorAll('#touch-pad [data-act]')){
     b.addEventListener('pointerdown',e=>{e.preventDefault();if(b.dataset.act==='jump')pressJump(world,'player');else pressDodge(world,'player',keys);});
   }
+  // iOS Safari ignores user-scalable=no: block pinch (gesture*) and double-tap zoom explicitly.
+  for(const g of ['gesturestart','gesturechange','gestureend'])document.addEventListener(g,e=>e.preventDefault());
+  let lastTouchEnd=0;
+  document.addEventListener('touchend',e=>{
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+    const now=Date.now();if(now-lastTouchEnd<300&&e.cancelable)e.preventDefault();lastTouchEnd=now;
+  },{passive:false});
+  document.addEventListener('contextmenu',e=>{if(e.target.closest?.('.arena-wrap,.skill-row'))e.preventDefault();});
   const el=renderer.domElement;
-  el.addEventListener('pointerdown',e=>{camState.drag=true;camState.last={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);});
+  let camPointer=null;   // only one finger may drag the camera; a second finger (attack button) must not rotate it
+  el.addEventListener('pointerdown',e=>{if(!e.isPrimary||camPointer!==null)return;camPointer=e.pointerId;camState.drag=true;camState.last={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);});
   el.addEventListener('pointermove',e=>{if(!camState.drag)return;camState.yaw-=(e.clientX-camState.last.x)*.004;camState.pitch=Math.max(-.05,Math.min(.65,camState.pitch+(e.clientY-camState.last.y)*.002));camState.last={x:e.clientX,y:e.clientY};keys.camYaw=camState.yaw;});
-  el.addEventListener('pointerup',()=>camState.drag=false);el.addEventListener('pointercancel',()=>camState.drag=false);
+  const endDrag=e=>{if(e.pointerId!==camPointer)return;camPointer=null;camState.drag=false;};
+  el.addEventListener('pointerup',endDrag);el.addEventListener('pointercancel',endDrag);
   return keys;
 }
