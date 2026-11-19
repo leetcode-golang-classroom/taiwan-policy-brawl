@@ -168,9 +168,9 @@ export function initVfxEvents(world){
       const O=obj(e.id);
       const ctx=createSkillContext(O,O),steps=7;
       for(let i=0;i<steps;i++){
-        const h=(i+1)*.3,p=O.position.clone().addScaledVector(ctx.forward,.9+i*.55);p.y=h/2;
-        const step=ctx.mesh(new THREE.BoxGeometry(1.5,h,.55),0xd5dbe6,p,.75,'fade');step.rotation.y=O.rotation.y;
-        const nose=ctx.mesh(new THREE.BoxGeometry(1.52,.05,.12),0xf8b61c,p.clone().add(new THREE.Vector3(0,h/2+.01,0)).addScaledVector(ctx.forward,-.22),.75,'fade');nose.rotation.y=O.rotation.y;
+        const h=(i+1)*.28,p=O.position.clone().addScaledVector(ctx.forward,.9+i*.3+.15);p.y=h/2;
+        const step=ctx.mesh(new THREE.BoxGeometry(1.5,h,.3),0xd5dbe6,p,1.25,'fade');step.rotation.y=O.rotation.y;
+        const nose=ctx.mesh(new THREE.BoxGeometry(1.52,.05,.08),0xf8b61c,p.clone().add(new THREE.Vector3(0,h/2+.01,0)).addScaledVector(ctx.forward,-.1),1.25,'fade');nose.rotation.y=O.rotation.y;
       }
       burst(up(O.position,.1).addScaledVector(ctx.forward,1.8),0xd5dbe6,14);
     }

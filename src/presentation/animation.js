@@ -144,9 +144,8 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.1,18,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.25,18,dt);
       }
       if(u.id==='mech'&&u.chargeStyle==='skill'){ // 階梯往上爬: alternating knee lifts and arm pumps while the body climbs
-        const D=THREE.MathUtils.damp,sw=Math.sin(world.time*16),lift=q*.3;
-        u.body.position.y=1.25+lift;u.head.position.y=2.12+lift;u.body.rotation.x=D(u.body.rotation.x,-.18,14,dt);u.body.rotation.y=D(u.body.rotation.y,0,14,dt);
-        u.limbs[0].position.y=1.72+lift;u.limbs[2].position.y=1.72+lift;u.limbs[1].position.y=.85+lift;u.limbs[3].position.y=.85+lift;
+        const D=THREE.MathUtils.damp,sw=Math.sin(world.time*16);
+        u.body.rotation.x=D(u.body.rotation.x,-.18,14,dt);u.body.rotation.y=D(u.body.rotation.y,0,14,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,-.5-sw*.8,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.5+sw*.8,22,dt);
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,sw*.9-.3,22,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-sw*.9-.3,22,dt);
       }
@@ -216,8 +215,7 @@ export function updateAnimations(world,dt){
       }
       if(u.id==='mech'&&tier==='skill'){ // 階梯往上爬: final big step up — rear knee driven high, arms reaching upward
         const D=THREE.MathUtils.damp,top=u.phase==='impact';
-        const lift=top?.55:.4;u.body.position.y=1.25+lift;u.head.position.y=2.12+lift;
-        u.limbs[0].position.y=1.72+lift;u.limbs[2].position.y=1.72+lift;u.limbs[1].position.y=.85+lift;u.limbs[3].position.y=.85+lift;
+        void top;
         u.body.rotation.x=D(u.body.rotation.x,-.2,22,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,-1.15,26,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,.35,26,dt);
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-2.3,26,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-2.3,26,dt);
@@ -246,5 +244,16 @@ export function updateAnimations(world,dt){
       u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,-.08*(1-t),10,dt);u.body.rotation.y=THREE.MathUtils.damp(u.body.rotation.y,0,9,dt);u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,0,9,dt);
       u.limbs[2].rotation.x=THREE.MathUtils.damp(u.limbs[2].rotation.x,0,9,dt);u.limbs[0].rotation.x=THREE.MathUtils.damp(u.limbs[0].rotation.x,0,9,dt);
     }else{u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,0,12,dt);u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,0,12,dt);u.head.rotation.y=THREE.MathUtils.damp(u.head.rotation.y,0,12,dt);u.head.rotation.x=THREE.MathUtils.damp(u.head.rotation.x,0,12,dt);u.body.rotation.y=THREE.MathUtils.damp(u.body.rotation.y,0,12,dt);}
+    if(u.id==='mech'){ // 階梯往上爬: the whole fighter really walks up the 7-step staircase during the charge, holds at the top for the strike, then drops back down
+      const ud=f.userData,STEPS=7,RISE=.28,DEPTH=.3;
+      const climbing=u.phase==='charge'&&u.chargeStyle==='skill',top=(u.phase==='strike'||u.phase==='impact')&&(u.phase==='strike'?u.chargeStyle:u.attackStyle)==='skill';
+      if(climbing)ud.climb=Math.min(1,u.chargeTime/chargeDurations.skill)*STEPS;else if(top)ud.climb=STEPS;else ud.climb=THREE.MathUtils.damp(ud.climb||0,0,10,dt);
+      const c=ud.climb||0;
+      if(c>.001){
+        const t=Math.max(0,(c-.75)*STEPS/(STEPS-.75)),fl=Math.floor(t),fr=t-fl,e=fr*fr*(3-2*fr);
+        const fwd=c*DEPTH+Math.min(1,c)*.6,h=Math.min(STEPS,fl+e)*RISE;
+        f.position.x+=Math.sin(f.rotation.y)*fwd;f.position.z+=Math.cos(f.rotation.y)*fwd;f.position.y+=h;
+      }
+    }
     updateGlow(u,world.time,dt);}
 }
