@@ -164,6 +164,16 @@ export function initVfxEvents(world){
     showMoveName(side(e.id),e.tier,charId(e.id));
     $('#move-callout-type').textContent='蓄力中 · '+(e.tier==='ult'?'必殺技':e.tier==='skill'?'特殊招式':'普通攻擊');
     burst(up(F.position,1),color,e.tier==='ult'?18:10);
+    if(charId(e.id)==='mech'&&e.tier==='skill'){   // a staircase rises out of the ground in front of the fighter and is climbed during the charge
+      const O=obj(e.id);
+      const ctx=createSkillContext(O,O),steps=7;
+      for(let i=0;i<steps;i++){
+        const h=(i+1)*.3,p=O.position.clone().addScaledVector(ctx.forward,.9+i*.55);p.y=h/2;
+        const step=ctx.mesh(new THREE.BoxGeometry(1.5,h,.55),0xd5dbe6,p,.75,'fade');step.rotation.y=O.rotation.y;
+        const nose=ctx.mesh(new THREE.BoxGeometry(1.52,.05,.12),0xf8b61c,p.clone().add(new THREE.Vector3(0,h/2+.01,0)).addScaledVector(ctx.forward,-.22),.75,'fade');nose.rotation.y=O.rotation.y;
+      }
+      burst(up(O.position,.1).addScaledVector(ctx.forward,1.8),0xd5dbe6,14);
+    }
   });
   on('ultNotReady',e=>{if(side(e.id)==='player')$('#player-status').textContent='必殺技需要 100% 能量';});
   on('roundStart',()=>{for(const id of [...rings.keys()])dropRing(id);for(const id of [...arcs.keys()])dropArc(id);});
