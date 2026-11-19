@@ -8,13 +8,8 @@ export function buildAdmiral({root,body,head,hair,add,makeCap,accentMat,bodyMat,
     const WHITE=mat(0xf4f2ea),NAVY=mat(0x16233f),GOLD=gold;
     hairMat.color.set(0xf4f4f8);   // white hair showing under the cap
     hair.visible=true;
-    // white 胡子: upturned moustache over the mouth, a goatee and short sideburns
-    for(const x of [-1,1]){
-      add(new THREE.SphereGeometry(.12,12,10),hairMat,[x*.1,2.04,.49],[0,0,x*-.35],[1.5,.55,.6]);
-      add(new THREE.SphereGeometry(.07,10,8),hairMat,[x*.23,2.07,.47],[0,0,x*.5],[1.4,.5,.6]);
-      add(new THREE.BoxGeometry(.06,.3,.1),hairMat,[x*.47,2.0,.12]);
-    }
-    add(new THREE.SphereGeometry(.17,12,10),hairMat,[0,1.8,.4],[.25,0,0],[1.2,1.3,.6]);
+    // white 胡子: just a small moustache over the mouth
+    for(const x of [-1,1])add(new THREE.SphereGeometry(.09,12,10),hairMat,[x*.075,2.04,.49],[0,0,x*-.3],[1.3,.5,.55]);
     body.scale.set(1.22,1.0,1.08);
     // peaked cap (replaces the generic one from the base rig: draw over it, taller)
     add(new THREE.CylinderGeometry(.43,.4,.2,20),WHITE,[0,2.58,0]);           // white crown
