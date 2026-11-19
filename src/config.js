@@ -25,7 +25,8 @@ const SKILL_OVERRIDES={
   admiral:{basic:{name:'乾坤一擲',type:'projectile',dice:true,damage:3,cooldown:.9,speed:9,range:7,radius:1.3,knockback:3.6,launch:2.5,stun:.5},
     skill:{name:'紅中旋風',type:'projectile',damage:7,speed:8.8,range:7,radius:.8,tracking:true,trackRange:12,turnRate:9,
       volley:[{wait:0,angle:-1.1,knockback:2.2,launch:0},{wait:.22,angle:1.1,knockback:2.2,launch:0},{wait:.44,angle:0,knockback:3.4,launch:6.5}]},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
-  mage:{basic:{type:'projectile',speed:7.2,range:6,radius:.9},skill:{type:'projectile',speed:7.6,range:7,radius:.9},ult:{range:8}},
+  // 開卷有益 / SoR 教學 / 百年樹人: all instant area hits (the books, words, pyramid light and vines are presentation).
+  mage:{basic:{name:'開卷有益',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'SoR 教學',type:'area',range:8,damage:19,knockback:2.4,launch:3.5,stun:.7,stepIn:0},ult:{name:'百年樹人',range:8,knockback:1.6,launch:10,stun:1.1}},
   cleric:{basic:{range:3.1},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
   // 紫氣東來: a dragon-shaped qi blast; knockback follows the projectile's heading at the moment it hits.
   yu:{basic:{name:'乾坤之動',damage:6,range:2.6,knockback:.5,cooldown:.7},skill:{name:'紫氣東來',type:'projectile',damage:19,range:11,speed:12,radius:1.1,knockback:3.4,launch:2.2,stun:.6,stepIn:0},ult:{name:'百川匯海'}},
