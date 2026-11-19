@@ -6,7 +6,6 @@ export function buildBubble({root,body,head,hair,add,makeCap,accentMat,bodyMat,h
     // 白髮平頭: short white flat-top (long locks hidden) + grey stubble around the mouth and chin
     hairMat.color.set(0xf2f2f6);hair.visible=true;hair.scale.set(1.1,.8,1.08);
     root.children.forEach(c=>{if(c!==hair&&c.material===hairMat&&c.position.y>1.95&&c.geometry?.type!=='BoxGeometry')c.visible=false;});
-    add(new THREE.BoxGeometry(.7,.1,.64),hairMat,[0,2.73,-.01]);                        // flat top
     const stub=toonMat(0x8f8f98),faceZ=(x,y)=>.489*Math.sqrt(Math.max(.05,1-(x/.54)**2-((y-2.12)/.56)**2))+.01;
     for(let i=0;i<70;i++){
       const r1=Math.abs(Math.sin(i*12.9898)*43758.5453)%1,r2=Math.abs(Math.sin(i*78.233)*12345.678)%1;
