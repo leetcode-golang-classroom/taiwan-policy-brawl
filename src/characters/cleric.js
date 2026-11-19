@@ -12,21 +12,30 @@ export function buildCleric({root,body,head,hair,add,makeCap,accentMat,bodyMat,h
     add(new THREE.BoxGeometry(.3,.42,.07),mat(0xf5ecd0),[.64,1.0,.45],[0,.3,.1]);
     add(new THREE.BoxGeometry(.04,.2,.02),gold,[.6,1.02,.49],[0,.3,.1]);
     add(new THREE.BoxGeometry(.12,.035,.02),gold,[.6,1.06,.49],[0,.3,.1]);
-    // Full-length robe: flared white skirt to the floor, gold hem, purple sash, wide sleeves.
-    const robe=mat(0xeee9df);
-    // Robe stops just above the ground: a single steady skirt, so the legs and boots stepping underneath stay readable.
-    add(new THREE.CylinderGeometry(.5,.8,1.05,24),robe,[0,.84,0]);
-    add(new THREE.TorusGeometry(.8,.035,6,32),gold,[0,.32,0],[Math.PI/2,0,0]);
-    add(new THREE.TorusGeometry(.52,.07,8,24),mat(0x6a3f91),[0,1.06,0],[Math.PI/2,0,0]);
-    add(new THREE.BoxGeometry(.2,.95,.05),mat(0x6a3f91),[0,.8,.6],[.2,0,0]);
-    for(const side of [-1,1]){add(new THREE.CylinderGeometry(.17,.27,.7,14),robe,[side*.6,1.2,.04],[0,0,side*-.45]);add(new THREE.TorusGeometry(.25,.03,6,16),gold,[side*.73,.9,.07],[Math.PI/2,0,side*-.45]);}
-    // Cleric-inspired ceremonial robe: high collar, stole and cross emblem.
-    add(new THREE.BoxGeometry(.84,.92,.09),mat(0xeee9df),[0,1.26,.37]);
-    add(new THREE.BoxGeometry(.18,.76,.07),mat(0x6a3f91),[-.2,1.3,.44],[0,0,.12]);
-    add(new THREE.BoxGeometry(.18,.76,.07),mat(0x6a3f91),[.2,1.3,.44],[0,0,-.12]);
-    add(new THREE.BoxGeometry(.08,.28,.045),gold,[0,1.55,.49]);
-    add(new THREE.BoxGeometry(.23,.07,.045),gold,[0,1.61,.49]);
-    add(new THREE.SphereGeometry(.055,10,8),mat(0xeee9df),[0,2.48,0]);
-    add(new THREE.SphereGeometry(.1,10,8),gold,[0,2.58,.12]);
-    for(const side of [-1,1]) add(new THREE.SphereGeometry(.14,10,8),white,[side*.22,2.45,-.08],[0,0,side*.5],[1,1.8,.35]);
+    // 牧師穿著: black clerical suit, white tab collar, purple stole, gold pectoral cross.
+    const BLACK=0x1b1b21,blk=toonMat(BLACK);
+    body.material=blk;
+    for(const arm of [limbs[0],limbs[2]]){arm.material=blk;const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.05,12),toonMat(0xf4f0e6));cuff.position.set(0,-.3,0);arm.add(cuff);}
+    for(const leg of [limbs[1],limbs[3]]){leg.material=blk;leg.children[0].material=toonMat(0x0c0c10);}   // black trousers and shoes
+    add(new THREE.CylinderGeometry(.5,.66,.62,24),blk,[0,.98,0]);                                        // long suit-coat skirt
+    add(new THREE.BoxGeometry(.84,.92,.09),blk,[0,1.26,.37]);                                            // black clerical shirt front
+    add(new THREE.CylinderGeometry(.31,.31,.1,20),white,[0,1.78,0]);                                      // white collar band
+    add(new THREE.BoxGeometry(.13,.13,.04),white,[0,1.76,.31]);                                           // tab
+    add(new THREE.BoxGeometry(.16,.9,.06),mat(0x6a3f91),[-.26,1.2,.44],[0,0,.08]);                       // purple stole
+    add(new THREE.BoxGeometry(.16,.9,.06),mat(0x6a3f91),[.26,1.2,.44],[0,0,-.08]);
+    add(new THREE.BoxGeometry(.04,.2,.03),gold,[0,1.5,.5]);add(new THREE.BoxGeometry(.13,.04,.03),gold,[0,1.54,.5]);   // pectoral cross
+    // 方形臉 + 厚嘴唇: a squared jaw block over the lower face, thick lips, short neat grey hair, no halo-style cap
+    hair.visible=true;hairMat.color.set(0x3b3b42);hair.scale.set(1.1,.8,1.08);
+    root.children.forEach(c=>{if(c!==hair&&c.material===hairMat&&c.position.y>1.95&&c.geometry?.type!=='BoxGeometry')c.visible=false;
+      if(c.geometry?.type==='TorusGeometry'&&Math.abs(c.position.y-1.78)<.02)c.visible=false;                 // generic scarf
+      if(c.geometry?.type==='SphereGeometry'&&Math.abs(c.position.y-1.99)<.01&&Math.abs(c.position.z-.493)<.01)c.visible=false;});   // small default mouth
+    const skinMat=toonMat(0xffd6c2);
+    add(new THREE.BoxGeometry(.94,.42,.98),skinMat,[0,1.76,.0]);                                          // square jaw
+    add(new THREE.BoxGeometry(.98,.12,.9),skinMat,[0,2.0,-.02]);                                          // wide cheekbones
+    const lip=0xc2566a;
+    add(new THREE.BoxGeometry(.36,.075,.06),toonMat(lip),[0,1.9,.5]);                                     // upper lip
+    add(new THREE.BoxGeometry(.32,.095,.06),toonMat(0xd06a7c),[0,1.82,.505]);                             // fuller lower lip
+    add(new THREE.BoxGeometry(.3,.02,.03),toonMat(0x6e2c3a),[0,1.862,.512]);                              // mouth line
+    // heavy brows to match the squared face
+    for(const x of [-.19,.19])add(new THREE.BoxGeometry(.22,.05,.05),hairMat,[x,2.31,.46],[0,0,x<0?-.08:.08]);
 }
