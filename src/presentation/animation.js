@@ -54,7 +54,7 @@ export function updateAnimations(world,dt){
         case 'brawler': stride=.82;bob=Math.abs(step)*.16;lean=-.1;armSwing=.88;legs[0].rotation.z=-.13;legs[1].rotation.z=.13;break; // bodybuilder power stomp
         case 'nun': stride=.8;bob=Math.abs(step)*.06;lean=0;armSwing=.5;sway=.25;arms[0].rotation.z=-.15+alt*.08;arms[1].rotation.z=.3-step*.1;break; // demolition-site heavy boots
         case 'yu': stride=.34;bob=Math.abs(step)*.018;lean=0;armSwing=.2;arms[0].rotation.z=-.22+alt*.1;arms[1].rotation.z=.22-alt*.1;break; // measured engineer walk
-        case 'bubble': stride=.4;bob=Math.abs(step)*.055;lean=Math.sin(gait)*.07;armSwing=.28;arms[0].rotation.z=-.55+alt*.1;arms[1].rotation.z=.12-step*.12;break; // careful presentation walk
+        case 'bubble': stride=.24;bob=Math.abs(step)*.025;lean=Math.sin(gait)*.02;armSwing=.18;sway=.3;arms[0].rotation.z=-.55+alt*.1;arms[1].rotation.z=.12-step*.12;break; // careful presentation walk
         default: break;
       }
       if(walking&&u.grounded){
