@@ -10,7 +10,7 @@ export function slashEffect(fighter,target,type,sink=[],{noBeam=false}={}){
   const center=start.clone().addScaledVector(forward,reach);
   const colors={mech:0xffbd4a,leopard:0x75d6c5,admiral:0x69c9e7,mage:0xffc4a5,cleric:0x79e6f2,brawler:0xffbd69,nun:0xffd18b,yu:0xffc56b,'bubble':0xe8b6dc};
   const color=colors[id]||0xffffff;
-  if(type==='ult'||(id==='mech'&&type!=='ult')||(id==='leopard'&&type!=='ult')||(id==='admiral'&&type==='basic')||(id==='mage'&&type==='basic')||(id==='nun'&&type!=='ult')||(id==='brawler'&&type!=='ult')||(id==='cleric'&&type!=='basic')){signatureUltimate(fighter,target,type,sink);return;}
+  if(type==='ult'||(id==='mech'&&type!=='ult')||(id==='leopard'&&type!=='ult')||(id==='admiral'&&type==='basic')||(id==='mage'&&type==='basic')||(id==='nun'&&type!=='ult')||id==='yu'||(id==='brawler'&&type!=='ult')||(id==='cleric'&&type!=='basic')){signatureUltimate(fighter,target,type,sink);return;}
   const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.96,depthWrite:false});
   if(id==='mech'){
     // Twin luminous rails and a heavy forward impact ring.

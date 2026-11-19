@@ -1,4 +1,4 @@
-import {chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME} from '../config.js';
+import {REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {attack} from './combatSystem.js';
 
@@ -55,6 +55,7 @@ function release(world,id){
   if(tier==='basic'){
     // (re)store the step: the status tick clears comboStep while the window is closed (i.e. during the charge)
     a.comboWindow=COMBO.window;a.comboStep=c.comboStep||1;
+    if(world.get(id,'fighter').charId===REFLECT.charId)world.get(id,'status').reflect=REFLECT.duration;
     attack(world,id,'basic',{onHit:()=>comboHit(world,id,c.comboStep||1)});
   } else {
     a.comboWindow=0;a.comboStep=0;

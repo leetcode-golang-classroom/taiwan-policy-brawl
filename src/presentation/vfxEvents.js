@@ -5,6 +5,8 @@ import {burst,addFx,hitBurst,freezeFx,throwProjectile} from '../vfx/VFXSystem.js
 import {slashEffect} from '../skills/slashEffect.js';
 import {showCombatFeedback,showMoveName} from '../ui/hud.js';
 import {syncView} from './renderSync.js';
+import {createSkillContext} from '../skills/context.js';
+import {taiChiDisc} from '../skills/yu.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -44,6 +46,20 @@ export function initVfxEvents(world){
     }
     if(e.tier==='skill')burst(up(A.position,1),side(e.attackerId)==='player'?0x63b9ff:0x8de8a9,side(e.attackerId)==='player'?30:20);
     if(e.tier==='ult'){addCameraShake(.45,.55);if(side(e.attackerId)==='player')burst(up(T.position,1),0xffdc70,65);}
+  });
+  on('reflect',e=>{   // 乾坤之動: tai-chi disc flashes at the reflector; a reflected projectile turns into a returning orb
+    const R=obj(e.targetId),O=obj(e.attackerId);if(!R||!O)return;
+    const ctx=createSkillContext(R,O),dir=O.position.clone().sub(R.position).setY(0).normalize();
+    taiChiDisc(ctx.mesh,up(R.position,1.3).addScaledVector(dir,1),Math.atan2(dir.x,dir.z),.5);
+    burst(up(R.position,1.3),0xffe9a8,24);addCameraShake(.12,.15);
+    if(e.projectileId!=null){
+      const entry=bound.get(e.projectileId);if(!entry)return;
+      freezeFx(entry.meshes);entry.meshes=[];
+      if(entry.orb){scene.remove(entry.orb);entry.orb.geometry.dispose();entry.orb.material.dispose();}
+      const p=world.get(e.projectileId,'projectile');
+      entry.orb=new THREE.Mesh(new THREE.SphereGeometry(Math.max(.3,e.skill.radius*.55),14,12),new THREE.MeshBasicMaterial({color:0xf4f4f4,transparent:true,opacity:.95}));
+      entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
+    }
   });
   on('projectileEnd',e=>{
     const entry=bound.get(e.id);if(!entry)return;

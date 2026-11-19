@@ -23,6 +23,8 @@ const SKILL_OVERRIDES={
   admiral:{basic:{type:'projectile',speed:8.5,range:7,radius:.9},skill:{type:'projectile',speed:8.2,range:6.5,radius:.8},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
   mage:{basic:{type:'projectile',speed:7.2,range:6,radius:.9},skill:{type:'projectile',speed:7.6,range:7,radius:.9},ult:{range:8}},
   cleric:{basic:{range:3.1},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
+  // 紫氣東來: a dragon-shaped qi blast; knockback follows the projectile's heading at the moment it hits.
+  yu:{basic:{name:'乾坤之動',damage:6,range:2.6,knockback:.5,cooldown:.7},skill:{name:'紫氣東來',type:'projectile',damage:19,range:11,speed:12,radius:1.1,knockback:3.4,launch:2.2,stun:.6,stepIn:0},ult:{name:'百川匯海'}},
   brawler:{basic:{name:'重拳出擊',type:'projectile',speed:10,range:6.5,radius:.85},skill:{type:'dash',range:2.3,dashSpeed:16,dashMax:4.5,stepIn:0}},
   nun:{basic:{type:'projectile',speed:9.2,range:7,radius:.9},
     // 電光火球 (spec 6.2): fully replaces the old excavator skill. Real projectile, blockable, strong knockback, no launch.
@@ -37,6 +39,8 @@ export const cooldownDurations={basic:SKILL_DEFAULTS.basic.cooldown,skill:SKILL_
 // ---- Gameplay constants shared by systems (kept here so balance is tuned in one place) ----
 export const DODGE={duration:.68,invuln:.42,cooldown:1.1,defaultDistance:2.1,
   distance:{mech:2.55,leopard:2.25,admiral:1.9,mage:2.35,cleric:2.2,brawler:2.0,nun:1.9,yu:2.15,'bubble':2.2}};
+// 乾坤之動 (08 basic): a tai-chi stance that reflects incoming attacks for `duration` seconds after it is released.
+export const REFLECT={duration:.5,charId:'yu'};
 export const HIT={reactTime:.38,baseStun:.28,airborneThreshold:.25};
 export const GRAVITY=20;
 export const ATTACK_TIME={basic:.32,skill:.48,ult:.72};

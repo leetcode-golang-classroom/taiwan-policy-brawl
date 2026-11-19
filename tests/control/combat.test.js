@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pressAttack,pressDodge} from '../../src/systems/playerControl.js';
 import {getSkill,LUNGE,ATTACK_TIME} from '../../src/config.js';
+import {resolveHit} from '../../src/systems/combatSystem.js';
+import {spawnProjectile} from '../../src/systems/projectileSystem.js';
 import {startedWorld,step,arrange,record,hp} from '../helpers.js';
 
 const CHARS=['mech','leopard','admiral','mage','cleric','brawler','nun','yu','bubble'];
@@ -84,4 +86,19 @@ test('KO ends the round, awards the win and keeps the best-of-three rules', ()=>
 test('time-out awards the round to whoever has more HP', ()=>{
   const w=startedWorld();w.world.get(w.cpu,'health').hp=40;const re=record(w.world,'roundEnd');
   w.world.match.timeLeft=.05;step(w.world,.2);assert.equal(re[0].winner,'player');assert.equal(re[0].reason,'時間結束');
+});
+test('乾坤之動: reflect window turns a projectile back on its sender (reflector takes no damage)', ()=>{
+  const w=startedWorld({p:'yu',c:'mech'});arrange(w,{dist:6});const ref=record(w.world,'reflect');
+  w.world.get(w.player,'status').reflect=3;
+  const mech=getSkill('mech','basic'),ct=w.world.get(w.cpu,'transform');
+  spawnProjectile(w.world,{ownerId:w.cpu,targetId:w.player,skill:mech,pos:{x:ct.x-1,y:1.15,z:0},dir:{x:-1,y:0,z:0}});
+  step(w.world,.5);
+  assert.equal(ref.length,1,'reflected once');assert.equal(hp(w,'player'),100,'reflector undamaged');
+  step(w.world,1.5);assert.ok(hp(w,'cpu')<100,'sender is hit by its own projectile');
+});
+test('乾坤之動: reflect window turns a melee hit back on its attacker', ()=>{
+  const w=startedWorld({p:'yu',c:'leopard'});arrange(w,{dist:1.5});
+  w.world.get(w.player,'status').reflect=3;
+  resolveHit(w.world,w.cpu,w.player,getSkill('leopard','skill'));
+  assert.equal(hp(w,'player'),100);assert.ok(hp(w,'cpu')<100);
 });

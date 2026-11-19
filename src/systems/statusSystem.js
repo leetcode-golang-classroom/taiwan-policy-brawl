@@ -5,7 +5,7 @@ export function statusSystem(world,dt){
     const s=world.get(id,'status');
     s.dodgeTimer=Math.max(0,s.dodgeTimer-dt);s.dodgeInvuln=Math.max(0,s.dodgeInvuln-dt);
     s.dodgeCooldown=Math.max(0,s.dodgeCooldown-dt);s.hitReact=Math.max(0,s.hitReact-dt);s.stun=Math.max(0,s.stun-dt);
-    s.rushTimer=Math.max(0,s.rushTimer-dt);s.rushCooldown=Math.max(0,s.rushCooldown-dt);s.landTimer=Math.max(0,s.landTimer-dt);
+    s.rushTimer=Math.max(0,s.rushTimer-dt);s.rushCooldown=Math.max(0,s.rushCooldown-dt);s.landTimer=Math.max(0,s.landTimer-dt);s.reflect=Math.max(0,s.reflect-dt);
   }
   for(const id of world.query('attacker')){
     const a=world.get(id,'attacker');

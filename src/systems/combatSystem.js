@@ -26,9 +26,13 @@ export function damage(world,targetId,amount,sourceId){
 
 // THE single entry point for every damaging hit (melee, area, projectile, dash).
 // Order: dodge invulnerability -> defense modifier -> damage() -> knockback -> event.
-export function resolveHit(world,attackerId,targetId,skill,{dir,onHit}={}){
+export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=false}={}){
   const st=world.get(targetId,'status'),tt=world.get(targetId,'transform'),at=world.get(attackerId,'transform');
   if(st.dodgeInvuln>0){world.events.emit('evade',{attackerId,targetId,skill});return false;}
+  if(st.reflect>0&&!reflected){   // 乾坤之動: the attack is turned back on its sender (no damage to the reflector)
+    world.events.emit('reflect',{attackerId,targetId,skill,projectileId:null});
+    return resolveHit(world,targetId,attackerId,skill,{reflected:true});
+  }
   const def=applyDefense(world,targetId,attackerId,skill);
   const base=skill.damage+(at.y>HIT.airborneThreshold?AIRBORNE_BONUS:0);
   const amount=def.blocked?0:Math.max(1,Math.round(base*def.multiplier));

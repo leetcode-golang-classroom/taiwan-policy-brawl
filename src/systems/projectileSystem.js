@@ -27,6 +27,11 @@ export function projectileSystem(world,dt){
       const st=world.get(p.targetId,'status');
       if(st.dodgeInvuln>0){ // dodging: pass through, report once
         if(!p.evaded){p.evaded=true;world.events.emit('evade',{attackerId:p.ownerId,targetId:p.targetId,skill:s});}
+      } else if(st.reflect>0){ // 乾坤之動: the projectile is sent back at its owner
+        const owner=p.ownerId,oc=bodyCenter(world,owner);
+        p.ownerId=p.targetId;p.targetId=owner;p.dir=normalize(sub(oc,p.pos));p.travelled=0;p.onHit=undefined;
+        world.events.emit('reflect',{attackerId:owner,targetId:p.ownerId,skill:s,projectileId:id});
+        continue;
       } else {
         resolveHit(world,p.ownerId,p.targetId,s,{dir:p.dir,onHit:p.onHit});
         finish(world,id,true);continue;
