@@ -67,18 +67,20 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
       const v=aim.clone().sub(p).multiplyScalar(1/.5).add(new THREE.Vector3(0,1.5,0));
       projectile(new THREE.BoxGeometry(.62,.14,.46),BOOK_COLORS[i%BOOK_COLORS.length],p,v,.55,(i%2?1:-1)*6,-6);
     },380+i*25);
-    // the lecturer holds the SoR pyramid up in his hand; its light and his shiny bald head both reflect onto the opponent
-    const hand=fighter.position.clone().addScaledVector(right,.8).addScaledVector(forward,.45).add(new THREE.Vector3(0,2.45,0));
-    const headTop=fighter.position.clone().addScaledVector(forward,.2).add(new THREE.Vector3(0,2.6,0));
-    setTimeout(()=>{
-      const pyr=mesh(new THREE.ConeGeometry(.42,.66,4),0xffd54a,hand,1.0,'fade',{opacity:.95});pyr.rotation.y=Math.PI/4;
-      mesh(new THREE.ConeGeometry(.46,.7,4),0xfff3b0,hand,1.0,'fade',{wireframe:true}).rotation.y=Math.PI/4;
-      mesh(new THREE.SphereGeometry(.13,10,8),0xffffff,hand.clone().add(new THREE.Vector3(0,.05,.2)),1.0,'grow');
-      mesh(new THREE.SphereGeometry(.5,12,10),0xfff0a0,hand,.9,'grow',{opacity:.5});          // glow around the pyramid
-      mesh(new THREE.SphereGeometry(.3,12,10),0xffffff,headTop,.9,'grow',{opacity:.7});       // glint on the bald head
-      const sp=wordSprite('SoR','#ffffff',.5);sp.position.copy(hand).add(new THREE.Vector3(0,.6,0));addFx(sp,1.0,'fade');
-      burst(hand,0xfff0a0,14);burst(headTop,0xffffff,8);
-    },420);
+    // the lecturer holds the SoR pyramid over his raised right hand (child of the fighter, so it always stays on him)
+    const held=new THREE.Group();held.position.set(.62,2.7,.25);
+    const pyrMat=new THREE.MeshBasicMaterial({color:0xffd54a});
+    const pyr=new THREE.Mesh(new THREE.ConeGeometry(.42,.66,4),pyrMat);pyr.rotation.y=Math.PI/4;held.add(pyr);
+    const wire=new THREE.Mesh(new THREE.ConeGeometry(.47,.72,4),new THREE.MeshBasicMaterial({color:0xfff3b0,wireframe:true}));wire.rotation.y=Math.PI/4;held.add(wire);
+    const glow=new THREE.Mesh(new THREE.SphereGeometry(.6,12,10),new THREE.MeshBasicMaterial({color:0xfff0a0,transparent:true,opacity:.4,depthWrite:false}));held.add(glow);
+    const lab=wordSprite('SoR','#ffffff',.5);lab.position.y=.7;held.add(lab);
+    held.visible=false;fighter.add(held);
+    const hand=new THREE.Vector3(),headTop=new THREE.Vector3();
+    const refresh=()=>{fighter.updateMatrixWorld(true);hand.copy(held.position);fighter.localToWorld(hand);headTop.set(0,2.62,.12);fighter.localToWorld(headTop);};
+    setTimeout(()=>{held.visible=true;refresh();burst(hand,0xfff0a0,14);burst(headTop,0xffffff,8);
+      mesh(new THREE.SphereGeometry(.3,12,10),0xffffff,headTop,.9,'grow',{opacity:.7});},420);
+    let spin=setInterval(()=>{held.rotation.y+=.25;glow.scale.setScalar(1+Math.sin(Date.now()/60)*.15);},30);
+    setTimeout(()=>{clearInterval(spin);fighter.remove(held);for(const m of [pyr,wire,glow,lab]){m.geometry.dispose();m.material.dispose();}},1700);
     // three staged lights: pyramid beam + head-reflected beam converge on the opponent
     const Y=new THREE.Vector3(0,1,0);
     const shine=(from,s,color,o)=>{
@@ -87,6 +89,7 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
       beam.quaternion.setFromUnitVectors(Y,dirv);
     };
     for(let s=0;s<3;s++)setTimeout(()=>{
+      refresh();
       shine(hand,s,s===2?0xffffff:0xfff2a0,.85);
       shine(headTop,s,0xffffff,.6);
       mesh(new THREE.SphereGeometry(.5+s*.3,12,10),0xffffff,aim.clone(),.3,'grow');
@@ -94,33 +97,30 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
       burst(aim,0xfff0a0,10+s*6);
     },700+s*230);
   } else {
-    // 百年樹人: the ground cracks open under the opponent, vines burst out of the cracks, weave into a giant tree and hurl them skyward.
-    const green=[0x3f8a3a,0x57a64a,0x2f6b34];
-    mesh(new THREE.CircleGeometry(2.4,28),0x2a1a10,tp.clone().add(new THREE.Vector3(0,.03,0)),1.6,'fade',{rotation:[-Math.PI/2,0,0],opacity:.85});   // scorched, split earth
+    // 百年樹人: the ground cracks open under the opponent and ONE giant tree bursts out of the earth, hurling them skyward.
+    const green=[0x3f8a3a,0x57a64a,0x2f6b34],at=(x,y,z)=>tp.clone().add(new THREE.Vector3(x,y,z));
+    mesh(new THREE.CircleGeometry(2.6,28),0x2a1a10,at(0,.03,0),1.5,'fade',{rotation:[-Math.PI/2,0,0],opacity:.85});   // split earth
     for(let i=0;i<9;i++){   // cracks radiating from the opponent's feet
       const a=i/9*Math.PI*2+.3,len=3.4+(i%3)*.5,dir=new THREE.Vector3(Math.sin(a),0,Math.cos(a));
-      const c=mesh(new THREE.BoxGeometry(.16,.04,len),0x120a06,tp.clone().addScaledVector(dir,len/2).add(new THREE.Vector3(0,.05,0)),1.6,'fade',{opacity:.95});c.rotation.y=a;
-      mesh(new THREE.BoxGeometry(.06,.045,len*.9),0x8bd86a,tp.clone().addScaledVector(dir,len*.45).add(new THREE.Vector3(0,.06,0)),1.2,'fade').rotation.y=a;
+      mesh(new THREE.BoxGeometry(.16,.04,len),0x120a06,tp.clone().addScaledVector(dir,len/2).add(new THREE.Vector3(0,.05,0)),1.5,'fade',{opacity:.95}).rotation.y=a;
     }
-    mesh(new THREE.TorusGeometry(1.6,.1,8,30),0x9b7a52,tp.clone().add(new THREE.Vector3(0,.08,0)),.7,'ring',{rotation:[Math.PI/2,0,0]});
-    burst(tp.clone().add(new THREE.Vector3(0,.3,0)),0x7a5a3a,26);
-    for(let i=0;i<12;i++){   // vines burst up out of the cracks and coil around the opponent
-      const a=i/12*Math.PI*2+(i%2)*.25,tw=i%2?1:-1,pt=[];
-      for(const [r,h,t] of [[2.6-(i%3)*.4,.02,0],[2.0,1.0,.45],[1.3,2.4,.9],[.6,4.0,1.3],[.2,5.2,1.6]])pt.push(tp.clone().add(new THREE.Vector3(Math.sin(a+tw*t)*r,h,Math.cos(a+tw*t)*r)));
-      for(let n=3;n<=pt.length;n++)setTimeout(()=>{   // grows out of the ground section by section
-        mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pt.slice(0,n)),14*n,.15+(i%3)*.03,6,false),green[i%3],tp,1.2-(n-3)*.2,'fade',{opacity:.95});
-        burst(pt[n-1],0x57a64a,2);
-      },120+i*30+(n-3)*130);
-    }
-    // the trunk rises through the middle section by section, then the canopy opens
-    const seg=[[1.0,.9],[.85,.9],[.7,.9],[.55,.9],[.4,.9]];let y=0;
+    mesh(new THREE.TorusGeometry(1.8,.12,8,30),0x9b7a52,at(0,.08,0),.7,'ring',{rotation:[Math.PI/2,0,0]});
+    burst(at(0,.3,0),0x7a5a3a,28);
+    // root flare at the base, then the trunk rises section by section
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2;
+      const r=mesh(new THREE.ConeGeometry(.35,1.4,6),0x5a3d22,at(Math.sin(a)*1.35,.55,Math.cos(a)*1.35),1.3,'fade',{opacity:.97});r.rotation.set(Math.cos(a)*.9,0,-Math.sin(a)*.9);}
+    const seg=[[1.5,1.1],[1.3,1.1],[1.1,1.1],[.95,1.1],[.8,1.1]];let y=0;
     seg.forEach(([r,h],i)=>{const cy=y+h/2;y+=h;setTimeout(()=>{
-      mesh(new THREE.CylinderGeometry(r*.85,r,h,10),0x6b4a2b,tp.clone().add(new THREE.Vector3(0,cy,0)),1.2-i*.1,'fade',{opacity:.97});
-      burst(tp.clone().add(new THREE.Vector3(0,cy,0)),0x9b7a52,6);
-    },300+i*90);});
+      mesh(new THREE.CylinderGeometry(r*.88,r,h,12),0x6b4a2b,at(0,cy,0),1.3-i*.08,'fade',{opacity:.97});
+      burst(at(0,cy,0),0x9b7a52,8);
+    },250+i*90);});
+    // thick branches and a wide canopy open at the top
     setTimeout(()=>{
-      for(const [x,yy,z,s] of [[0,5.1,0,1.5],[1.1,4.7,.4,1.0],[-1.1,4.8,-.3,1.0],[.3,4.6,-1.1,.9],[-.4,4.7,1.0,.9]])
-        mesh(new THREE.IcosahedronGeometry(s,1),green[(Math.abs(x*7)|0)%3],tp.clone().add(new THREE.Vector3(x,yy,z)),1.0,'fade',{opacity:.95});
+      for(let i=0;i<5;i++){const a=i/5*Math.PI*2+.4,dir=new THREE.Vector3(Math.sin(a),0,Math.cos(a));
+        const br=mesh(new THREE.CylinderGeometry(.18,.32,2.0,8),0x6b4a2b,at(dir.x*.9,5.3,dir.z*.9),1.0,'fade',{opacity:.97});br.rotation.set(dir.z*.9,0,-dir.x*.9);}
+      for(const [x,yy,z,s] of [[0,6.0,0,1.9],[1.7,5.5,.5,1.3],[-1.7,5.6,-.4,1.3],[.4,5.4,-1.7,1.2],[-.5,5.5,1.6,1.2],[1.0,6.5,-.8,1.1],[-1.0,6.4,.8,1.1]])
+        mesh(new THREE.IcosahedronGeometry(s,1),green[(Math.abs(x*7)|0)%3],at(x,yy,z),1.0,'fade',{opacity:.95});
+      for(let i=0;i<12;i++)burst(at((Math.random()-.5)*4,5+Math.random()*2,(Math.random()-.5)*4),0x9be07a,3);
       burst(aim,0xffe08a,30);
     },700);
   }
