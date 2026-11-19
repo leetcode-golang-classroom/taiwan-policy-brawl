@@ -3,6 +3,16 @@ import {mat,toonMat,toonRamp,floorMat,gold,dark,skin,white,black} from '../mater
 
 // Model props for character "bubble" (layers: base props, outfit, signature silhouette).
 export function buildBubble({root,body,head,hair,add,makeCap,accentMat,bodyMat,hairMat,weapon}){
+    // 白髮平頭: short white flat-top (long locks hidden) + grey stubble around the mouth and chin
+    hairMat.color.set(0xf2f2f6);hair.visible=true;hair.scale.set(1.1,.8,1.08);
+    root.children.forEach(c=>{if(c!==hair&&c.material===hairMat&&c.position.y>1.95&&c.geometry?.type!=='BoxGeometry')c.visible=false;});
+    add(new THREE.BoxGeometry(.7,.1,.64),hairMat,[0,2.73,-.01]);                        // flat top
+    const stub=toonMat(0x8f8f98),faceZ=(x,y)=>.489*Math.sqrt(Math.max(.05,1-(x/.54)**2-((y-2.12)/.56)**2))+.01;
+    for(let i=0;i<70;i++){
+      const r1=Math.abs(Math.sin(i*12.9898)*43758.5453)%1,r2=Math.abs(Math.sin(i*78.233)*12345.678)%1;
+      const y=1.6+r1*.4,half=.17+(y-1.6)*.55+Math.min(0,(y-1.82))*0,x=(r2*2-1)*Math.min(.3,half);   // jaw/chin/moustache area
+      const m=add(new THREE.BoxGeometry(.035,.035,.02),stub,[x,y,faceZ(x,y)]);m.castShadow=false;
+    }
     add(new THREE.BoxGeometry(.5,.62,.1),dark,[0,1.28,-.48]);
     add(new THREE.BoxGeometry(.36,.04,.025),accentMat,[0,1.5,-.41]);
     add(new THREE.SphereGeometry(.16,12,10),gold,[0,1.84,.38]);

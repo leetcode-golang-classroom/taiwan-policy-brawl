@@ -3,11 +3,11 @@ import {burst,throwProjectile,addFx} from '../vfx/VFXSystem.js';
 
 // ---- helpers ----
 const wordTex=new Map();
-const wordSprite=(text,color='#fff7d6',size=.9)=>{
+export const wordSprite=(text,color='#fff7d6',size=.9)=>{
   let tex=wordTex.get(text+color);
   if(!tex){
     const cv=document.createElement('canvas');cv.width=256;cv.height=96;const g=cv.getContext('2d');
-    g.font='bold 56px Georgia, serif';g.textAlign='center';g.textBaseline='middle';
+    g.font="bold 56px Georgia, 'Noto Sans TC', 'Microsoft JhengHei', sans-serif";g.textAlign='center';g.textBaseline='middle';
     g.lineWidth=10;g.strokeStyle='#2b1d46';g.strokeText(text,128,50);g.fillStyle=color;g.fillText(text,128,50);
     tex=new THREE.CanvasTexture(cv);wordTex.set(text+color,tex);
   }

@@ -30,6 +30,8 @@ const SKILL_OVERRIDES={
   cleric:{basic:{range:3.1},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
   // 紫氣東來: a dragon-shaped qi blast; knockback follows the projectile's heading at the moment it hits.
   yu:{basic:{name:'乾坤之動',damage:6,range:2.6,knockback:.5,cooldown:.7},skill:{name:'紫氣東來',type:'projectile',damage:19,range:11,speed:12,radius:1.1,knockback:3.4,launch:2.2,stun:.6,stepIn:0},ult:{name:'百川匯海'}},
+  // 生育大改革 / 市警大升級 / 警局長照護: instant area hits (figures, slaps, gunfire and crowds are presentation).
+  bubble:{basic:{name:'生育大改革',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'市警大升級',type:'area',range:8,damage:19,knockback:2.2,launch:3,stun:.7,stepIn:0},ult:{name:'警局長照護',range:8,knockback:2,launch:6,stun:1}},
   brawler:{basic:{name:'重拳出擊',type:'projectile',speed:10,range:6.5,radius:.85},skill:{type:'dash',range:2.3,dashSpeed:16,dashMax:4.5,stepIn:0}},
   nun:{basic:{type:'projectile',speed:9.2,range:7,radius:.9},
     // 電光火球 (spec 6.2): fully replaces the old excavator skill. Real projectile, blockable, strong knockback, no launch.

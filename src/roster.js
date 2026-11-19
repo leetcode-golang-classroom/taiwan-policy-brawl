@@ -7,7 +7,7 @@ export const roster=[
   {id:'brawler',defense:'金色肌肉護盾',moveSpeed:5.65,code:'代號 06',name:'健身獎牌肌肉大叔',icon:'🥊',primary:0x9b6244,secondary:0x4d3028,accent:0xffbd69,kind:'athlete',style:'💪　🏅　🥇　🔥',symbols:'💪 🏅 🥇 🔥',basic:'重拳出擊',skill:'風花雪月',ult:'健身獎牌投擲',bio:'以運動競技與肌肉大叔風格為創作靈感。',source:'虛構設定：角色與招式均為遊戲創作。'},
   {id:'nun',defense:'鋼板防禦',moveSpeed:5.05,code:'代號 07',name:'光明使者',icon:'🗺️',primary:0xf6f3ec,secondary:0xcfd8e6,accent:0xffd18b,kind:'planner',style:'🏗️　🚧　⚫　💥',symbols:'🏗️ 🚧 ⚫ 💥',basic:'乾坤大挪移',skill:'電光火球',ult:'神之震怒',bio:'以白衣修女與光明意象為創作靈感。',source:'虛構設定：角色與招式均為遊戲創作。'},
   {id:'yu',defense:'工程防護牆',moveSpeed:4.35,code:'代號 08',name:'工程總指揮',icon:'🏗️',primary:0x55718f,secondary:0x293d54,accent:0xffc56b,kind:'engineer',style:'👷　📐　🔧　🏢',symbols:'👷 📐 🔧 🏢',basic:'乾坤之動',skill:'紫氣東來',ult:'百川匯海',bio:'以大禹治水的文官形象為創作靈感。',source:'虛構設定：角色與招式均為遊戲創作。'},
-  {id:'bubble',defense:'多層泡泡',moveSpeed:4.85,code:'代號 09',name:'家庭計畫推廣員',icon:'📣',primary:0x8a6a9e,secondary:0x443450,accent:0xe8b6dc,kind:'disruptor',style:'👨‍👩‍👧‍👦　🛡️　🌱　📦',symbols:'👨‍👩‍👧‍👦 🛡️ 🌱 📦',basic:'計畫宣導單',skill:'家庭計畫說明會',ult:'節育計畫啟動',bio:'以泡泡與家庭溫馨風格為創作靈感。',source:'虛構設定：角色與招式均為遊戲創作。'}
+  {id:'bubble',defense:'多層泡泡',moveSpeed:4.85,code:'代號 09',name:'家庭計畫推廣員',icon:'📣',primary:0x8a6a9e,secondary:0x443450,accent:0xe8b6dc,kind:'disruptor',style:'👨‍👩‍👧‍👦　🛡️　🌱　📦',symbols:'👨‍👩‍👧‍👦 🛡️ 🌱 📦',basic:'生育大改革',skill:'市警大升級',ult:'警局長照護',bio:'以白髮平頭、帶鬍渣的家庭計畫推廣員為創作靈感。',source:'虛構設定：角色與招式均為遊戲創作。'}
 ];
 
 export const rosterById=id=>roster.find(r=>r.id===id);
