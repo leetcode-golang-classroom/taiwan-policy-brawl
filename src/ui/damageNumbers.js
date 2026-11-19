@@ -23,7 +23,7 @@ export function initDamageNumbers(world){
     const stack=list.length-1,w=layer.clientWidth,h=layer.clientHeight;
     const el=document.createElement('div');
     el.className=`damage-number ${damageTier(e.amount,e.launched)} ${world.get(e.targetId,'fighter').side}${e.reduced?' reduced':''}`;
-    el.textContent=`-${Math.round(e.amount)}`;
+    el.textContent=`${e.roll?`🎲${e.roll} `:''}-${Math.round(e.amount)}`;
     el.style.left=`${(v.x*.5+.5)*w+(stack%2?1:-1)*Math.ceil(stack/2)*22}px`;
     el.style.top=`${(-v.y*.5+.5)*h-stack*18}px`;
     layer.appendChild(el);

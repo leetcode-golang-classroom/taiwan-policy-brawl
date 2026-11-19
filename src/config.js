@@ -20,7 +20,10 @@ const SKILL_DEFAULTS={
 const SKILL_OVERRIDES={
   mech:{basic:{type:'projectile',speed:9,range:7,radius:.7},skill:{type:'projectile',speed:7.8,range:8,radius:1.0}},
   leopard:{basic:{name:'豹之撲擊',type:'dash',range:1.7,dashSpeed:17,dashMax:3.8,knockback:1.55,launch:4.4,stun:.58},skill:{type:'projectile',speed:9.4,range:7,radius:.9}},
-  admiral:{basic:{type:'projectile',speed:8.5,range:7,radius:.9},skill:{type:'projectile',speed:8.2,range:6.5,radius:.8},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
+  // 乾坤一擲: a giant die; damage = points (1-6) x `damage`. 紅中旋風: three red-dragon tiles spiral in and knock the target left, right, then up/back.
+  admiral:{basic:{name:'乾坤一擲',type:'projectile',dice:true,damage:3,cooldown:.9,speed:9,range:7,radius:1.3,knockback:3.6,launch:2.5,stun:.5},
+    skill:{name:'紅中旋風',type:'projectile',damage:7,speed:8.8,range:7,radius:.8,tracking:true,trackRange:12,turnRate:9,
+      volley:[{wait:0,angle:-1.1,knockback:2.2,launch:0},{wait:.22,angle:1.1,knockback:2.2,launch:0},{wait:.44,angle:0,knockback:3.4,launch:6.5}]},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
   mage:{basic:{type:'projectile',speed:7.2,range:6,radius:.9},skill:{type:'projectile',speed:7.6,range:7,radius:.9},ult:{range:8}},
   cleric:{basic:{range:3.1},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
   // 紫氣東來: a dragon-shaped qi blast; knockback follows the projectile's heading at the moment it hits.

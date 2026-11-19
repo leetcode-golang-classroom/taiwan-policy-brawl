@@ -34,7 +34,8 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
     return resolveHit(world,targetId,attackerId,skill,{reflected:true});
   }
   const def=applyDefense(world,targetId,attackerId,skill);
-  const base=skill.damage+(at.y>HIT.airborneThreshold?AIRBORNE_BONUS:0);
+  const roll=skill.dice?1+Math.floor(world.rng()*6):0;      // 乾坤一擲: damage = dice points x base damage
+  const base=skill.damage*(roll||1)+(at.y>HIT.airborneThreshold?AIRBORNE_BONUS:0);
   const amount=def.blocked?0:Math.max(1,Math.round(base*def.multiplier));
   const dealt=amount>0?damage(world,targetId,amount,attackerId):0;
   // knockback: direction of the attack, scaled by defense, kept inside the arena
@@ -47,7 +48,7 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
   if(dealt>0){st.hitDir={x:d.x,z:d.z};st.hitPower=Math.min(1,dealt/HIT_REACT.powerRef);st.rushTimer=0;}   // reaction data: push direction + strength
   if(launched){body.vy=Math.max(body.vy,skill.launch*kb);body.grounded=false;st.airHit=true;st.stun=Math.max(st.stun,skill.stun);}
   else if(dealt>0)st.stun=Math.max(st.stun,skill.stun);
-  world.events.emit('hit',{attackerId,targetId,skill,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched});
+  world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched});
   if(dealt>0)onHit?.(dealt);
   return dealt>0;
 }
@@ -81,7 +82,10 @@ export function attack(world,attackerId,tier,opts={}){
     const t=world.get(targetId,'transform');
     const dir=skill.type==='homing'?normalize({x:t.x-at.x,y:0,z:t.z-at.z}):forwardOf(at);
     const pos={x:at.x+dir.x*.6,y:at.y+1.1,z:at.z+dir.z*.6};
-    info.projectileId=spawnProjectile(world,{ownerId:attackerId,targetId,skill,pos,dir,onHit:opts.onHit});
+    if(skill.volley){   // several projectiles released together, each hitting one after another with its own knock direction
+      info.projectileIds=skill.volley.map((st,i)=>spawnProjectile(world,{ownerId:attackerId,targetId,skill:{...skill,...st},pos,dir,onHit:opts.onHit,wait:st.wait||0,knockAngle:st.angle||0,stage:i}));
+      info.projectileId=info.projectileIds[0];
+    } else info.projectileId=spawnProjectile(world,{ownerId:attackerId,targetId,skill,pos,dir,onHit:opts.onHit});
     world.events.emit('attackStart',info);return false;
   }
   if(skill.type==='dash'){

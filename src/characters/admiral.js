@@ -6,7 +6,8 @@ export function buildAdmiral({root,body,head,hair,add,makeCap,accentMat,bodyMat,
     // Fleet admiral: white dress tunic over navy trousers, gold epaulettes and braid, ribbon bars, peaked cap with anchor badge.
     // Weapon: a 麻將尺 (the wooden bar used to push and stack mahjong walls).
     const WHITE=mat(0xf4f2ea),NAVY=mat(0x16233f),GOLD=gold;
-    hair.visible=false;
+    hairMat.color.set(0xf4f4f8);   // white hair showing under the cap
+    hair.visible=true;
     body.scale.set(1.22,1.0,1.08);
     // peaked cap (replaces the generic one from the base rig: draw over it, taller)
     add(new THREE.CylinderGeometry(.43,.4,.2,20),WHITE,[0,2.58,0]);           // white crown

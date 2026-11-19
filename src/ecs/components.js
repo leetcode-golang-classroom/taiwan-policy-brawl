@@ -11,6 +11,6 @@ export const Defense=()=>({active:false,timer:0,cooldown:0,layers:0});
 export const Intent=()=>({moveX:0,moveZ:0,attack:null,jump:false,dodge:false,dodgeDir:null,defend:false,rush:null,lastTap:{code:null,time:-9}});
 export const Brain=()=>({attackCd:1.2,skillCd:3.5,jumpCd:2.8});
 export const Dash=({targetId,skill,remaining,onHit})=>({targetId,skill,remaining,onHit});
-export const Projectile=({ownerId,targetId,skill,pos,dir,onHit})=>({ownerId,targetId,skill,pos:{...pos},dir:{...dir},onHit,travelled:0,evaded:false});
+export const Projectile=({ownerId,targetId,skill,pos,dir,onHit,wait=0,knockAngle=0,stage=0})=>({ownerId,targetId,skill,pos:{...pos},dir:{...dir},onHit,travelled:0,evaded:false,wait,knockAngle,stage});
 // Singleton match state (stored on world.match)
 export const Match=()=>({running:false,ended:false,timeLeft:99,roundNumber:1,playerRounds:0,cpuRounds:0,roundTransition:0});

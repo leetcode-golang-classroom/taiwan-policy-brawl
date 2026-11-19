@@ -7,6 +7,7 @@ import {showCombatFeedback,showMoveName} from '../ui/hud.js';
 import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
+import {buildDie,buildZhongTile} from '../skills/admiral.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -15,6 +16,7 @@ const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 function fireBurst(c,n=3){for(let i=0;i<n;i++)burst(c,FIRE[i%3],24);}
 const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};
 
+function disposeOrb(o){scene.remove(o);o.traverse(c=>{c.geometry?.dispose();c.material?.dispose();});}
 export function initVfxEvents(world){
   const bound=new Map();   // projectile entity id -> {meshes, orb}
   const rings=new Map();   // fighter id -> charge ring mesh
@@ -29,6 +31,15 @@ export function initVfxEvents(world){
     syncView(world,e.attackerId);syncView(world,e.targetId);
     showMoveName(side(e.attackerId),e.tier,charId(e.attackerId));
     const A=obj(e.attackerId),T=obj(e.targetId);if(!A||!T)return;
+    // 乾坤一擲 (die) and 紅中旋風 (tiles): visuals follow the logical projectile(s) every frame.
+    if(charId(e.attackerId)==='admiral'&&e.tier!=='ult'&&e.projectileId!=null){
+      const ids=e.projectileIds||[e.projectileId];
+      ids.forEach((pid,i)=>{
+        const g=e.tier==='basic'?buildDie():buildZhongTile(i),p=world.get(pid,'projectile');
+        g.position.set(p.pos.x,p.pos.y,p.pos.z);g.visible=false;scene.add(g);bound.set(pid,{meshes:[],orb:g});
+      });
+      burst(up(A.position,1.1),0xffd36c,14);
+    } else {
     const sink=[];
     slashEffect(A,T,e.tier,sink,{noBeam:e.skill.type==='homing'});
     if(e.projectileId!=null){
@@ -39,6 +50,7 @@ export function initVfxEvents(world){
         entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
       }
       bound.set(e.projectileId,entry);
+    }
     }
     if(e.tier==='skill'&&charId(e.attackerId)==='leopard'){   // 工人隊: two claw rakes in front of the leopard
       const fw=new THREE.Vector3(Math.sin(A.rotation.y),0,Math.cos(A.rotation.y)),rt=new THREE.Vector3(fw.z,0,-fw.x);
@@ -55,7 +67,7 @@ export function initVfxEvents(world){
     if(e.projectileId!=null){
       const entry=bound.get(e.projectileId);if(!entry)return;
       freezeFx(entry.meshes);entry.meshes=[];
-      if(entry.orb){scene.remove(entry.orb);entry.orb.geometry.dispose();entry.orb.material.dispose();}
+      if(entry.orb){disposeOrb(entry.orb);entry.orb=null;}
       const p=world.get(e.projectileId,'projectile');
       entry.orb=new THREE.Mesh(new THREE.SphereGeometry(Math.max(.3,e.skill.radius*.55),14,12),new THREE.MeshBasicMaterial({color:0xf4f4f4,transparent:true,opacity:.95}));
       entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
@@ -64,7 +76,7 @@ export function initVfxEvents(world){
   on('projectileEnd',e=>{
     const entry=bound.get(e.id);if(!entry)return;
     if(e.hit)freezeFx(entry.meshes);
-    if(entry.orb){scene.remove(entry.orb);entry.orb.geometry.dispose();entry.orb.material.dispose();}
+    if(entry.orb){disposeOrb(entry.orb);entry.orb=null;}
     bound.delete(e.id);
   });
   on('hit',e=>{
@@ -181,7 +193,9 @@ export function initVfxEvents(world){
       ring.position.set(t.x,t.y+.12+q*.18,t.z);ring.scale.setScalar(.8+q*1.25);ring.material.opacity=.45+q*.5;
     }
     for(const [id,entry] of bound){
-      if(!entry.orb)continue;const p=world.get(id,'projectile');if(p)entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);
+      if(!entry.orb)continue;const p=world.get(id,'projectile');if(!p)continue;
+      const o=entry.orb;o.position.set(p.pos.x,p.pos.y,p.pos.z);
+      if(o.userData.update){o.visible=!(p.wait>0);if(o.userData.heading)o.rotation.y=Math.atan2(p.dir.x,p.dir.z);o.userData.update(world.time);}
     }
   };
 }

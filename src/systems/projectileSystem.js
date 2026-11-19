@@ -5,8 +5,8 @@ import {resolveHit,bodyCenter} from './combatSystem.js';
 const BODY_RADIUS=.55;
 
 // Logical flying object: speed, max range, collision, optional homing. Visuals are bound by the presentation layer.
-export function spawnProjectile(world,{ownerId,targetId,skill,pos,dir,onHit}){
-  return world.create({projectile:Projectile({ownerId,targetId,skill,pos,dir:normalize(dir),onHit})});
+export function spawnProjectile(world,{ownerId,targetId,skill,pos,dir,onHit,wait,knockAngle,stage}){
+  return world.create({projectile:Projectile({ownerId,targetId,skill,pos,dir:normalize(dir),onHit,wait,knockAngle,stage})});
 }
 function finish(world,id,hit){
   const p=world.get(id,'projectile');
@@ -17,6 +17,7 @@ export function projectileSystem(world,dt){
   if(!world.match.running)return;
   for(const id of world.query('projectile')){
     const p=world.get(id,'projectile'),s=p.skill;
+    if(p.wait>0){p.wait-=dt;continue;}   // staggered volley: waits at the launch point
     const center=bodyCenter(world,p.targetId);
     if(s.tracking&&dist(p.pos,center)<=s.trackRange){
       const want=normalize(sub(center,p.pos)),ang=angleBetween(p.dir,want),maxTurn=s.turnRate*dt;
@@ -33,7 +34,8 @@ export function projectileSystem(world,dt){
         world.events.emit('reflect',{attackerId:owner,targetId:p.ownerId,skill:s,projectileId:id});
         continue;
       } else {
-        resolveHit(world,p.ownerId,p.targetId,s,{dir:p.dir,onHit:p.onHit});
+        const a=p.knockAngle,kd=a?{x:p.dir.x*Math.cos(a)-p.dir.z*Math.sin(a),y:0,z:p.dir.x*Math.sin(a)+p.dir.z*Math.cos(a)}:p.dir;   // volley stages knock in different directions
+        resolveHit(world,p.ownerId,p.targetId,s,{dir:kd,onHit:p.onHit});
         finish(world,id,true);continue;
       }
     }

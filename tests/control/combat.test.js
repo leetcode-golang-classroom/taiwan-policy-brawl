@@ -20,9 +20,11 @@ for(const id of CHARS)for(const tier of ['basic','skill','ult']){
   test(`${id}/${tier} (${sk.type}): hits once inside range, misses outside`, ()=>{
     const a=startedWorld({p:id});arrange(a,{dist:inside});const hits=record(a.world,'hit');
     fire(a,tier);step(a.world,2.2);
-    assert.equal(100-hp(a,'cpu'),sk.damage,'damage = skill damage');
-    assert.equal(hits.length,1,'exactly one hit (no duplicate damage)');
-    assert.equal(hits[0].amount,100-hp(a,'cpu'),'event amount equals real HP loss');
+    const lost=100-hp(a,'cpu'),nHits=sk.volley?.length||1;
+    if(sk.dice){assert.ok(lost%sk.damage===0&&lost/sk.damage>=1&&lost/sk.damage<=6,'dice: damage = points x base');}
+    else assert.equal(lost,sk.damage*nHits,'damage = skill damage (x volley stages)');
+    assert.equal(hits.length,nHits,'exactly one hit per stage (no duplicate damage)');
+    assert.equal(hits.reduce((n,h)=>n+h.amount,0),100-hp(a,'cpu'),'event amounts equal real HP loss');
     if(sk.range>=14)return;   // range exceeds the arena width: no out-of-range position exists
     const b=startedWorld({p:id});arrange(b,{dist:outside});
     fire(b,tier);step(b.world,2.2);
