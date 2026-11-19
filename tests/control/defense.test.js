@@ -36,7 +36,7 @@ test('melee/area damage is reduced by 70%, no knockback launch', ()=>{
   assert.equal(w.world.get(w.cpu,'body').vy,0,'guard prevents launch');
 });
 test('blockable projectiles are fully blocked and destroyed', ()=>{
-  const w=startedWorld({p:'mech'});arrange(w,{dist:5});guard(w,'cpu');const hits=record(w.world,'hit');
+  const w=startedWorld({p:'mage'});arrange(w,{dist:5});guard(w,'cpu');const hits=record(w.world,'hit');
   pressAttack(w.world,'player','basic');pressAttack(w.world,'player','basic');step(w.world,1.4);
   assert.equal(hp(w,'cpu'),100);assert.equal(hits.length,1);assert.equal(hits[0].blocked,true);assert.equal(hits[0].amount,0);
   assert.equal(w.world.query('projectile').length,0);

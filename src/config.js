@@ -18,7 +18,8 @@ const SKILL_DEFAULTS={
 };
 // Per-character overrides. Characters not listed use the defaults.
 const SKILL_OVERRIDES={
-  mech:{basic:{type:'projectile',speed:9,range:7,radius:.7},skill:{type:'projectile',speed:7.8,range:8,radius:1.0}},
+  // AI 基礎建設: seven GPU beams converge (instant area hit). 交通捷運四通八達: metro lines from every direction launch the target.
+  mech:{basic:{name:'AI 基礎建設',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'交通捷運四通八達',type:'area',range:8,damage:19,knockback:2.8,launch:6,stun:.8,stepIn:0}},
   leopard:{basic:{name:'豹之撲擊',type:'dash',range:1.7,dashSpeed:17,dashMax:3.8,knockback:1.55,launch:4.4,stun:.58},skill:{type:'projectile',speed:9.4,range:7,radius:.9}},
   // 乾坤一擲: a giant die; damage = points (1-6) x `damage`. 紅中旋風: three red-dragon tiles spiral in and knock the target left, right, then up/back.
   admiral:{basic:{name:'乾坤一擲',type:'projectile',dice:true,damage:3,cooldown:.9,speed:9,range:7,radius:1.3,knockback:3.6,launch:2.5,stun:.5},

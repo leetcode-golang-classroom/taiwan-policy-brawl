@@ -33,13 +33,13 @@ for(const id of CHARS)for(const tier of ['basic','skill','ult']){
   });
 }
 test('projectile has flight time: not instant, hits after travelling', ()=>{
-  const w=startedWorld({p:'mech'});arrange(w,{dist:6});const hits=record(w.world,'hit');
+  const w=startedWorld({p:'mage'});arrange(w,{dist:6});const hits=record(w.world,'hit');
   fire(w,'basic');step(w.world,.3);                       // charge done, projectile just spawned
   assert.equal(w.world.query('projectile').length,1);assert.equal(hp(w,'cpu'),100);
   step(w.world,1);assert.equal(hits.length,1);
 });
 test('a dodging target is passed through by projectiles (no damage, evade reported once)', ()=>{
-  const w=startedWorld({p:'mech'});arrange(w,{dist:5});const ev=record(w.world,'evade');
+  const w=startedWorld({p:'mage'});arrange(w,{dist:5});const ev=record(w.world,'evade');
   w.world.get(w.cpu,'status').dodgeInvuln=5;
   fire(w,'basic');step(w.world,1.5);
   assert.equal(hp(w,'cpu'),100);assert.equal(ev.length,1);
@@ -54,7 +54,7 @@ test('straight projectile misses a target that sidestepped; cleric 神的啟示 
     step(w.world,.3);w.world.get(w.cpu,'transform').z=z;
     step(w.world,2.2);return hp(w,'cpu');};
   assert.ok(run('cleric',2.6)<100);
-  assert.equal(run('mech',4),100);     // straight: flies past
+  assert.equal(run('mage',4),100);     // straight: flies past
 });
 test('dash attack moves the attacker toward the target, bounded by dashMax, then hits', ()=>{
   const w=startedWorld({p:'brawler'});arrange(w,{dist:5});const pt=w.world.get(w.player,'transform');const x0=pt.x;
@@ -90,9 +90,9 @@ test('time-out awards the round to whoever has more HP', ()=>{
   w.world.match.timeLeft=.05;step(w.world,.2);assert.equal(re[0].winner,'player');assert.equal(re[0].reason,'時間結束');
 });
 test('乾坤之動: reflect window turns a projectile back on its sender (reflector takes no damage)', ()=>{
-  const w=startedWorld({p:'yu',c:'mech'});arrange(w,{dist:6});const ref=record(w.world,'reflect');
+  const w=startedWorld({p:'yu',c:'mage'});arrange(w,{dist:6});const ref=record(w.world,'reflect');
   w.world.get(w.player,'status').reflect=3;
-  const mech=getSkill('mech','basic'),ct=w.world.get(w.cpu,'transform');
+  const mech=getSkill('mage','basic'),ct=w.world.get(w.cpu,'transform');
   spawnProjectile(w.world,{ownerId:w.cpu,targetId:w.player,skill:mech,pos:{x:ct.x-1,y:1.15,z:0},dir:{x:-1,y:0,z:0}});
   step(w.world,.5);
   assert.equal(ref.length,1,'reflected once');assert.equal(hp(w,'player'),100,'reflector undamaged');
