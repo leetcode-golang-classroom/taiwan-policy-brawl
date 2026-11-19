@@ -8,8 +8,16 @@ export function buildAdmiral({root,body,head,hair,add,makeCap,accentMat,bodyMat,
     const WHITE=mat(0xf4f2ea),NAVY=mat(0x16233f),GOLD=gold;
     hairMat.color.set(0xf4f4f8);   // white hair showing under the cap
     hair.visible=true;
-    // white 胡子: just a small moustache over the mouth
-    for(const x of [-1,1])add(new THREE.SphereGeometry(.09,12,10),hairMat,[x*.075,2.04,.49],[0,0,x*-.3],[1.3,.5,.55]);
+    // 皺紋: thin darker-skin lines on the face (crow's feet, under-eye bags, glabella and nasolabial folds)
+    const wr=toonMat(0xb27f68),faceZ=(x,y)=>.489*Math.sqrt(Math.max(.05,1-(x/.54)**2-((y-2.12)/.56)**2))+.012;
+    const line=(x,y,len,rot,ry=0)=>{const m=add(new THREE.BoxGeometry(len,.014,.014),wr,[x,y,faceZ(x,y)],[0,ry,rot]);m.castShadow=false;};
+    for(const sd of [-1,1]){
+      for(const [dy,r] of [[.07,.45],[0,0],[-.07,-.45]])line(sd*.35,2.13+dy,.1,sd*r,sd*-.5);       // crow's feet
+      line(sd*.19,2.03,.17,sd*.12);line(sd*.2,1.99,.13,sd*.12);                                    // under-eye bags
+      line(sd*.14,1.99,.15,sd*-1.0);line(sd*.17,1.93,.12,sd*-1.0);                                // nasolabial folds
+      line(sd*.05,2.25,.09,Math.PI/2);                                                            // glabella
+    }
+    line(0,2.37,.34,0);line(0,2.33,.28,0);
     body.scale.set(1.22,1.0,1.08);
     // peaked cap (replaces the generic one from the base rig: draw over it, taller)
     add(new THREE.CylinderGeometry(.43,.4,.2,20),WHITE,[0,2.58,0]);           // white crown
