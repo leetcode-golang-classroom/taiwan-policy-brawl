@@ -52,6 +52,7 @@ export function skillBubble({fighter,target,forward,origin,center,right,projecti
   if(type==='basic'){
     // 生育大改革: two people of the OPPOSITE sex to the target appear at RANDOM positions around them and slap them in random order.
     const kind=FEMALE.has(target.userData.id)?'man':'woman';
+    pop('❤',fighter.position.clone().addScaledVector(forward,.9).add(new THREE.Vector3(0,1.7,0)),'#ff5d8f',1.2);   // heart made with both hands
     const a0=Math.random()*Math.PI*2,a1=a0+Math.PI*(.5+Math.random());      // two random, clearly separated bearings
     const dirs=[a0,a1].map(a=>new THREE.Vector3(Math.sin(a),0,Math.cos(a)));
     const figs=dirs.map(d=>{const g=human(kind);place(g,tp.clone().addScaledVector(d,2.8+Math.random()*1.4),tp);burst(g.position.clone().add(new THREE.Vector3(0,.5,0)),0xe8b6dc,8);return g;});
