@@ -50,15 +50,17 @@ export function skillBubble({fighter,target,forward,origin,center,right,projecti
   const tp=target.position.clone(),aim=tp.clone().add(new THREE.Vector3(0,1.4,0));
   const ring=(r=1.2,c=0xffffff)=>mesh(new THREE.TorusGeometry(r,.07,8,28),c,tp.clone().add(new THREE.Vector3(0,.1,0)),.5,'ring',{rotation:[Math.PI/2,0,0]});
   if(type==='basic'){
-    // 生育大改革: two people of the OPPOSITE sex to the target step in from the left and the right and slap them, in random order.
+    // 生育大改革: two people of the OPPOSITE sex to the target appear at RANDOM positions around them and slap them in random order.
     const kind=FEMALE.has(target.userData.id)?'man':'woman';
-    const sides=[-1,1],figs=sides.map(sd=>{const g=human(kind);place(g,tp.clone().addScaledVector(right,sd*3.2),tp);burst(g.position.clone().add(new THREE.Vector3(0,.5,0)),0xe8b6dc,8);return g;});
+    const a0=Math.random()*Math.PI*2,a1=a0+Math.PI*(.5+Math.random());      // two random, clearly separated bearings
+    const dirs=[a0,a1].map(a=>new THREE.Vector3(Math.sin(a),0,Math.cos(a)));
+    const figs=dirs.map(d=>{const g=human(kind);place(g,tp.clone().addScaledVector(d,2.8+Math.random()*1.4),tp);burst(g.position.clone().add(new THREE.Vector3(0,.5,0)),0xe8b6dc,8);return g;});
     const order=Math.random()<.5?[0,1]:[1,0];
     const slaps=[];for(let n=0;n<4;n++)slaps.push(order[n%2]);          // alternating slaps, random who starts
     slaps.forEach((i,n)=>later(200+n*260+Math.random()*90,()=>lunge(figs[i],aim,1.15,slapSwing,()=>{
-      const sd=sides[i];burst(aim.clone().addScaledVector(right,sd*.3),0xffd0b8,10);
-      pop('啪！',aim.clone().addScaledVector(right,sd*.6).add(new THREE.Vector3(0,.5+n*.1,0)),'#ffe08a',.9);
-      mesh(new THREE.SphereGeometry(.55,12,10),0xffffff,aim.clone().addScaledVector(right,sd*.3),.18,'grow',{opacity:.7});
+      const d=dirs[i];burst(aim.clone().addScaledVector(d,.3),0xffd0b8,10);
+      pop('啪！',aim.clone().addScaledVector(d,.6).add(new THREE.Vector3(0,.5+n*.1,0)),'#ffe08a',.9);
+      mesh(new THREE.SphereGeometry(.55,12,10),0xffffff,aim.clone().addScaledVector(d,.3),.18,'grow',{opacity:.7});
     })));
     later(1500,()=>figs.forEach(dispose));
   } else if(type==='skill'){
