@@ -11,6 +11,9 @@ export function buildYu({root,body,head,hair,add,makeCap,accentMat,bodyMat,hairM
     add(new THREE.BoxGeometry(1.1,.07,.8),dark,[0,2.93,0]);                                   // mian board (冕板)
     add(new THREE.BoxGeometry(1.14,.025,.84),gold,[0,2.89,0]);                                // gold trim under the board
     for(const z of [.46,-.46])for(let i=0;i<9;i++){const x=-.48+i*.12;add(new THREE.CylinderGeometry(.008,.008,.42,4),gold,[x,2.7,z]);add(new THREE.SphereGeometry(.035,8,6),jade,[x,2.49,z]);add(new THREE.SphereGeometry(.025,8,6),gold,[x,2.62,z]);}   // 旒 bead strings
+    // 法令紋: nasolabial folds running from the nose wings down past the mouth corners
+    const wr=toonMat(0xb27f68),faceZ=(x,y)=>.489*Math.sqrt(Math.max(.05,1-(x/.54)**2-((y-2.12)/.56)**2))+.012;
+    for(const sd of [-1,1])for(const [x,y,len] of [[.14,1.99,.15],[.17,1.93,.12],[.2,1.87,.1]]){const m=add(new THREE.BoxGeometry(len,.016,.016),wr,[sd*x,y,faceZ(sd*x,y)],[0,0,sd*-1.0]);m.castShadow=false;}
     add(new THREE.BoxGeometry(.86,1.0,.1),robe,[0,1.25,.4]);                                  // robe front
     add(new THREE.BoxGeometry(.2,.96,.11),gold,[0,1.25,.44]);                                 // central embroidered band
     add(new THREE.BoxGeometry(.9,.12,.12),robe2,[0,1.7,.42],[0,0,0]);                       // cross-collar
