@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {mat,toonMat,toonRamp,floorMat,gold,dark,skin,white,black} from '../materials.js';
 
 // Model props for character "cleric" (layers: base props, outfit, signature silhouette).
@@ -25,19 +24,15 @@ export function buildCleric({root,body,head,hair,add,makeCap,accentMat,bodyMat,h
     add(new THREE.BoxGeometry(.16,.9,.06),mat(0x6a3f91),[-.26,1.2,.44],[0,0,.08]);                       // purple stole
     add(new THREE.BoxGeometry(.16,.9,.06),mat(0x6a3f91),[.26,1.2,.44],[0,0,-.08]);
     add(new THREE.BoxGeometry(.04,.2,.03),gold,[0,1.5,.5]);add(new THREE.BoxGeometry(.13,.04,.03),gold,[0,1.54,.5]);   // pectoral cross
-    // 方形臉 + 厚嘴唇: a squared jaw block over the lower face, thick lips, short neat grey hair, no halo-style cap
+    // 厚嘴唇: round head kept, thick lips, short neat grey hair, no halo-style cap
     hair.visible=true;hairMat.color.set(0x3b3b42);hair.scale.set(1.1,.8,1.08);
     root.children.forEach(c=>{if(c!==hair&&c.material===hairMat&&c.position.y>1.95&&c.geometry?.type!=='BoxGeometry')c.visible=false;
       if(c.geometry?.type==='TorusGeometry'&&Math.abs(c.position.y-1.78)<.02)c.visible=false;                 // generic scarf
       if(c.geometry?.type==='SphereGeometry'&&Math.abs(c.position.y-1.99)<.01&&Math.abs(c.position.z-.493)<.01)c.visible=false;});   // small default mouth
-    const skinMat=toonMat(0xffd6c2);
-    head.visible=false;                                                                                   // the round skull is replaced by a squared head
-    add(new RoundedBoxGeometry(1.0,1.02,.94,4,.1),skinMat,[0,2.12,0]);                                    // square face
-    add(new RoundedBoxGeometry(.1,.2,.1,2,.03),skinMat,[-.52,2.08,0]);add(new RoundedBoxGeometry(.1,.2,.1,2,.03),skinMat,[.52,2.08,0]);   // ears
     const lip=0xc2566a;
-    add(new THREE.BoxGeometry(.36,.075,.06),toonMat(lip),[0,1.9,.485]);                                     // upper lip
-    add(new THREE.BoxGeometry(.32,.095,.06),toonMat(0xd06a7c),[0,1.82,.49]);                             // fuller lower lip
-    add(new THREE.BoxGeometry(.3,.02,.03),toonMat(0x6e2c3a),[0,1.862,.5]);                              // mouth line
+    add(new THREE.BoxGeometry(.36,.075,.06),toonMat(lip),[0,1.9,.465]);                                     // upper lip
+    add(new THREE.BoxGeometry(.32,.095,.06),toonMat(0xd06a7c),[0,1.82,.47]);                             // fuller lower lip
+    add(new THREE.BoxGeometry(.3,.02,.03),toonMat(0x6e2c3a),[0,1.862,.48]);                              // mouth line
     // heavy brows to match the squared face
     for(const x of [-.19,.19])add(new THREE.BoxGeometry(.22,.05,.05),hairMat,[x,2.31,.46],[0,0,x<0?-.08:.08]);
 }
