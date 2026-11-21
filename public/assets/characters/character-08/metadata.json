@@ -1,0 +1,10 @@
+{
+  "characterId": "08",
+  "rosterId": "yu",
+  "name": "新北市長候選人（原型人物）",
+  "status": "ready",
+  "model": "fighter.glb",
+  "height": 2.85,
+  "facingOffset": 0,
+  "note": "fighter.glb 由 tools/build-character-08.mjs 程序化生成（有骨架、蒙皮、21 個動作的原型模型）；可用美術製作的模型取代，保持骨骼與動作名稱即可。"
+}
