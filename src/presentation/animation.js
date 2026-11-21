@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {updateRealModel} from '../character/CharacterController.js';
 import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT} from '../config.js';
 
 // Maps ECS components onto a read-only "state" layer in front of the rig (limbs/head/body...) stored on the view.
@@ -183,13 +184,13 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,first?-.5:-1.75,34,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,first?-.7:-.1,28,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.3,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.3,22,dt);
       }
-      if(u.id==='leopard'&&tier==='basic'){ // 豹之撲擊: airborne body stretched forward, forelimbs reaching, hind legs trailing; claws raked on impact
-        const air=u.phase==='strike',D=THREE.MathUtils.damp;
-        u.body.position.y=air?1.6:1.05;u.body.rotation.x=D(u.body.rotation.x,air?.95:.55,26,dt);u.body.rotation.y=D(u.body.rotation.y,0,24,dt);
-        u.head.position.y=air?1.95:1.7;u.head.rotation.x=D(u.head.rotation.x,-.35,20,dt);
-        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,air?-2.5:-1.9,28,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,air?-2.5:-2.3,28,dt);
-        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,air?-.2:-.45,24,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,air?.2:.45,24,dt);
-        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,air?.9:-.3,26,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,air?.9:.3,26,dt);
+      if(u.id==='leopard'&&tier==='basic'){ // 都市縫合: arms sweep wide (windup), then clap together in front (strike)
+        const clap=u.phase==='strike',D=THREE.MathUtils.damp;
+        u.body.position.y=1.15;u.body.rotation.x=D(u.body.rotation.x,clap?.15:-.1,24,dt);u.body.rotation.y=D(u.body.rotation.y,0,24,dt);
+        u.head.rotation.x=D(u.head.rotation.x,0,20,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,clap?-1.5:-.35,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,clap?-1.5:-.35,30,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,clap?-.25:-1.4,30,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,clap?.25:1.4,30,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,clap?.3:0,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,clap?-.3:0,22,dt);
       }
       if(u.id==='leopard'&&tier==='skill'){ // 工人隊: low double paw rake, left then right, as the pack is sent forward
         const D=THREE.MathUtils.damp,air=u.phase==='strike';
@@ -255,5 +256,6 @@ export function updateAnimations(world,dt){
         f.position.x+=Math.sin(f.rotation.y)*fwd;f.position.z+=Math.cos(f.rotation.y)*fwd;f.position.y+=h;
       }
     }
+    updateRealModel(f,u,dt);
     updateGlow(u,world.time,dt);}
 }

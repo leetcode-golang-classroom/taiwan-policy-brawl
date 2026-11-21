@@ -7,6 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "build:character-01": "node tools/build-character-01.mjs",
+    "build:character-02": "node tools/build-character-02.mjs",
+    "build:character-03": "node tools/build-character-03.mjs",
+    "build:character-04": "node tools/build-character-04.mjs",
+    "build:character-05": "node tools/build-character-05.mjs",
+    "build:character-06": "node tools/build-character-06.mjs",
+    "build:character-07": "node tools/build-character-07.mjs",
+    "build:character-08": "node tools/build-character-08.mjs",
+    "build:character-09": "node tools/build-character-09.mjs",
     "test": "node --test \"tests/**/*.test.js\""
   },
   "dependencies": {

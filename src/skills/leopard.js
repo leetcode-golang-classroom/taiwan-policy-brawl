@@ -3,12 +3,23 @@ import {burst,throwProjectile,addFx} from '../vfx/VFXSystem.js';
 
 export function skillLeopard({fighter,target,forward,origin,center,right,projectile,mesh},type){
     if(type==='basic'){
-      // 豹之撲擊：蹬地起跳的塵土與速度線；爪痕在命中時由 vfxEvents 的 hit 事件補上。
-      burst(origin.clone().add(new THREE.Vector3(0,.15,0)),0xd8c08a,22);
-      for(let i=0;i<5;i++){
-        const line=mesh(new THREE.BoxGeometry(.04,.04,1.3),0xfff0b8,origin.clone().addScaledVector(forward,.9).addScaledVector(right,(i-2)*.28).add(new THREE.Vector3(0,.55+(i%2)*.3,0)),.3);
-        line.rotation.y=fighter.rotation.y;
+      // 都市縫合：兩排都市土牆從對手左右兩側合攏夾擊，接縫處留下縫線般的針腳。
+      const T=target.position.clone(),sideRight=new THREE.Vector3(Math.cos(fighter.rotation.y),0,-Math.sin(fighter.rotation.y));
+      const EARTH=[0xb08a5a,0x9c7648,0xc29a68,0x8a6a40];
+      for(const side of [-1,1])for(let j=0;j<4;j++){
+        const h=1.7+((j*7+(side>0?3:0))%4)*.22,depth=.95;
+        const p=T.clone().addScaledVector(sideRight,side*3.1).addScaledVector(forward,(j-1.5)*depth).add(new THREE.Vector3(0,h/2,0));
+        const v=sideRight.clone().multiplyScalar(-side*7.2);
+        const wall=projectile(new THREE.BoxGeometry(.55,h,depth-.06),EARTH[(j+(side>0?1:0))%4],p,v,.5,0,0);wall.rotation.y=fighter.rotation.y;
+        const cap=projectile(new THREE.BoxGeometry(.62,.1,depth),0x6e5231,p.clone().add(new THREE.Vector3(0,h/2+.05,0)),v,.5,0,0);cap.rotation.y=fighter.rotation.y;
+        for(let k=0;k<2;k++){   // dark windows facing the opponent
+          const win=projectile(new THREE.BoxGeometry(.04,.28,.26),0x2d2a26,p.clone().addScaledVector(sideRight,-side*.3).add(new THREE.Vector3(0,(k-.5)*.62+.1,0)),v,.5,0,0);win.rotation.y=fighter.rotation.y;
+        }
       }
+      for(let i=0;i<7;i++){   // stitch marks across the seam
+        const st=mesh(new THREE.BoxGeometry(.9,.06,.06),0xf4ecd4,T.clone().addScaledVector(forward,(i-3)*.28).add(new THREE.Vector3(0,.9+(i%2)*.35,0)),.9,'fade');st.rotation.y=fighter.rotation.y;st.rotation.z=i%2?.5:-.5;
+      }
+      burst(T.clone().add(new THREE.Vector3(0,.3,0)),0xc9a773,26);
     } else if(type==='skill'){
       // 工人隊伍由施招者前方衝出，形成可見的集體撞擊。
       for(let i=0;i<5;i++){

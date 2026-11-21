@@ -20,7 +20,7 @@ const SKILL_DEFAULTS={
 const SKILL_OVERRIDES={
   // AI 基礎建設: seven GPU beams converge (instant area hit). 交通捷運四通八達: metro lines from every direction launch the target.
   mech:{basic:{name:'AI 基礎建設',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'交通捷運四通八達',type:'area',range:8,damage:19,knockback:2.8,launch:6,stun:.8,stepIn:0}},
-  leopard:{basic:{name:'豹之撲擊',type:'dash',range:1.7,dashSpeed:17,dashMax:3.8,knockback:1.55,launch:4.4,stun:.58},skill:{type:'projectile',speed:9.4,range:7,radius:.9}},
+  leopard:{basic:{name:'都市縫合',type:'area',range:6,knockback:1.55,launch:4.4,stun:.58},skill:{type:'projectile',speed:9.4,range:7,radius:.9}},
   // 乾坤一擲: a giant die; damage = points (1-6) x `damage`. 紅中旋風: three red-dragon tiles spiral in and knock the target left, right, then up/back.
   admiral:{basic:{name:'乾坤一擲',type:'projectile',dice:true,damage:3,cooldown:.9,speed:9,range:7,radius:1.3,knockback:3.6,launch:2.5,stun:.5},
     skill:{name:'紅中旋風',type:'projectile',damage:7,speed:8.8,range:7,radius:.8,tracking:true,trackRange:12,turnRate:9,
@@ -31,7 +31,7 @@ const SKILL_OVERRIDES={
   // 紫氣東來: a dragon-shaped qi blast; knockback follows the projectile's heading at the moment it hits.
   yu:{basic:{name:'乾坤之動',damage:6,range:2.6,knockback:.5,cooldown:.7},skill:{name:'紫氣東來',type:'projectile',damage:19,range:11,speed:12,radius:1.1,knockback:3.4,launch:2.2,stun:.6,stepIn:0},ult:{name:'百川匯海'}},
   // 生育大改革 / 市警大升級 / 警局長照護: instant area hits (figures, slaps, gunfire and crowds are presentation).
-  bubble:{basic:{name:'生育大改革',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'市警大升級',type:'area',range:8,damage:19,knockback:2.2,launch:3,stun:.7,stepIn:0},ult:{name:'警局長照護',range:8,knockback:2,launch:6,stun:1}},
+  bubble:{basic:{name:'生育大改革',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'市警大升級',type:'area',range:8,damage:24,knockback:2.2,launch:3,stun:.7,stepIn:0},ult:{name:'警局長照護',range:8,knockback:2,launch:6,stun:1}},
   brawler:{basic:{name:'重拳出擊',type:'projectile',speed:10,range:6.5,radius:.85},skill:{type:'dash',range:2.3,dashSpeed:16,dashMax:4.5,stepIn:0}},
   nun:{basic:{type:'projectile',speed:9.2,range:7,radius:.9},
     // 電光火球 (spec 6.2): fully replaces the old excavator skill. Real projectile, blockable, strong knockback, no launch.

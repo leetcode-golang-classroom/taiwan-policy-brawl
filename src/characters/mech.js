@@ -30,6 +30,18 @@ export function buildMech({root,body,head,hair,add,limbs,parts,weapon,accentMat,
   }
   // short, tidy hair: hide the long side locks and add a swept-up front quiff and trimmed sideburns
   root.children.forEach(c=>{if(c.geometry?.type==='ConeGeometry'&&Math.abs(Math.abs(c.position.x)-.43)<.02&&Math.abs(c.position.y-2.08)<.02)c.visible=false;});
+  // V3.9 face/hair pass, from the 原型人物 reference photos (assets/characters/references/character_01/face-profile.json):
+  // original Q-style hair is kept; thick straight brows, brown eyes, straight nose, soft smile, firm jaw.
+  root.children.forEach(c=>{const g=c.geometry?.type,col=c.material?.color?.getHex?.();
+    if(g==='BoxGeometry'&&Math.abs(c.position.y-2.285)<.01&&Math.abs(c.position.z-.43)<.01){c.scale.set(1.15,1.9,1.2);c.position.y=2.265;c.rotation.z*=-.5;}   // thick, straight, slightly low brows
+    if(col===0x416d9d)c.material.color.set(0x4a2f1c);                                                                // brown irises
+    if(g==='SphereGeometry'&&Math.abs(c.position.y-1.99)<.01&&Math.abs(c.position.z-.493)<.01){c.scale.set(1.7,.6,.35);c.position.y=1.985;}   // gentle smile line
+  });
+  const skinM=toonMat(SKIN);
+  add(new THREE.SphereGeometry(.07,12,10),skinM,[0,2.04,.5],[0,0,0],[.85,1,.9]);              // rounded nose tip with slightly wide alae
+  add(new THREE.BoxGeometry(.06,.17,.05),skinM,[0,2.13,.49],[-.2,0,0]);                       // straight nose bridge
+  add(new THREE.BoxGeometry(.5,.1,.2),skinM,[0,1.9,.42],[.15,0,0],[1,1,.6]);                  // squarer chin / jaw
+  for(const x of [-1,1])add(new THREE.SphereGeometry(.085,10,8),skinM,[x*.53,2.08,0],[0,0,0],[.5,1,.8]);   // ears
   const quiff=add(new THREE.SphereGeometry(.3,14,10),hairMat,[.06,2.76,.16],[-.35,0,-.2],[1.35,.62,1.15]);
   void quiff;
   for(const x of [-1,1])add(new THREE.BoxGeometry(.07,.2,.1),hairMat,[x*.47,2.1,.12]);
