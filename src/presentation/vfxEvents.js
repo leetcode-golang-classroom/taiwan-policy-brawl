@@ -105,19 +105,9 @@ export function initVfxEvents(world){
       const r=new THREE.Mesh(new THREE.TorusGeometry(.9,.09,8,32),new THREE.MeshBasicMaterial({color:0x9fe8ff,transparent:true,opacity:.95,depthWrite:false}));r.position.copy(c);r.rotation.x=Math.PI/2;addFx(r,.5,'ring');
       for(let i=0;i<6;i++){const bolt=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,1.6),new THREE.MeshBasicMaterial({color:0xeaffff,transparent:true,opacity:.95,depthWrite:false}));bolt.position.copy(c);bolt.rotation.set(Math.random()*3,Math.random()*6,0);addFx(bolt,.3,'fade');}
     }
-    if(e.skill.id==='leopard'&&e.skill.tier==='basic'&&e.amount>0){   // 豹之撲擊: three claw slashes across the target
-      const c=up(T.position,1.2);
-      for(let i=-1;i<=1;i++){const claw=new THREE.Mesh(new THREE.BoxGeometry(.07,1.25,.05),new THREE.MeshBasicMaterial({color:0xfff0b8,transparent:true,opacity:.95,depthWrite:false}));claw.position.copy(c).add(new THREE.Vector3(i*.22,0,0));claw.rotation.z=.6;addFx(claw,.35,'grow');}
-      burst(c,0xe0b35a,16);
-      // a grove bursts out of the ground where the pounce landed
-      const ground=T.position.clone(),fx=(geo,color,pos,vel)=>{const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.98,depthWrite:false}));m.position.copy(pos);throwProjectile(m,vel,.95,0,-3.5);return m;};
-      for(let i=0;i<9;i++){
-        const a=i*Math.PI*2/9,r=.65+(i%3)*.34,vy=5.8+(i%3)*.35,base=ground.clone().add(new THREE.Vector3(Math.cos(a)*r,.12,Math.sin(a)*r));
-        const trunk=fx(new THREE.CylinderGeometry(.12,.2,1.7,8),0x765039,base.clone().add(new THREE.Vector3(0,.72,0)),new THREE.Vector3(0,vy,0));trunk.rotation.z=i%2?-.08:.08;
-        fx(new THREE.ConeGeometry(.62,1.15,8),0x4d9d55,base.clone().add(new THREE.Vector3(0,1.55,0)),new THREE.Vector3(0,vy,0));
-      }
-      const shock=new THREE.Mesh(new THREE.TorusGeometry(1.65,.12,9,40),new THREE.MeshBasicMaterial({color:0x8eea91,transparent:true,opacity:.9,depthWrite:false}));shock.position.copy(ground).y+=.12;shock.rotation.x=Math.PI/2;addFx(shock,.85,'ring');
-      burst(ground.clone().add(new THREE.Vector3(0,.4,0)),0x78d77d,36);
+    if(e.skill.id==='leopard'&&e.skill.tier==='basic'&&e.amount>0){   // 都市縫合: walls slam shut on the target, dust and a stitched seam
+      const c=up(T.position,1.1);burst(c,0xc9a773,30);burst(c,0xe8dcc0,14);addCameraShake(.22,.25);
+      const seam=new THREE.Mesh(new THREE.TorusGeometry(.8,.07,8,32),new THREE.MeshBasicMaterial({color:0xf4ecd4,transparent:true,opacity:.9,depthWrite:false}));seam.position.copy(c);seam.rotation.x=Math.PI/2;addFx(seam,.5,'ring');
     }
     if(e.skill.id==='leopard'&&e.skill.tier==='ult'){   // 大海: roar shockwave around the leopard's slam
       const A=obj(e.attackerId);if(A){const g=up(A.position,.15);

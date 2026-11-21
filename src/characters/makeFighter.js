@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {scene} from '../scene.js';
 import {mat,toonMat,toonRamp,floorMat,gold,dark,skin,white,black} from '../materials.js';
 import {characterBuilders} from './index.js';
+import {attachRealModel} from '../character/CharacterController.js';
 
 export function makeFighter(profile){
   const {id='mech',name,primary,secondary,accent,kind,icon='✦'}=profile;
@@ -81,5 +82,5 @@ export function makeFighter(profile){
   limbs.forEach((l,i)=>{for(let c=limbBase[i];c<l.children.length;c++)l.children[c].position.y-=LIMB_H;});
   if(['mage','brawler'].includes(id)){hair.visible=false;root.children.forEach(part=>{if(part.position.y>2.38&&part.position.y<2.48&&part.geometry?.type==='SphereGeometry')part.visible=false;});}
   root.userData={id,name,kind,icon,limbs,parts,body,head,aura,chargeRig,glowLight,chargeHalo,chargeCore,baseY:0,attackTime:0,hitFlash:0,velocityY:0,grounded:true,jumpPhase:0,movePhase:0,stun:0,rootTrap:0,hitReact:0,dodgeTimer:0,dodgeInvuln:0,dodgeCooldown:0,dodgeDirection:new THREE.Vector3(),moveSpeed:profile.moveSpeed||5,jumpPower:kind==='heavy'||kind==='engineer'?7.5:8.2};
-  scene.add(root);return root;
+  scene.add(root);attachRealModel(root,id);return root;
 }

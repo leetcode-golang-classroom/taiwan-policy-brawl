@@ -5,20 +5,20 @@ import {getSkill} from '../../src/config.js';
 import {roster} from '../../src/roster.js';
 import {startedWorld,step,arrange,hp} from '../helpers.js';
 
-test('豹之撲擊 is a dash attack and replaces the old tree basic', ()=>{
+test('都市縫合 is an instant area attack and replaces the pounce', ()=>{
   const sk=getSkill('leopard','basic');
-  assert.equal(sk.type,'dash');assert.ok(sk.dashMax>=3);
-  assert.equal(roster.find(r=>r.id==='leopard').basic,'豹之撲擊');
+  assert.equal(sk.type,'area');assert.ok(sk.range>=5);
+  assert.equal(roster.find(r=>r.id==='leopard').basic,'都市縫合');
 });
-test('pounce leaps across a gap, lands next to the target and hits once', ()=>{
+test('都市縫合 hits a target within range from a distance without moving the caster', ()=>{
   const w=startedWorld({p:'leopard'});arrange(w,{dist:4.5});
-  const pt=w.world.get(w.player,'transform'),ct=w.world.get(w.cpu,'transform');const x0=pt.x;
+  const pt=w.world.get(w.player,'transform');const x0=pt.x;
   pressAttack(w.world,'player','basic');pressAttack(w.world,'player','basic');step(w.world,1.2);
-  assert.ok(Math.abs(pt.x-x0)>1.5);   // the leopard itself travelled
-  assert.equal(hp(w,'cpu'),91);
+  assert.ok(Math.abs(pt.x-x0)<.5);
+  assert.ok(hp(w,'cpu')<100);
 });
-test('pounce cannot reach a target beyond dashMax + range', ()=>{
-  const w=startedWorld({p:'leopard'});arrange(w,{dist:9});
+test('都市縫合 cannot reach a target beyond its range', ()=>{
+  const w=startedWorld({p:'leopard'});arrange(w,{dist:12});
   pressAttack(w.world,'player','basic');pressAttack(w.world,'player','basic');step(w.world,1.2);
   assert.equal(hp(w,'cpu'),100);
 });
