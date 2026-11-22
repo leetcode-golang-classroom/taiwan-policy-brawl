@@ -23,10 +23,18 @@ export function startMatch(world){
   resetRound(world);m.running=true;
   world.events.emit('roundStart',{roundNumber:1});
 }
+// actionSystem stops while the match is not running, so anything still charging/attacking at the buzzer would stay frozen
+// mid-phase (charge halo hanging in the air until the next resetRound, which never comes after the last round).
+function cancelActions(world){
+  for(const id of world.query('attacker')){
+    const a=world.get(id,'attacker');
+    a.charge=null;a.active=null;a.buffer=null;a.attackTime=0;a.comboWindow=0;a.phase='idle';
+  }
+}
 export function endRound(world,winner,reason='時間結束'){
   const m=world.match;
   if(!m.running||m.ended||m.roundTransition>0)return;
-  m.running=false;
+  m.running=false;cancelActions(world);
   if(winner==='player')m.playerRounds++;else m.cpuRounds++;
   const final=m.playerRounds>=MATCH.winsNeeded||m.cpuRounds>=MATCH.winsNeeded||m.roundNumber>=MATCH.maxRounds;
   if(final){
