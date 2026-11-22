@@ -33,3 +33,13 @@ test('a huge pose flip (round reset) snaps instead of whipping through the blend
   const u=rig(),st={};blendPose(u,1/60,st);u.body.rotation.y=Math.PI;blendPose(u,1/60,st);
   assert.equal(u.body.rotation.y,Math.PI);
 });
+
+import {stepRunBlend,RUN_BLEND} from '../../src/presentation/poseBlend.js';
+test('runBlend eases 0->1 over a few frames and back down more slowly, never leaving [0,1]',()=>{
+  let v=0;v=stepRunBlend(v,true,1/60);assert.ok(v>0&&v<.5,'not a snap: '+v);
+  for(let i=0;i<30;i++)v=stepRunBlend(v,true,1/60);assert.equal(v,1);
+  let d=stepRunBlend(1,false,1/60);assert.ok(d<1&&d>.8,'eases down: '+d);
+  for(let i=0;i<120;i++)d=stepRunBlend(d,false,1/60);assert.equal(d,0);
+  assert.ok(RUN_BLEND.up>RUN_BLEND.down);
+  assert.ok(Math.abs(stepRunBlend(0,true,1/30)-(1-Math.exp(-RUN_BLEND.up/30)))<1e-9,'frame-rate independent form');
+});

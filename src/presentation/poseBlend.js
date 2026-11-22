@@ -30,3 +30,12 @@ export function blendPose(u,dt,store){
     }
   });
 }
+
+// Walk <-> rush blend (0 = walking, 1 = full sprint). The rush is a boolean in the logic layer; the animator needs a
+// continuous weight so stride, lean and arm swing ease in/out instead of flipping on one frame. Fast up (the rush only
+// lasts RUSH.duration), slower down so the braking frames still read as a sprint settling.
+export const RUN_BLEND={up:24,down:9};
+export function stepRunBlend(cur,rushing,dt){
+  const tgt=rushing?1:0,k=1-Math.exp(-(rushing?RUN_BLEND.up:RUN_BLEND.down)*dt),v=cur+(tgt-cur)*k;
+  return v<.001?0:v>.999?1:v;
+}

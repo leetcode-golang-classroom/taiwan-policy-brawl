@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {blendPose} from './poseBlend.js';
+import {blendPose,stepRunBlend} from './poseBlend.js';
 import {updateRealModel} from '../character/CharacterController.js';
 import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT} from '../config.js';
 
@@ -44,7 +44,7 @@ const SIGNATURE={
 };
 export function updateAnimations(world,dt){
   for(const id of world.query('view','fighter','status','body','attacker')){const f=world.get(id,'view').obj;const u=stateOf(world,id,f);
-    if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
+    if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const rb=f.userData.runBlend=stepRunBlend(f.userData.runBlend||0,u.rushTimer>0,dt);const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
     // Character-specific walk cycles. Limb order: left arm, left leg, right arm, right leg.
     if(u.limbs.length>=4){const arms=[u.limbs[0],u.limbs[2]],legs=[u.limbs[1],u.limbs[3]];let stride=.58,bob=0,lean=0,armSwing=.55,sway=1;   // sway scales the sideways wobble (leg splay, torso roll)
       switch(u.id){
@@ -61,13 +61,13 @@ export function updateAnimations(world,dt){
       }
       if(walking&&u.grounded){
         // Direction-aware gait: backing off reverses the stride, strafing shortens it and splays the legs, a rush is a low forward sprint.
-        const sgn=u.moveFwd<-.25?-1:1,sd=u.moveSide,rushing=u.rushTimer>0;stride*=(1-.4*Math.abs(sd))*(rushing?1.3:.6+.4*u.speedRatio);armSwing*=rushing?1.4:1;
-        legs[0].rotation.x=step*stride*sgn;legs[1].rotation.x=-step*stride*sgn;arms[0].rotation.x=-step*armSwing*sgn+(rushing?.9:0);arms[1].rotation.x=step*armSwing*sgn+(rushing?.9:0);
+        const sgn=u.moveFwd<-.25?-1:1,sd=u.moveSide,rushing=rb>.5,L=(a,b)=>a+(b-a)*rb;stride*=(1-.4*Math.abs(sd))*L(.6+.4*u.speedRatio,1.3);armSwing*=L(1,1.4);
+        legs[0].rotation.x=step*stride*sgn;legs[1].rotation.x=-step*stride*sgn;arms[0].rotation.x=-step*armSwing*sgn+.9*rb;arms[1].rotation.x=step*armSwing*sgn+.9*rb;
         legs[0].rotation.z+=sd*(.2+.2*step)*sway;legs[1].rotation.z+=sd*(.2-.2*step)*sway;
         u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,lean+(Math.sin(gait)*.025+sd*.14)*sway,12,dt);
-        u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,(rushing?.42*Math.max(0,u.moveFwd)-(u.moveFwd<-.25?.1:0):0)+(u.id==='leopard'?.22:0),12,dt);   // lean into a forward rush
+        u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,(.42*rb*Math.max(0,u.moveFwd)-(u.moveFwd<-.25?.1:0)*(1-rb))+(u.id==='leopard'?.22:0),12,dt);   // lean into a forward rush
         u.body.rotation.y=THREE.MathUtils.damp(u.body.rotation.y,-sd*.38,10,dt);u.head.rotation.y=THREE.MathUtils.damp(u.head.rotation.y,-sd*.2,10,dt); // torso turns toward the move direction, head follows a little
-        u.body.position.y=1.25+bob-(rushing?.1:0);u.head.position.y=2.12+bob*.72-(rushing?.08:0);
+        u.body.position.y=1.25+bob-.1*rb;u.head.position.y=2.12+bob*.72-.08*rb;
         if(u.id==='leopard'){ // quadruped gait: forelimbs reach forward, the head rides on the pitched shoulders, a rush becomes a bounding gallop
           const pitch=u.body.rotation.x,g=Math.sin(gait),sw=rushing?.95:.6;
           if(rushing){ // fast bound: left/right limbs always alternate, hind legs lag the forelimbs
