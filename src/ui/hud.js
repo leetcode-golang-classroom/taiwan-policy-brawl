@@ -23,7 +23,8 @@ export function updateHud(world){
   const pd=world.get(L,'defense');
   setCooldownCard('defense',pd.cooldown,DEFENSE.cooldown,'READY');
   $('#card-defense').classList.toggle('guarding',pd.active);
-  if(pd.active)$('#cool-defense').textContent=`防禦中 ${pd.timer.toFixed(1)}s`;
+  if(pd.active)$('#cool-defense').textContent=pd.startup>0?'舉盾中…':`防禦中 ${pd.timer.toFixed(1)}s`;
+  else if(pd.recovery>0)$('#cool-defense').textContent='收招中…';
   $('#combo-status').textContent=pa.comboWindow>0?'連段窗口 '+pa.comboStep+'/3':'連段：等待起手';
   $('#player-health').style.width=ph.hp/ph.max*100+'%';$('#cpu-health').style.width=ch.hp/ch.max*100+'%';
   for(const [k,h] of [['player',ph],['cpu',ch]]){

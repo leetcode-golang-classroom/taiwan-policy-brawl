@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {burst,throwProjectile} from '../vfx/VFXSystem.js';
+import {burst,delay,throwProjectile} from '../vfx/VFXSystem.js';
 
 const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 export function skillCleric({fighter,target,projectile,mesh},type){
@@ -28,6 +28,6 @@ export function skillCleric({fighter,target,projectile,mesh},type){
       burst(ground.clone().add(new THREE.Vector3(0,.6,0)),0xffc93c,36);
       // Sky explosion where the opponent is carried.
       const sky=ground.clone().add(new THREE.Vector3(0,8.5,0));
-      setTimeout(()=>{burst(sky,0xff4a1c,50);burst(sky,0xffc93c,40);},420);
+      delay(()=>{burst(sky,0xff4a1c,50);burst(sky,0xffc93c,40);},420);
     }
 }

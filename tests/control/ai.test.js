@@ -11,13 +11,13 @@ test('AI writes only the CPU intent and does nothing when the match is not runni
   assert.equal(w.world.get(w.player,'intent').moveX,0);
 });
 test('AI chases a distant player (moves toward, faster when far)', ()=>{
-  const near=startedWorld();place(near,3);aiControl(near.world,.016);
-  const far=startedWorld();place(far,8);aiControl(far.world,.016);
+  const near=startedWorld({c:'yu'});place(near,3);aiControl(near.world,.016);
+  const far=startedWorld({c:'yu'});place(far,8);aiControl(far.world,.016);
   const n=near.world.get(near.cpu,'intent'),f=far.world.get(far.cpu,'intent');
   assert.ok(n.moveX<0&&f.moveX<0);assert.ok(Math.abs(f.moveX)>Math.abs(n.moveX));
 });
 test('AI stops advancing when close and when stunned', ()=>{
-  const w=startedWorld();place(w,1.5);aiControl(w.world,.016);assert.equal(w.world.get(w.cpu,'intent').moveX,0);
+  const w=startedWorld({c:'yu'});place(w,1.5);aiControl(w.world,.016);assert.equal(w.world.get(w.cpu,'intent').moveX,0);
   place(w,6);w.world.get(w.cpu,'status').stun=1;aiControl(w.world,.016);assert.equal(w.world.get(w.cpu,'intent').moveX,0);
 });
 test('AI melee: attacks only when in reach and its think-cooldown is ready', ()=>{
@@ -36,11 +36,48 @@ test('AI with projectile skills fires from range (not only in melee reach)', ()=
   const w=startedWorld({c:'mech'});place(w,5.5);w.world.get(w.cpu,'brain').attackCd=0;aiControl(w.world,.016);
   assert.equal(w.world.get(w.cpu,'intent').attack,'basic');
 });
-test('AI tries to dodge when the player is charging a move (rng-controlled)', ()=>{
-  const w=startedWorld({rng:()=>0});place(w,4);w.world.get(w.player,'attacker').charge={tier:'skill',time:0,duration:.6};
-  aiControl(w.world,.016);const it=w.world.get(w.cpu,'intent');assert.ok(it.dodge);assert.ok(it.dodgeDir.x>0); // away from player (player is at -x... cpu is at +x)
-  const n=startedWorld({rng:()=>0.99});place(n,4);n.world.get(n.player,'attacker').charge={tier:'skill',time:0,duration:.6};
-  aiControl(n.world,.016);assert.ok(!n.world.get(n.cpu,'intent').dodge);
+const charging=(w,left=.6)=>{w.world.get(w.player,'attacker').charge={tier:'skill',time:0,duration:left};};
+test('AI reacts to a charging move only after a reaction delay (rng-controlled)', ()=>{
+  const w=startedWorld({rng:()=>0,c:'yu'});place(w,4);charging(w);
+  aiControl(w.world,.016);assert.ok(!w.world.get(w.cpu,'intent').dodge,'no instant reflex');
+  w.world.time+=.4;aiControl(w.world,.016);const it=w.world.get(w.cpu,'intent');
+  assert.ok(it.dodge);assert.ok(it.dodgeDir.x>0); // away from the player (player is at -x, cpu at +x)
+  const n=startedWorld({rng:()=>0.99,c:'yu'});place(n,4);charging(n);
+  aiControl(n.world,.016);n.world.time+=.4;aiControl(n.world,.016);assert.ok(!n.world.get(n.cpu,'intent').dodge&&!n.world.get(n.cpu,'intent').defend);
+});
+test('AI makes ONE reaction decision per threat, not one roll per frame', ()=>{
+  const w=startedWorld({rng:()=>0,c:'yu'});place(w,4);charging(w,5);
+  aiControl(w.world,.016);w.world.time+=.4;aiControl(w.world,.016);
+  w.world.get(w.cpu,'intent').dodge=false;w.world.time+=.1;aiControl(w.world,.016);
+  assert.ok(!w.world.get(w.cpu,'intent').dodge,'already decided for this threat');
+});
+test('AI falls back to guarding when its dodge is on cooldown', ()=>{
+  const w=startedWorld({rng:()=>0,c:'yu'});place(w,4);charging(w);w.world.get(w.cpu,'status').dodgeCooldown=5;
+  aiControl(w.world,.016);w.world.time+=.4;aiControl(w.world,.016);assert.ok(w.world.get(w.cpu,'intent').defend);
+});
+test('AI does not blindly attack into the strike frame of the player; it attacks once the threat is read', ()=>{
+  const w=startedWorld({rng:()=>.9,c:'yu'});place(w,2);w.world.get(w.cpu,'brain').attackCd=0;charging(w,.1);
+  w.world.get(w.player,'attacker').charge.time=.05;aiControl(w.world,.016);
+  assert.equal(w.world.get(w.cpu,'intent').attack,null);
+});
+test('AI respects real cooldowns and uses its ultimate only with full energy, after a think delay', ()=>{
+  const w=startedWorld({c:'yu'});place(w,3);const b=w.world.get(w.cpu,'brain'),a=w.world.get(w.cpu,'attacker');
+  b.attackCd=0;a.cooldowns.basic=1;aiControl(w.world,.016);assert.equal(w.world.get(w.cpu,'intent').attack,null,'basic still on cooldown');
+  const u=startedWorld({c:'yu'});place(u,3);u.world.get(u.cpu,'brain').attackCd=99;u.world.get(u.cpu,'brain').skillCd=99;
+  aiControl(u.world,.016);assert.equal(u.world.get(u.cpu,'intent').attack,null,'no energy');
+  u.world.get(u.cpu,'energy').value=100;aiControl(u.world,.016);assert.equal(u.world.get(u.cpu,'intent').attack,null,'thinking...');
+  u.world.time+=1.5;aiControl(u.world,.016);assert.equal(u.world.get(u.cpu,'intent').attack,'ult');
+});
+test('after attacking the CPU backs off for a moment instead of pressing again', ()=>{
+  const w=startedWorld({c:'yu'});place(w,2);const b=w.world.get(w.cpu,'brain');b.attackCd=0;aiControl(w.world,.016);
+  assert.equal(w.world.get(w.cpu,'intent').attack,'basic');assert.ok(b.recoverUntil>w.world.time);
+  w.world.get(w.cpu,'intent').attack=null;aiControl(w.world,.016);
+  assert.equal(b.mode,'retreat');assert.ok(w.world.get(w.cpu,'intent').moveX>0,'steps away from the player');
+});
+test('a ranged CPU keeps its distance; a CPU at a comfortable range circles instead of standing still', ()=>{
+  const r=startedWorld({c:'mech'});place(r,1.6);aiControl(r.world,.016);assert.equal(r.world.get(r.cpu,'brain').mode,'retreat');
+  const s=startedWorld({c:'yu'});place(s,2.1);aiControl(s.world,.016);
+  const it=s.world.get(s.cpu,'intent');assert.equal(s.world.get(s.cpu,'brain').mode,'strafe');assert.ok(Math.abs(it.moveZ)>0&&Math.abs(it.moveX)<1e-9);
 });
 test('AI will not queue a new attack while it is already charging', ()=>{
   const w=startedWorld({c:'yu'});place(w,2);w.world.get(w.cpu,'brain').attackCd=0;w.world.get(w.cpu,'attacker').charge={tier:'basic',time:0,duration:.2};
@@ -64,4 +101,41 @@ test('full AI-controlled duel keeps every invariant (bounds, finite numbers, HP 
     }
     assert.ok(w.world.match.ended,`${p} vs ${c} should finish within 2 minutes`);assert.equal(me.length,1);
   }
+});
+test('a CPU vs idle P1 duel has rhythm: it attacks regularly, not every frame, and never stands still for long', ()=>{
+  const w=startedWorld({p:'yu',c:'yu',rng:seeded(5)});const starts=[];w.world.events.on('chargeStart',e=>{if(e.id===w.cpu)starts.push(w.world.time);});
+  w.world.get(w.player,'status').dodgeCooldown=1e9;
+  let still=0,maxStill=0,prev=null;const t=w.world.get(w.cpu,'transform');
+  for(let i=0;i<60*20&&!w.world.match.ended;i++){
+    w.world.get(w.player,'health').hp=100;step(w.world,1/60);   // P1 is a punching bag that never dies
+    if(prev&&Math.hypot(t.x-prev.x,t.z-prev.z)<1e-5)still++;else still=0;maxStill=Math.max(maxStill,still);prev={x:t.x,z:t.z};
+  }
+  assert.ok(starts.length>=4,'attacks regularly: '+starts.length);assert.ok(starts.length<=20*2,'not spamming');
+  for(let i=1;i<starts.length;i++)assert.ok(starts[i]-starts[i-1]>=.25,'a gap between attacks (chained J on a confirmed hit is the shortest)');
+  assert.ok(maxStill<60*2,'never idle for 2+ seconds');
+});
+test('a CPU circling the player never grinds against the arena wall', ()=>{
+  const w=startedWorld({p:'yu',c:'yu',rng:seeded(2)});const t=w.world.get(w.cpu,'transform'),p=w.world.get(w.player,'transform');
+  p.x=5.5;p.z=0;t.x=6.9;t.z=0.2;w.world.get(w.player,'status').stun=1e9;
+  let atWall=0;for(let i=0;i<60*10;i++){w.world.get(w.cpu,'brain').attackCd=1e9;w.world.get(w.cpu,'brain').skillCd=1e9;
+    step(w.world,1/60);if(Math.abs(t.x)>=7-1e-6||Math.abs(t.z)>=5-1e-6)atWall++;}
+  assert.ok(atWall<60*2,'only briefly touches the wall: '+atWall/60+'s');
+});
+test('a melee CPU closes in until its basic is really in reach (so it can attack)', ()=>{
+  const w=startedWorld({p:'yu',c:'yu',rng:seeded(4)});const hits=record(w.world,'hit');
+  w.world.get(w.player,'status').dodgeCooldown=1e9;w.world.get(w.player,'defense').cooldown=1e9;
+  for(let i=0;i<60*8;i++){w.world.get(w.player,'health').hp=100;step(w.world,1/60);}
+  assert.ok(hits.some(h=>h.attackerId===w.cpu&&h.amount>0),'the CPU lands hits');
+});
+
+test('after a confirmed J hit the CPU sometimes chains the next J (never on a whiff), and still backs off otherwise',()=>{
+  let chains=0,hits=0,maxStep=0;
+  for(let seed=1;seed<=8;seed++){
+    const w=startedWorld({p:'mech',c:'cleric',rng:seeded(seed)});place(w,2);
+    const comboHits=record(w.world,'comboHit');
+    w.world.get(w.player,'status').stun=1e9;   // dummy target
+    step(w.world,20);
+    for(const e of comboHits){hits++;maxStep=Math.max(maxStep,e.step);if(e.step>=2)chains++;}
+  }
+  assert.ok(hits>0);assert.ok(chains>0,`no chained J in ${hits} hits`);assert.ok(maxStep<=3);
 });

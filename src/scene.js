@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {fighterOf} from './ecs/entities.js';
+import {createCameraRig,updateCameraRig} from './presentation/cameraDirector.js';
 import {mat,toonMat,toonRamp,floorMat,gold,dark,skin,white,black} from './materials.js';
 export const mount = document.querySelector('#arena');
 export const scene = new THREE.Scene();
@@ -39,12 +40,13 @@ export function initResize(){
 let shake={t:0,dur:1,mag:0},shakeOff=new THREE.Vector3();
 export function addCameraShake(mag,dur=.3){if(mag>=shake.mag*Math.max(0,shake.t/shake.dur))shake={t:dur,dur,mag};}
 export const camState={yaw:0,pitch:.24,drag:false,last:{x:0,y:0}};
+export const camRig=createCameraRig();
 export function updateCamera(world,dt=1/60){
-  const a=world.get(fighterOf(world,'player'),'transform'),b=world.get(fighterOf(world,'cpu'),'transform');
-  const focus=new THREE.Vector3((a.x+b.x)/2,((a.y+b.y)/2),(a.z+b.z)/2);const radius=13;
-  const desired=new THREE.Vector3(focus.x+Math.sin(camState.yaw)*radius,5.2+camState.pitch*5,focus.z+Math.cos(camState.yaw)*radius);
-  camera.position.sub(shakeOff);camera.position.lerp(desired,.06);
+  updateCameraRig(camRig,world,dt);
+  const yaw=camState.yaw+camRig.yawOff,r=camRig.radius;
+  const desired=new THREE.Vector3(camRig.fx+Math.sin(yaw)*r,5.2+(camState.pitch+camRig.pitchOff)*5,camRig.fz+Math.cos(yaw)*r);
+  camera.position.sub(shakeOff);camera.position.lerp(desired,1-Math.exp(-6*dt));   // frame-rate independent follow
   shakeOff.set(0,0,0);
   if(shake.t>0){shake.t-=dt;const k=Math.max(0,shake.t/shake.dur)*shake.mag;shakeOff.set((Math.random()-.5)*k,(Math.random()-.5)*k,(Math.random()-.5)*k);}
-  camera.position.add(shakeOff);camera.lookAt(focus.x,1.05,focus.z);
+  camera.position.add(shakeOff);camera.lookAt(camRig.fx,camRig.fy,camRig.fz);
 }

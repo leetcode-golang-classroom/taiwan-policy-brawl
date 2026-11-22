@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {burst,throwProjectile,addFx} from '../vfx/VFXSystem.js';
+import {burst,delay,throwProjectile,addFx} from '../vfx/VFXSystem.js';
 
 // ---- helpers ----
 const wordTex=new Map();
@@ -41,14 +41,14 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
         const base=tp.clone().addScaledVector(dir,3.0+k*.9).add(new THREE.Vector3(0,.55+k*.5,0));
         openBook(mesh,base,a+Math.PI,1.5);
         burst(base,0xffe08a,4);
-        for(let w=0;w<2;w++)setTimeout(()=>{
+        for(let w=0;w<2;w++)delay(()=>{
           const sp=wordSprite(WORDS[(d*4+k*2+w)%WORDS.length]);sp.position.copy(base).add(new THREE.Vector3(0,.4,0));
           const v=aim.clone().sub(sp.position).multiplyScalar(1/.5);throwProjectile(sp,v,.5,0);
           if(w===1&&k===1)burst(aim,0xffe08a,6);
         },160+k*110+w*260+d*25);
       }
     }
-    setTimeout(()=>burst(aim,0xffd68b,24),700);
+    delay(()=>burst(aim,0xffd68b,24),700);
   } else if(type==='skill'){
     // SoR 教學: a heap of English textbooks erupts from the ground, the lecturer pushes it over onto the opponent,
     // then holds up a glowing SoR pyramid whose light shines onto the opponent in three bursts.
@@ -62,7 +62,7 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
     burst(heap.clone().add(new THREE.Vector3(0,.4,0)),0xc88a2e,18);
     mesh(new THREE.TorusGeometry(.9,.08,8,28),0xc88a2e,heap.clone().add(new THREE.Vector3(0,.08,0)),.6,'ring',{rotation:[Math.PI/2,0,0]});
     // push: the books topple toward the opponent
-    for(let i=0;i<14;i++)setTimeout(()=>{
+    for(let i=0;i<14;i++)delay(()=>{
       const p=heap.clone().add(new THREE.Vector3((Math.random()-.5)*1.4,.4+Math.random()*.6,(Math.random()-.5)*1.4));
       const v=aim.clone().sub(p).multiplyScalar(1/.5).add(new THREE.Vector3(0,1.5,0));
       projectile(new THREE.BoxGeometry(.62,.14,.46),BOOK_COLORS[i%BOOK_COLORS.length],p,v,.55,(i%2?1:-1)*6,-6);
@@ -77,10 +77,10 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
     held.visible=false;fighter.add(held);
     const hand=new THREE.Vector3(),headTop=new THREE.Vector3();
     const refresh=()=>{fighter.updateMatrixWorld(true);hand.copy(held.position);fighter.localToWorld(hand);headTop.set(0,2.62,.12);fighter.localToWorld(headTop);};
-    setTimeout(()=>{held.visible=true;refresh();burst(hand,0xfff0a0,14);burst(headTop,0xffffff,8);
+    delay(()=>{held.visible=true;refresh();burst(hand,0xfff0a0,14);burst(headTop,0xffffff,8);
       mesh(new THREE.SphereGeometry(.3,12,10),0xffffff,headTop,.9,'grow',{opacity:.7});},420);
     let spin=setInterval(()=>{held.rotation.y+=.25;glow.scale.setScalar(1+Math.sin(Date.now()/60)*.15);},30);
-    setTimeout(()=>{clearInterval(spin);fighter.remove(held);for(const m of [pyr,wire,glow,lab]){m.geometry.dispose();m.material.dispose();}},1700);
+    delay(()=>{clearInterval(spin);fighter.remove(held);for(const m of [pyr,wire,glow,lab]){m.geometry.dispose();m.material.dispose();}},1700);
     // three staged lights: pyramid beam + head-reflected beam converge on the opponent
     const Y=new THREE.Vector3(0,1,0);
     const shine=(from,s,color,o)=>{
@@ -88,7 +88,7 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
       const beam=mesh(new THREE.CylinderGeometry(.1+s*.1,.3+s*.16,len,10),color,from.clone().lerp(aim,.5),.28,'fade',{opacity:o});
       beam.quaternion.setFromUnitVectors(Y,dirv);
     };
-    for(let s=0;s<3;s++)setTimeout(()=>{
+    for(let s=0;s<3;s++)delay(()=>{
       refresh();
       shine(hand,s,s===2?0xffffff:0xfff2a0,.85);
       shine(headTop,s,0xffffff,.6);
@@ -110,12 +110,12 @@ export function skillMage({fighter,target,forward,origin,center,right,projectile
     for(let i=0;i<6;i++){const a=i/6*Math.PI*2;
       const r=mesh(new THREE.ConeGeometry(.35,1.4,6),0x5a3d22,at(Math.sin(a)*1.35,.55,Math.cos(a)*1.35),1.3,'fade',{opacity:.97});r.rotation.set(Math.cos(a)*.9,0,-Math.sin(a)*.9);}
     const seg=[[1.5,1.1],[1.3,1.1],[1.1,1.1],[.95,1.1],[.8,1.1]];let y=0;
-    seg.forEach(([r,h],i)=>{const cy=y+h/2;y+=h;setTimeout(()=>{
+    seg.forEach(([r,h],i)=>{const cy=y+h/2;y+=h;delay(()=>{
       mesh(new THREE.CylinderGeometry(r*.88,r,h,12),0x6b4a2b,at(0,cy,0),1.3-i*.08,'fade',{opacity:.97});
       burst(at(0,cy,0),0x9b7a52,8);
     },250+i*90);});
     // thick branches and a wide canopy open at the top
-    setTimeout(()=>{
+    delay(()=>{
       for(let i=0;i<5;i++){const a=i/5*Math.PI*2+.4,dir=new THREE.Vector3(Math.sin(a),0,Math.cos(a));
         const br=mesh(new THREE.CylinderGeometry(.18,.32,2.0,8),0x6b4a2b,at(dir.x*.9,5.3,dir.z*.9),1.0,'fade',{opacity:.97});br.rotation.set(dir.z*.9,0,-dir.x*.9);}
       for(const [x,yy,z,s] of [[0,6.0,0,1.9],[1.7,5.5,.5,1.3],[-1.7,5.6,-.4,1.3],[.4,5.4,-1.7,1.2],[-.5,5.5,1.6,1.2],[1.0,6.5,-.8,1.1],[-1.0,6.4,.8,1.1]])

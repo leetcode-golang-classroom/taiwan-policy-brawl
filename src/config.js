@@ -5,7 +5,9 @@ export const ARENA={halfX:7,halfZ:5};
 export const AIRBORNE_BONUS=4;          // extra damage when the attacker is airborne
 // I-key exclusive defense. Projectiles/homing are fully blocked; melee/area/dash are reduced by `reduction`.
 // cooldown starts when the guard ends. layers: characters whose barrier breaks after N absorbed hits.
-export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3}};
+// PHASE 12: raising the guard has a startup (not protective yet), then the active guard, then a recovery (no actions) after it drops.
+// duration = startup + active.
+export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3},startup:.08,recovery:.2};
 
 // Unified skill data (spec 6.2). type: melee | projectile | homing | area | dash
 // range    = max reach (melee/area/dash-hit) or max flight distance (projectile/homing)
@@ -44,23 +46,62 @@ export const cooldownFor=(charId,tier)=>getSkill(charId,tier).cooldown;   // per
 export const cooldownDurations={basic:SKILL_DEFAULTS.basic.cooldown,skill:SKILL_DEFAULTS.skill.cooldown,ult:SKILL_DEFAULTS.ult.cooldown};
 
 // ---- Gameplay constants shared by systems (kept here so balance is tuned in one place) ----
-export const DODGE={duration:.68,invuln:.42,cooldown:1.1,defaultDistance:2.1,
+// PHASE 12 dodge: invuln for the first `invuln` s, vulnerable recovery until `duration`. The body SLIDES `slide` s (not a teleport).
+// attackAfter: attacks (counter-attacks) are locked for this long after the dodge starts; a press just before it is buffered.
+export const DODGE={duration:.68,invuln:.42,cooldown:1.1,slide:.2,attackAfter:.5,defaultDistance:2.1,
   distance:{mech:2.55,leopard:2.25,admiral:1.9,mage:2.35,cleric:2.2,brawler:2.0,nun:1.9,yu:2.15,'bubble':2.2}};
 // 乾坤之動 (08 basic): a tai-chi stance that reflects incoming attacks for `duration` seconds after it is released.
 export const REFLECT={duration:.5,charId:'yu'};
-export const HIT={reactTime:.38,baseStun:.28,airborneThreshold:.25};
+// maxStun: hit stun is re-computed (not summed) on every hit and can never exceed this, so nobody is stun-locked forever.
+export const HIT={reactTime:.38,baseStun:.28,airborneThreshold:.25,maxStun:1.4};
 export const GRAVITY=20;
 export const ATTACK_TIME={basic:.32,skill:.48,ult:.72};
 // Six-phase attack (spec 3.3): windup -> charge -> strike | impact (hit / launch frame) -> recovery -> idle.
 // windup+charge+strike = chargeDurations[tier] (so total time-to-hit is unchanged); impact+recovery = ATTACK_TIME[tier].
 export const PHASES={windup:{basic:.05,skill:.1,ult:.15},strike:{basic:.04,skill:.06,ult:.08},impact:{basic:.05,skill:.07,ult:.1}};
 // Quick rush (double-tap a direction): short, fast, grounded, no invulnerability (that is the dodge's job).
-export const RUSH={duration:.24,speed:13,cooldown:.7,doubleTap:.28,aiRate:.6,aiMinDist:4.5};
+export const RUSH={duration:.24,speed:13,cooldown:.7,doubleTap:.28,aiRate:.6,aiMinDist:4.5,accel:140,endDecel:100,recovery:.1};   // accel: ramp up to speed; endDecel/recovery: braking + short no-input recovery after the burst
 export const HIT_REACT={landTime:.32,powerRef:36,airborneSpin:.9};
-export const COMBO={window:.92,step2Stun:.42,step3Stun:.62,step3Launch:3.3,step3ChargeBonus:.12};
+// J1 -> J2 -> J3 per-step data (Phase 4). Index = comboStep-1.
+//   chargeBonus: extra windup seconds   stun/launch: extra hit stun / upward launch applied by the step (0 = skill's own)
+//   stepIn: advance on release so the chain keeps up with the knocked-back target
+//   cancels: what a LANDED hit of this step may cancel into (J = next J ignoring cooldown, K = skill, L = ultimate at full energy)
+export const COMBO_STEPS=Object.freeze([
+  Object.freeze({chargeBonus:0,   stun:0,   launch:0,   stepIn:0,   cancels:Object.freeze(['J','K'])}),
+  Object.freeze({chargeBonus:0,   stun:.42, launch:0,   stepIn:.75, cancels:Object.freeze(['J','K'])}),
+  Object.freeze({chargeBonus:.12, stun:.62, launch:3.3, stepIn:.75, cancels:Object.freeze(['K','L'])}),
+]);
+export const COMBO={window:.92,steps:COMBO_STEPS};
 export const SKILL_ENERGY_BONUS=8;
 // forward lunge while an attack animation plays: units/second (per character, per tier)
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};
 export const MATCH={roundTime:99,transition:2.8,maxRounds:3,winsNeeded:2};
 export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasic:2.45,meleeSkill:4.4,rangedMax:6,
-  jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,dodgeChance:.12,defendRange:5.5,defendRate:5,projectileWarn:4.5};
+  jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,defendRange:5.5,projectileWarn:4.5,
+  // PHASE 14 rhythm. reaction: the CPU notices a threat only after reactMin..reactMax seconds (a J's 0.22 s charge is too fast to react to,
+  // a K/L charge is not); it then rolls ONCE per threat (reactChance) and picks dodge (dodgePref) or guard.
+  reactMin:.18,reactMax:.32,reactChance:.55,dodgePref:.6,
+  recoverMin:.4,recoverMax:.8,            // after any attack the CPU backs off / circles for this long before pressing again
+  wallMargin:1.2,strafeSpeed:.35,strafeMin:.5,strafeMax:1.3,rangedPref:4.2,retreatSpeed:.5,
+  ultThinkMin:.4,ultThinkMax:1.1,ultReachMul:.8,   // delay between "energy full" and casting the ultimate
+  punishBoost:1.5,
+  chainChance:.55,cancelSkillChance:.3};   // after a confirmed J hit: chance to chain the next J / cancel into K (otherwise back off)                         // think cooldowns tick this much faster while the player is stunned / recovering
+
+// PHASE 2: a J/K/L press made while the fighter is busy (charging / on cooldown) is remembered this long (s), then discarded.
+export const INPUT_BUFFER=.18;
+
+// PHASE 3 hit stop (s): BOTH attacker and victim freeze their own timers (attack/stun/movement/AI) for this long on a damaging hit.
+// Cooldowns, energy, the round clock, UI and projectiles keep running. Chosen by the hit: ult > skill/launch > basic.
+export const HITSTOP={basic:.06,skill:.1,ult:.15};
+// PHASE 5: Active window (s) during which a melee/area hitbox is live after the strike frame. One attack = one hit at most.
+export const ACTIVE_TIME={basic:.08,skill:.1,ult:.12};
+
+// PHASE 7 knockback: a hit sets a push VELOCITY that decays linearly to 0 over `duration` (total distance = skill.knockback * defense / weight),
+// instead of teleporting the victim. Heavier fighters are pushed less. minSep keeps two grounded fighters from overlapping.
+export const KNOCK={duration:{basic:.16,skill:.26,ult:.4},minSep:.8,sepHeight:1.4};
+export const WEIGHT={mech:1.2,brawler:1.15,cleric:1,admiral:1,leopard:.95,nun:.9,yu:.9,mage:.85,bubble:.85};
+// PHASE 8 locomotion: velocity chases the input direction at `accel` (also turns it), decays at `friction` with no input; speed is capped by body.moveSpeed.
+export const MOVE={accel:42,friction:34,turnRate:16,moveEps:.3};
+
+// PHASE 12: brief slow-motion after the local player successfully dodges (real seconds, time scale while it lasts).
+export const SLOWMO={time:.35,scale:.35};

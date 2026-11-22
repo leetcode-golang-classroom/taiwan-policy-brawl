@@ -17,7 +17,9 @@ test('playerControl writes the player Intent (and never the CPU one)', ()=>{
 test('holding a direction moves the P1 entity in that direction, speed = moveSpeed', ()=>{
   const w=startedWorld();const t=w.world.get(w.player,'transform');const x0=t.x,z0=t.z;
   step(w.world,1,{KeyD:true});
-  assert.ok(Math.abs((t.x-x0)-w.world.get(w.player,'body').moveSpeed)<.2);assert.ok(Math.abs(t.z-z0)<1e-6);
+  const b=w.world.get(w.player,'body'),d=t.x-x0;
+  assert.ok(d<b.moveSpeed&&d>b.moveSpeed-.6,'accelerates, so slightly less than speed*time: '+d);   // ramp loss = v^2/(2*accel)
+  assert.ok(Math.abs(b.vx-b.moveSpeed)<1e-6,'reaches (and never exceeds) the maximum speed');assert.ok(Math.abs(t.z-z0)<1e-6);
   assert.ok(w.world.get(w.player,'body').moving);
 });
 test('movement is blocked while stunned and while charging', ()=>{
@@ -31,7 +33,8 @@ test('fighters never leave the arena', ()=>{
   const t=w.world.get(w.player,'transform');assert.ok(t.x>=-7&&t.z>=-5);
 });
 test('jump: leaves the ground, lands again, only when grounded', ()=>{
-  const w=startedWorld();const b=w.world.get(w.player,'body'),t=w.world.get(w.player,'transform');
+  const w=startedWorld();w.world.get(w.cpu,'status').stun=1e9;   // keep the CPU from hitting the jumper
+  const b=w.world.get(w.player,'body'),t=w.world.get(w.player,'transform');
   pressJump(w.world,'player');step(w.world,.1);assert.ok(!b.grounded&&t.y>0);
   const vy=b.vy;pressJump(w.world,'player');step(w.world,.02);assert.ok(b.vy<vy); // no double jump
   step(w.world,2);assert.ok(b.grounded&&t.y===0);
@@ -39,7 +42,8 @@ test('jump: leaves the ground, lands again, only when grounded', ()=>{
 test('dodge grants brief invulnerability, moves along the pressed direction and has a cooldown', ()=>{
   const w=startedWorld();const s=w.world.get(w.player,'status'),t=w.world.get(w.player,'transform');const z0=t.z;
   pressDodge(w.world,'player',{KeyS:true});step(w.world,.02);
-  assert.ok(s.dodgeInvuln>0&&t.z>z0+1.5);
+  assert.ok(s.dodgeInvuln>0&&t.z>z0&&t.z<z0+1.5,'sliding, not teleporting');step(w.world,.3);
+  assert.ok(t.z>z0+1.5,'covers the dodge distance');
   const d1=s.dodgeCooldown;pressDodge(w.world,'player');step(w.world,.02);assert.ok(s.dodgeCooldown<=d1);
   step(w.world,.5);assert.equal(s.dodgeInvuln,0);
 });
@@ -49,13 +53,12 @@ test('J starts a charge; the attack only lands after the charge time (wind-up)',
   assert.equal(started.length,1);assert.equal(hp(w,'cpu'),100);   // still charging
   step(w.world,.3);assert.equal(hp(w,'cpu'),91);                   // released: 9 damage
 });
-test('attack cooldown: a second press during cooldown is ignored', ()=>{
-  const w=startedWorld({p:'leopard'});arrange(w,{dist:1.7});
+test('attack cooldown: a second press after a WHIFF cannot cancel the recovery', ()=>{
+  const w=startedWorld({p:'leopard'});arrange(w,{dist:9});      // out of range: the first J misses
   pressAttack(w.world,'player','basic');step(w.world,.31);
-  w.world.get(w.cpu,'status').stun=1e9;
   pressAttack(w.world,'player','basic');step(w.world,.1);
   assert.equal(w.world.get(w.player,'attacker').charge,null);
-  step(w.world,.5);assert.equal(hp(w,'cpu'),91);
+  step(w.world,.5);assert.equal(hp(w,'cpu'),100);
 });
 test('ultimate needs 100% energy', ()=>{
   const w=startedWorld({p:'yu'});arrange(w,{dist:3});const nr=record(w.world,'ultNotReady');

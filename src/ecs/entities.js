@@ -1,4 +1,4 @@
-import {Transform,Body,Health,Energy,Fighter,Status,Attacker,Intent,Brain,Defense} from './components.js';
+import {Transform,Body,Health,Energy,Fighter,Status,Attacker,Intent,Brain,Defense,FState,Combo} from './components.js';
 
 export const SPAWN={player:{x:-3,z:1,rotY:0},cpu:{x:3,z:-1,rotY:Math.PI}};
 // Per-side energy tuning (player gets slightly faster energy than CPU, as in V3.8).
@@ -9,7 +9,7 @@ export function createFighter(world,{side,charId,moveSpeed=5,jumpPower=8.2,view=
   const s=SPAWN[side];
   const comps={
     fighter:Fighter({side,charId}),transform:Transform(s.x,s.z,s.rotY),body:Body({moveSpeed,jumpPower}),
-    health:Health(100),energy:Energy(ENERGY[side]),status:Status(),attacker:Attacker(),defense:Defense(),intent:Intent()
+    health:Health(100),energy:Energy(ENERGY[side]),status:Status(),attacker:Attacker(),defense:Defense(),intent:Intent(),fstate:FState(),combo:Combo()
   };
   if(side==='cpu')comps.brain=Brain();
   if(view)comps.view={obj:view};

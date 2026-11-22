@@ -9,6 +9,7 @@ import {initMessages} from './ui/messages.js';
 import {initDamageNumbers} from './ui/damageNumbers.js';
 import {initDefenseView} from './presentation/defenseView.js';
 import {initComboCounter} from './ui/comboCounter.js';
+import {SLOWMO} from './config.js';
 
 // Main loop: logic step (ECS systems) -> presentation (sync, animation, effects, HUD, camera) -> render.
 export function initGame(world,keys){
@@ -16,15 +17,19 @@ export function initGame(world,keys){
   const updateComboCounter=initComboCounter(world);
   const updateDefenseView=initDefenseView(world);
   const updateEventVfx=initVfxEvents(world);
-  // Hit-stop: a few frames of frozen logic on a solid hit give impacts weight (visual feel only; no game rule depends on it).
-  let hitStop=0;
-  world.events.on('hit',e=>{if(e.amount>0)hitStop=Math.max(hitStop,e.skill.tier==='ult'?.09:e.launched?.06:.035);});
+  // Successful dodge by the local player: a brief slow-motion (presentation + logic share the scaled dt; skipped online to keep peers in step).
+  let slow=0;
+  world.events.on('evade',e=>{if(!world.net&&world.get(e.targetId,'fighter').side==='player')slow=SLOWMO.time;});
   let last=0;
   function loop(now){
     requestAnimationFrame(loop);
-    const dt=Math.min((now-last)/1000,.04);last=now;
-    if(hitStop>0)hitStop-=dt;else stepWorld(world,dt,keys);
-    syncViews(world);updateAnimations(world,dt);updateVfx(dt);updateEventVfx();updateDefenseView(dt);
+    let dt=Math.min((now-last)/1000,.04);last=now;
+    if(slow>0){slow-=dt;dt*=SLOWMO.scale;}
+    // A slow frame is split into equal sub-steps of <= 1/60 s so low FPS cannot skip a hit window or tunnel a projectile;
+    // a fast display (60+ Hz) still runs exactly one step per frame, so motion stays smooth. Hit stop is per fighter inside the step.
+    const n=Math.max(1,Math.ceil(dt*60-1e-6));for(let i=0;i<n;i++)stepWorld(world,dt/n,keys);
+    const frozen=world.query('status').some(id=>world.get(id,'status').frozen);
+    syncViews(world);updateAnimations(world,dt);updateVfx(frozen?0:dt);updateEventVfx();updateDefenseView(dt);   // hit effects hold still with the fighters
     updateHud(world);updateComboCounter();updateCamera(world,dt);
     if(mount.clientWidth>0)renderer.render(scene,camera);   // battle screen hidden: skip drawing
   }
