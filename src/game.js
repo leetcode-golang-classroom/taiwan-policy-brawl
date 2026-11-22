@@ -25,7 +25,9 @@ export function initGame(world,keys){
     requestAnimationFrame(loop);
     let dt=Math.min((now-last)/1000,.04);last=now;
     if(slow>0){slow-=dt;dt*=SLOWMO.scale;}
-    stepWorld(world,dt,keys);   // hit stop is per fighter inside the logic step (status.hitStop); UI/clock/cooldowns keep running
+    // A slow frame is split into equal sub-steps of <= 1/60 s so low FPS cannot skip a hit window or tunnel a projectile;
+    // a fast display (60+ Hz) still runs exactly one step per frame, so motion stays smooth. Hit stop is per fighter inside the step.
+    const n=Math.max(1,Math.ceil(dt*60-1e-6));for(let i=0;i<n;i++)stepWorld(world,dt/n,keys);
     const frozen=world.query('status').some(id=>world.get(id,'status').frozen);
     syncViews(world);updateAnimations(world,dt);updateVfx(frozen?0:dt);updateEventVfx();updateDefenseView(dt);   // hit effects hold still with the fighters
     updateHud(world);updateComboCounter();updateCamera(world,dt);

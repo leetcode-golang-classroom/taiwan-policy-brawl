@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {burst,throwProjectile,addFx} from '../vfx/VFXSystem.js';
+import {burst,delay,throwProjectile,addFx} from '../vfx/VFXSystem.js';
 
 export function skillMech({fighter,target,forward,origin,center,right,projectile,mesh},type){
     if(type==='basic'){
@@ -21,7 +21,7 @@ export function skillMech({fighter,target,forward,origin,center,right,projectile
         const beam=mesh(new THREE.CylinderGeometry(.08,.08,len,8),i%2?0x9bff6f:0x76d64b,from.clone().lerp(aim,.5),.2,'fade');
         beam.quaternion.setFromUnitVectors(Y,aim.clone().sub(from).normalize());
         mesh(new THREE.SphereGeometry(.18,8,6),0xe9ffd8,from.clone(),.18,'grow');};
-      for(let r=0;r<3;r++)for(let i=0;i<7;i++)setTimeout(()=>{fire(i);if(i===6)burst(aim,0x9bff6f,16);},120+r*260+i*30);   // repeated sweeps of seven beams
+      for(let r=0;r<3;r++)for(let i=0;i<7;i++)delay(()=>{fire(i);if(i===6)burst(aim,0x9bff6f,16);},120+r*260+i*30);   // repeated sweeps of seven beams
       burst(aim,0x74e78b,20);
     } else if(type==='skill'){
       // 交通捷運四通八達: metro line segments (red/blue/green/orange/brown) rush in from every direction and blast the opponent away.

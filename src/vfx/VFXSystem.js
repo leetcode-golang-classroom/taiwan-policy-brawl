@@ -1,10 +1,25 @@
 import * as THREE from 'three';
 import {scene} from '../scene.js';
 import {mat} from '../materials.js';
+// Particles are POOLED: one shared geometry, one material per colour, meshes recycled instead of allocated per burst (no per-frame GC churn).
 export const particles=[];
+const PARTICLE_GEO=new THREE.IcosahedronGeometry(1,0),PARTICLE_MATS=new Map(),pool=[];
+export const MAX_PARTICLES=450;
+const particleMat=color=>{let m=PARTICLE_MATS.get(color);if(!m){m=mat(color,.3);PARTICLE_MATS.set(color,m);}return m;};
 export function burst(position,color=0xffc45c,count=16){
-  for(let i=0;i<count;i++){const p=new THREE.Mesh(new THREE.IcosahedronGeometry(.055+Math.random()*.06,0),mat(color,.3));p.position.copy(position);scene.add(p);particles.push({mesh:p,vel:new THREE.Vector3((Math.random()-.5)*.22,Math.random()*.22,(Math.random()-.5)*.22),life:.55});}
+  const m=particleMat(color);
+  for(let i=0;i<count&&particles.length<MAX_PARTICLES;i++){
+    const p=pool.pop()||new THREE.Mesh(PARTICLE_GEO,m);
+    p.material=m;p.visible=true;p.position.copy(position);p.scale.setScalar(.055+Math.random()*.06);
+    if(!p.parent)scene.add(p);
+    particles.push({mesh:p,vel:new THREE.Vector3((Math.random()-.5)*.22,Math.random()*.22,(Math.random()-.5)*.22),life:.55});
+  }
 }
+// Visual scheduler: setTimeout-compatible (fn, ms) but driven by updateVfx(dt), so scheduled effects freeze with hit stop,
+// follow slow-motion and never fire on a different clock than the fight.
+const timers=[];
+export function delay(fn,ms){timers.push({t:ms/1000,fn});}
+export const pendingDelays=()=>timers.length;
 export const combatFx=[];
 export function addFx(mesh,life,kind='fade'){
   scene.add(mesh);combatFx.push({mesh,life,max:life,kind,startY:mesh.position.y});return mesh;
@@ -37,7 +52,8 @@ export function hitBurst(target,type){
 }
 export function updateVfx(dt){
   for(let i=combatFx.length-1;i>=0;i--){const fx=combatFx[i];fx.life-=dt;const t=1-Math.max(0,fx.life)/fx.max;if(fx.kind==='ring'||fx.kind==='grow'){fx.mesh.scale.setScalar(1+t*(fx.kind==='ring'?2.2:1.35));fx.mesh.material.opacity=Math.max(0,fx.life/fx.max)*.9;}else if(fx.kind==='drop'){fx.mesh.position.y=fx.startY-4.5*t;fx.mesh.rotation.x+=dt*.18;fx.mesh.material.opacity=Math.max(0,fx.life/fx.max)*.98;}else if(fx.kind==='projectile'){fx.velocity.y+=((fx.gravity||0)*dt);fx.mesh.position.addScaledVector(fx.velocity,dt);fx.mesh.rotation.y+=dt*fx.spin;fx.mesh.rotation.x+=dt*fx.spin*.35;fx.mesh.material.opacity=Math.max(0,fx.life/fx.max)*.98;}else{fx.mesh.material.opacity=Math.max(0,fx.life/fx.max)*.95;}if(fx.life<=0){scene.remove(fx.mesh);fx.mesh.geometry.dispose();fx.mesh.material.dispose();combatFx.splice(i,1);}}
-  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.mesh.position.addScaledVector(p.vel,dt*8);p.mesh.scale.multiplyScalar(.97);if(p.life<=0){scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();particles.splice(i,1);}}
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.mesh.position.addScaledVector(p.vel,dt*8);p.mesh.scale.multiplyScalar(.97);if(p.life<=0){p.mesh.visible=false;pool.push(p.mesh);particles.splice(i,1);}}
+  if(timers.length){for(const x of timers)x.t-=dt;const due=timers.filter(x=>x.t<=0);if(due.length){for(let i=timers.length-1;i>=0;i--)if(timers[i].t<=0)timers.splice(i,1);for(const x of due)x.fn();}}   // callbacks may schedule more
 }
 // Make bound visuals of a logical projectile fade out quickly (called when it hits).
 export function freezeFx(meshes){

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {burst,throwProjectile} from '../vfx/VFXSystem.js';
+import {burst,delay,throwProjectile} from '../vfx/VFXSystem.js';
 import {scene} from '../scene.js';
 import {wordSprite} from './mage.js';
 
@@ -96,7 +96,7 @@ const both2=f=>[-1,1].forEach(f);
 export function place(g,pos,faceTo){g.position.copy(pos);g.lookAt(faceTo.x,pos.y,faceTo.z);scene.add(g);}
 export function dispose(g){scene.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){o.material.map?.dispose?.();o.material.dispose();}});}
 export const tween=(dur,fn,done)=>{const t0=performance.now();const f=()=>{const t=Math.min(1,(performance.now()-t0)/dur);fn(t);if(t<1)requestAnimationFrame(f);else done?.();};requestAnimationFrame(f);};
-export const later=(ms,fn)=>setTimeout(fn,ms);
+export const later=(ms,fn)=>delay(fn,ms);
 const pop=(txt,pos,color='#ffffff',size=.8)=>{const sp=wordSprite(txt,color,size);sp.position.copy(pos);scene.add(sp);let life=.6;const t0=performance.now();const f=()=>{const t=(performance.now()-t0)/1000/life;if(t>=1){scene.remove(sp);sp.material.dispose();return;}sp.position.y+=.012;sp.material.opacity=1-t;requestAnimationFrame(f);};requestAnimationFrame(f);};
 
 // move a figure toward `aim` (stopping `gap` short), swing, come back; calls `hit` at the moment of contact
@@ -141,7 +141,7 @@ export function skillBubble({fighter,target,forward,origin,center,right,projecti
     const shoot=(g)=>{
       const p=g.position.clone().add(new THREE.Vector3(0,1.9,0)),d=aim.clone().sub(p),dist=d.length();d.normalize();
       g.userData.parts.arms[1].rotation.x=-1.5;
-      box(.1,.1,.4,0x222222,.34,1.1,.3,g);setTimeout(()=>{const gm=g.children.pop();gm.geometry.dispose();gm.material.dispose();},260);
+      box(.1,.1,.4,0x222222,.34,1.1,.3,g);delay(()=>{const gm=g.children.pop();gm.geometry.dispose();gm.material.dispose();},260);
       const mf=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),new THREE.MeshBasicMaterial({color:0xfff0a0,transparent:true,opacity:.95}));mf.position.copy(p).addScaledVector(d,.7);throwProjectile(mf,new THREE.Vector3(),.12,0);
       const tr=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.9),new THREE.MeshBasicMaterial({color:0xfff7b0,transparent:true,opacity:.98,depthWrite:false}));tr.position.copy(p);tr.rotation.y=Math.atan2(d.x,d.z);tr.rotation.x=-Math.asin(d.y);throwProjectile(tr,d.clone().multiplyScalar(dist/.16),.16,0);
       later(160,()=>{burst(aim,0xffe08a,5);});
