@@ -54,7 +54,8 @@ export function aiControl(world,dt){
   }
 
   // ---- positioning: approach / keep distance / circle (never just stand there, never chase forever) --------
-  const recovering=now<brain.recoverUntil;
+  if(!a.charge&&a.attackTime<=0)brain.chain=false;
+  const recovering=now<brain.recoverUntil&&!brain.chain;   // a chosen combo follow-up is not a back-off
   // circle the opponent; flip direction every strafeMin..strafeMax s, and whenever the way ahead runs into a wall
   const circle=()=>{
     brain.mode='strafe';
@@ -90,6 +91,14 @@ export function aiControl(world,dt){
   const tick=dt*(punish?AI.punishBoost:1);
   brain.attackCd-=tick;brain.skillCd-=tick;
   if(busy||actionLocked(world,id))return;
+  // combo follow-up: once per confirmed hit the CPU rolls to chain J->J or cancel into K; otherwise it backs off. Whiffs never chain.
+  if(!a.hitConfirmed)brain.rolled=false;
+  else if(!brain.rolled&&!a.charge&&a.attackTime>0){
+    brain.rolled=true;
+    if(a.attackStyle==='basic'&&a.comboStep>=1&&a.comboStep<3&&dist<basicReach&&world.rng()<AI.chainChance){brain.chain=true;it.attack='basic';return;}
+    if(a.attackStyle==='basic'&&a.cooldowns.skill<=0&&brain.skillCd<=0&&dist<skillReach&&world.rng()<AI.cancelSkillChance){brain.chain=false;brain.skillCd=3.2+world.rng()*1.2;brain.recoverUntil=now+between(world,AI.recoverMin,AI.recoverMax)+.2;it.attack='skill';return;}
+    brain.chain=false;
+  }
   if(recovering)return;                 // attack -> recovery: no new attack until the back-off is over
   if(incoming&&!brain.reacted)return;   // do not blindly attack into the player's strike frame while still reading it
   // ultimate: energy full AND the real cooldown ready; a short think delay so it is not an instant reflex

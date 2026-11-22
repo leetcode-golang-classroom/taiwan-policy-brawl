@@ -111,7 +111,7 @@ test('a CPU vs idle P1 duel has rhythm: it attacks regularly, not every frame, a
     if(prev&&Math.hypot(t.x-prev.x,t.z-prev.z)<1e-5)still++;else still=0;maxStill=Math.max(maxStill,still);prev={x:t.x,z:t.z};
   }
   assert.ok(starts.length>=4,'attacks regularly: '+starts.length);assert.ok(starts.length<=20*2,'not spamming');
-  for(let i=1;i<starts.length;i++)assert.ok(starts[i]-starts[i-1]>=.4,'a gap between attacks');
+  for(let i=1;i<starts.length;i++)assert.ok(starts[i]-starts[i-1]>=.25,'a gap between attacks (chained J on a confirmed hit is the shortest)');
   assert.ok(maxStill<60*2,'never idle for 2+ seconds');
 });
 test('a CPU circling the player never grinds against the arena wall', ()=>{
@@ -126,4 +126,16 @@ test('a melee CPU closes in until its basic is really in reach (so it can attack
   w.world.get(w.player,'status').dodgeCooldown=1e9;w.world.get(w.player,'defense').cooldown=1e9;
   for(let i=0;i<60*8;i++){w.world.get(w.player,'health').hp=100;step(w.world,1/60);}
   assert.ok(hits.some(h=>h.attackerId===w.cpu&&h.amount>0),'the CPU lands hits');
+});
+
+test('after a confirmed J hit the CPU sometimes chains the next J (never on a whiff), and still backs off otherwise',()=>{
+  let chains=0,hits=0,maxStep=0;
+  for(let seed=1;seed<=8;seed++){
+    const w=startedWorld({p:'mech',c:'cleric',rng:seeded(seed)});place(w,2);
+    const comboHits=record(w.world,'comboHit');
+    w.world.get(w.player,'status').stun=1e9;   // dummy target
+    step(w.world,20);
+    for(const e of comboHits){hits++;maxStep=Math.max(maxStep,e.step);if(e.step>=2)chains++;}
+  }
+  assert.ok(hits>0);assert.ok(chains>0,`no chained J in ${hits} hits`);assert.ok(maxStep<=3);
 });

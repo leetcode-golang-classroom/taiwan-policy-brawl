@@ -33,7 +33,8 @@ test('fighters never leave the arena', ()=>{
   const t=w.world.get(w.player,'transform');assert.ok(t.x>=-7&&t.z>=-5);
 });
 test('jump: leaves the ground, lands again, only when grounded', ()=>{
-  const w=startedWorld();const b=w.world.get(w.player,'body'),t=w.world.get(w.player,'transform');
+  const w=startedWorld();w.world.get(w.cpu,'status').stun=1e9;   // keep the CPU from hitting the jumper
+  const b=w.world.get(w.player,'body'),t=w.world.get(w.player,'transform');
   pressJump(w.world,'player');step(w.world,.1);assert.ok(!b.grounded&&t.y>0);
   const vy=b.vy;pressJump(w.world,'player');step(w.world,.02);assert.ok(b.vy<vy); // no double jump
   step(w.world,2);assert.ok(b.grounded&&t.y===0);

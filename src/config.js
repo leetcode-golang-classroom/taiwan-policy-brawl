@@ -75,7 +75,8 @@ export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasi
   recoverMin:.4,recoverMax:.8,            // after any attack the CPU backs off / circles for this long before pressing again
   wallMargin:1.2,strafeSpeed:.35,strafeMin:.5,strafeMax:1.3,rangedPref:4.2,retreatSpeed:.5,
   ultThinkMin:.4,ultThinkMax:1.1,ultReachMul:.8,   // delay between "energy full" and casting the ultimate
-  punishBoost:1.5};                         // think cooldowns tick this much faster while the player is stunned / recovering
+  punishBoost:1.5,
+  chainChance:.55,cancelSkillChance:.3};   // after a confirmed J hit: chance to chain the next J / cancel into K (otherwise back off)                         // think cooldowns tick this much faster while the player is stunned / recovering
 
 // PHASE 2: a J/K/L press made while the fighter is busy (charging / on cooldown) is remembered this long (s), then discarded.
 export const INPUT_BUFFER=.18;
