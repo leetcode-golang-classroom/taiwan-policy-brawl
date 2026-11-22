@@ -1,4 +1,4 @@
-import {DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
+import {COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {attack,tickActiveHitbox} from './combatSystem.js';
 
@@ -41,11 +41,12 @@ export function canStart(a,tier,locked=false){
   if(a.charge||locked)return false;
   const busy=a.attackTime>0;
   const cancelWindow=busy&&a.hitConfirmed;   // opens as soon as the hit connects (hit stop already delays it); a whiff never opens it
-  if(tier==='basic'&&cancelWindow&&a.comboStep>0&&a.comboStep<3)return true;   // J -> J on hit ignores the basic cooldown
+  const cancels=COMBO_STEPS[a.comboStep-1]?.cancels||[];
+  if(tier==='basic'&&cancelWindow&&cancels.includes('J'))return true;   // J -> J on hit ignores the basic cooldown
   if(a.cooldowns[tier]>0)return false;
   if(!busy)return true;
-  if(tier==='ult')return cancelWindow&&a.attackStyle==='basic'&&a.comboStep===3;   // special condition: a landed J3 may cancel into a full-energy L (energy is checked by the caller)
-  return cancelWindow&&tier==='skill';
+  if(tier==='ult')return cancelWindow&&a.attackStyle==='basic'&&cancels.includes('L');   // special condition: a landed J3 may cancel into a full-energy L (energy is checked by the caller)
+  return cancelWindow&&tier==='skill'&&(a.attackStyle!=='basic'||cancels.includes('K'));
 }
 // Six phases: windup -> charge -> strike (arm thrust, still pending) -> impact (hit/launch frame) -> recovery -> idle.
 // The hit itself resolves when `strike` ends (see release), i.e. at the start of `impact`.
@@ -69,7 +70,7 @@ function setPhase(world,id,a,phase){
 function startCharge(world,id,tier){
   const a=world.get(id,'attacker');
   if(tier==='basic'){a.comboStep=a.comboWindow>0?a.comboStep%3+1:1;}
-  const duration=chargeDurations[tier]+(tier==='basic'&&a.comboStep===3?COMBO.step3ChargeBonus:0);
+  const duration=chargeDurations[tier]+(tier==='basic'?COMBO_STEPS[a.comboStep-1].chargeBonus:0);
   a.charge={tier,time:0,duration,comboStep:tier==='basic'?a.comboStep:0};
   a.attackTime=0;a.hitConfirmed=false;a.active=null;
   world.events.emit('chargeStart',{id,tier});
@@ -93,7 +94,8 @@ function release(world,id){
 function comboHit(world,id,step){
   const a=world.get(id,'attacker'),tid=opponentOf(world,id),st=world.get(tid,'status'),body=world.get(tid,'body');
   a.comboHits++;
-  if(step===2)st.stun=COMBO.step2Stun;
-  if(step===3){st.stun=COMBO.step3Stun;body.vy=Math.max(body.vy,COMBO.step3Launch);body.grounded=false;}
+  const d=COMBO_STEPS[step-1];
+  if(d.stun)st.stun=d.stun;
+  if(d.launch){body.vy=Math.max(body.vy,d.launch);body.grounded=false;}
   world.events.emit('comboHit',{attackerId:id,targetId:tid,step});
 }

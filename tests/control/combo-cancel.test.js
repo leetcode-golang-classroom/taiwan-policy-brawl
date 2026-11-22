@@ -89,3 +89,12 @@ test('integration: full energy + J3 hit lets a buffered L fire; without full ene
     assert.equal(ult>0,full,`energy full=${full}`);
   }
 });
+
+test('COMBO_STEPS is a per-step data table driving cancels, stun and launch',async()=>{
+  const {COMBO_STEPS}=await import('../../src/config.js');
+  assert.equal(COMBO_STEPS.length,3);
+  assert.ok(COMBO_STEPS[0].cancels.includes('J')&&!COMBO_STEPS[0].cancels.includes('L'));
+  assert.ok(!COMBO_STEPS[2].cancels.includes('J')&&COMBO_STEPS[2].cancels.includes('L'));
+  assert.ok(COMBO_STEPS[2].launch>0&&COMBO_STEPS[2].stun>COMBO_STEPS[1].stun);
+  assert.ok(Object.isFrozen(COMBO_STEPS[0]));
+});
