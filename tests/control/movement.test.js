@@ -19,8 +19,9 @@ test('movement is described relative to the opponent: forward / back / strafe / 
   step(w.world,.1,{KeyA:true});assert.ok(near(b.moveFwd,-1));                       // backing away
   step(w.world,.1,{KeyW:true});assert.ok(Math.abs(b.moveFwd)<.2&&b.moveSide<-.95);   // strafe left (facing re-aims a little as we move)
   step(w.world,.1,{KeyS:true});assert.ok(b.moveSide>.95);                       // strafe right
-  step(w.world,.1,{KeyD:true,KeyW:true});assert.ok(b.moveFwd>.6&&b.moveSide<-.6);   // diagonal = both
-  step(w.world,.1,{});assert.equal(b.moving,false);assert.equal(b.moveFwd,0);
+  step(w.world,.1,{KeyD:true,KeyW:true});assert.ok(b.moveFwd>.5&&b.moveSide<-.6);   // diagonal = both
+  step(w.world,.05,{});assert.equal(b.moving,true,'releasing the keys coasts to a stop instead of freezing instantly');
+  step(w.world,.4,{});assert.equal(b.moving,false);assert.equal(b.moveFwd,0);
 });
 test('double-tapping a direction key triggers a rush; a slow second tap does not', ()=>{
   const w=startedWorld();const it=w.world.get(w.player,'intent');
@@ -104,4 +105,30 @@ test('launched target gets a landing reaction (hard land event + landTimer + bri
 test('a normal jump landing is not a hard landing', ()=>{
   const w=startedWorld();const lands=record(w.world,'land');w.world.get(w.player,'intent').jump=true;step(w.world,1.5);
   assert.equal(lands.length,1);assert.equal(lands[0].hard,false);assert.equal(w.world.get(w.player,'status').landTimer,0);
+});
+test('inertia: speed ramps up, never exceeds the maximum, and decays after release (no instant stop)', ()=>{
+  const w=startedWorld();arrange(w,{dist:9});const b=w.world.get(w.player,'body');
+  step(w.world,1/60,{KeyD:true});assert.ok(b.vx>0&&b.vx<b.moveSpeed*.5,'first frame is not full speed');
+  step(w.world,.5,{KeyD:true});assert.ok(near(b.vx,b.moveSpeed));
+  step(w.world,1/60,{});assert.ok(b.vx>0&&b.vx<b.moveSpeed,'coasting');
+  const x=w.world.get(w.player,'transform').x;step(w.world,.5,{});assert.ok(w.world.get(w.player,'transform').x>x-1e-9);assert.equal(b.vx,0);
+});
+test('reversing direction takes time (turns through zero), it does not teleport the velocity', ()=>{
+  const w=startedWorld();arrange(w,{dist:9});const b=w.world.get(w.player,'body');
+  step(w.world,.5,{KeyD:true});step(w.world,.03,{KeyA:true});
+  assert.ok(b.vx>0,'still moving forward right after pressing the opposite key');
+  step(w.world,.5,{KeyA:true});assert.ok(near(b.vx,-b.moveSpeed));
+});
+test('facing turns toward the opponent at a limited rate', ()=>{
+  const w=startedWorld();arrange(w,{dist:5});const t=w.world.get(w.player,'transform');
+  t.rotY=-Math.PI/2;step(w.world,1/60,{});
+  assert.ok(Math.abs(t.rotY-(-Math.PI/2))<.3,'one frame turns only a fraction of 180 degrees');
+  step(w.world,.5,{});assert.ok(near(t.rotY,Math.PI/2,1e-3)||near(t.rotY,-3*Math.PI/2,1e-3));
+});
+test('rush: ramps up, then brakes during a short recovery (no input) before walking resumes', ()=>{
+  const w=startedWorld();arrange(w,{dist:9});const b=w.world.get(w.player,'body'),s=w.world.get(w.player,'status');
+  w.world.get(w.player,'intent').rush={x:1,z:0};step(w.world,1/60);
+  assert.ok(b.vx>0&&b.vx<RUSH.speed,'accelerating, not instantly at rush speed');
+  step(w.world,RUSH.duration+.02,{KeyD:true});assert.ok(s.rushRecover>0,'recovery after the burst');
+  step(w.world,.05,{KeyD:true});assert.ok(b.vx<RUSH.speed,'braking while the key is held: recovery ignores input');
 });

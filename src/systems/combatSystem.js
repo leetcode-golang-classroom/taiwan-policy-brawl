@@ -1,4 +1,4 @@
-import {AIRBORNE_BONUS,ARENA,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
+import {AIRBORNE_BONUS,ARENA,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
 import {normalize,clamp,horizontalLength} from '../ecs/math.js';
 import {Dash} from '../ecs/components.js';
 import {opponentOf} from '../ecs/entities.js';
@@ -44,7 +44,10 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
   if(horizontalLength(d)<.001)d=forwardOf(at);
   d=normalize(d);
   const kb=def.knockbackMult,body=world.get(targetId,'body');
-  tt.x+=d.x*skill.knockback*kb;tt.z+=d.z*skill.knockback*kb;clampToArena(tt);
+  // PHASE 7: push velocity (decays to 0 over `dur`); applied by physicsSystem, so it respects hit stop, walls and the other fighter.
+  const push=skill.knockback*kb/(WEIGHT[world.get(targetId,'fighter').charId]||1),dur=KNOCK.duration[skill.tier]||KNOCK.duration.basic;
+  if(push>.001){st.kbVx=d.x*2*push/dur;st.kbVz=d.z*2*push/dur;st.kbTime=st.kbDur=dur;}
+  body.vx=0;body.vz=0;   // a hit interrupts locomotion
   const launched=skill.launch>0&&!def.reduced&&kb>0;
   if(dealt>0){st.hitDir={x:d.x,z:d.z};st.hitPower=Math.min(1,dealt/HIT_REACT.powerRef);st.rushTimer=0;}   // reaction data: push direction + strength
   if(launched){body.vy=Math.max(body.vy,skill.launch*kb);body.grounded=false;st.airHit=true;st.stun=Math.max(st.stun,skill.stun);}

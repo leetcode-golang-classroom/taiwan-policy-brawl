@@ -10,7 +10,7 @@ export function statusSystem(world,dt){
     if(s.hitStop>0){frozen.add(id);s.hitStop=Math.max(0,s.hitStop-dt);continue;}   // frozen: action/reaction timers hold still
     s.dodgeTimer=Math.max(0,s.dodgeTimer-dt);s.dodgeInvuln=Math.max(0,s.dodgeInvuln-dt);
     s.hitReact=Math.max(0,s.hitReact-dt);s.stun=Math.max(0,s.stun-dt);
-    s.rushTimer=Math.max(0,s.rushTimer-dt);s.landTimer=Math.max(0,s.landTimer-dt);s.reflect=Math.max(0,s.reflect-dt);
+    s.rushTimer=Math.max(0,s.rushTimer-dt);s.rushRecover=Math.max(0,s.rushRecover-dt);s.landTimer=Math.max(0,s.landTimer-dt);s.reflect=Math.max(0,s.reflect-dt);
   }
   for(const id of world.query('attacker')){
     const a=world.get(id,'attacker');

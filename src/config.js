@@ -56,7 +56,7 @@ export const ATTACK_TIME={basic:.32,skill:.48,ult:.72};
 // windup+charge+strike = chargeDurations[tier] (so total time-to-hit is unchanged); impact+recovery = ATTACK_TIME[tier].
 export const PHASES={windup:{basic:.05,skill:.1,ult:.15},strike:{basic:.04,skill:.06,ult:.08},impact:{basic:.05,skill:.07,ult:.1}};
 // Quick rush (double-tap a direction): short, fast, grounded, no invulnerability (that is the dodge's job).
-export const RUSH={duration:.24,speed:13,cooldown:.7,doubleTap:.28,aiRate:.6,aiMinDist:4.5};
+export const RUSH={duration:.24,speed:13,cooldown:.7,doubleTap:.28,aiRate:.6,aiMinDist:4.5,accel:140,endDecel:100,recovery:.1};   // accel: ramp up to speed; endDecel/recovery: braking + short no-input recovery after the burst
 export const HIT_REACT={landTime:.32,powerRef:36,airborneSpin:.9};
 export const COMBO={window:.92,step2Stun:.42,step3Stun:.62,step3Launch:3.3,step3ChargeBonus:.12};
 export const SKILL_ENERGY_BONUS=8;
@@ -74,3 +74,10 @@ export const INPUT_BUFFER=.18;
 export const HITSTOP={basic:.06,skill:.1,ult:.15};
 // PHASE 5: Active window (s) during which a melee/area hitbox is live after the strike frame. One attack = one hit at most.
 export const ACTIVE_TIME={basic:.08,skill:.1,ult:.12};
+
+// PHASE 7 knockback: a hit sets a push VELOCITY that decays linearly to 0 over `duration` (total distance = skill.knockback * defense / weight),
+// instead of teleporting the victim. Heavier fighters are pushed less. minSep keeps two grounded fighters from overlapping.
+export const KNOCK={duration:{basic:.16,skill:.26,ult:.4},minSep:.8,sepHeight:1.4};
+export const WEIGHT={mech:1.2,brawler:1.15,cleric:1,admiral:1,leopard:.95,nun:.9,yu:.9,mage:.85,bubble:.85};
+// PHASE 8 locomotion: velocity chases the input direction at `accel` (also turns it), decays at `friction` with no input; speed is capped by body.moveSpeed.
+export const MOVE={accel:42,friction:34,turnRate:16,moveEps:.3};

@@ -45,7 +45,7 @@ const ATTACK_STATE={
 export function deriveState(world,id){
   const st=world.get(id,'status'),a=world.get(id,'attacker'),b=world.get(id,'body'),m=world.match;
   if(m.ended){const me=world.get(id,'health');if(me.hp>0)return 'Victory';}
-  if(st.stun>0)return b.grounded?'HitStun':'Airborne';   // Knockback is declared but not derived until the knockback phase
+  if(st.stun>0)return !b.grounded?'Airborne':st.kbTime>0?'Knockback':'HitStun';
   if(!b.grounded&&!a.charge&&a.attackTime<=0&&a.phase==='idle')return 'Jump';
   if(st.dodgeTimer>0)return 'Dodge';
   if(world.get(id,'defense')?.active)return 'Defense';

@@ -17,7 +17,9 @@ test('playerControl writes the player Intent (and never the CPU one)', ()=>{
 test('holding a direction moves the P1 entity in that direction, speed = moveSpeed', ()=>{
   const w=startedWorld();const t=w.world.get(w.player,'transform');const x0=t.x,z0=t.z;
   step(w.world,1,{KeyD:true});
-  assert.ok(Math.abs((t.x-x0)-w.world.get(w.player,'body').moveSpeed)<.2);assert.ok(Math.abs(t.z-z0)<1e-6);
+  const b=w.world.get(w.player,'body'),d=t.x-x0;
+  assert.ok(d<b.moveSpeed&&d>b.moveSpeed-.6,'accelerates, so slightly less than speed*time: '+d);   // ramp loss = v^2/(2*accel)
+  assert.ok(Math.abs(b.vx-b.moveSpeed)<1e-6,'reaches (and never exceeds) the maximum speed');assert.ok(Math.abs(t.z-z0)<1e-6);
   assert.ok(w.world.get(w.player,'body').moving);
 });
 test('movement is blocked while stunned and while charging', ()=>{
