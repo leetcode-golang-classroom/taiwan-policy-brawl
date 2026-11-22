@@ -68,7 +68,14 @@ export const SKILL_ENERGY_BONUS=8;
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};
 export const MATCH={roundTime:99,transition:2.8,maxRounds:3,winsNeeded:2};
 export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasic:2.45,meleeSkill:4.4,rangedMax:6,
-  jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,dodgeChance:.12,defendRange:5.5,defendRate:5,projectileWarn:4.5};
+  jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,defendRange:5.5,projectileWarn:4.5,
+  // PHASE 14 rhythm. reaction: the CPU notices a threat only after reactMin..reactMax seconds (a J's 0.22 s charge is too fast to react to,
+  // a K/L charge is not); it then rolls ONCE per threat (reactChance) and picks dodge (dodgePref) or guard.
+  reactMin:.18,reactMax:.32,reactChance:.55,dodgePref:.6,
+  recoverMin:.4,recoverMax:.8,            // after any attack the CPU backs off / circles for this long before pressing again
+  wallMargin:1.2,strafeSpeed:.35,strafeMin:.5,strafeMax:1.3,rangedPref:4.2,retreatSpeed:.5,
+  ultThinkMin:.4,ultThinkMax:1.1,ultReachMul:.8,   // delay between "energy full" and casting the ultimate
+  punishBoost:1.5};                         // think cooldowns tick this much faster while the player is stunned / recovering
 
 // PHASE 2: a J/K/L press made while the fighter is busy (charging / on cooldown) is remembered this long (s), then discarded.
 export const INPUT_BUFFER=.18;

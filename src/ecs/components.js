@@ -13,7 +13,8 @@ export const Combo=()=>({hits:0,damage:0,targetId:null,lastHit:-9});
 // Control output. Control systems (player input / AI) write it, gameplay systems consume it.
 export const Defense=()=>({active:false,timer:0,cooldown:0,layers:0,startup:0,recovery:0});
 export const Intent=()=>({moveX:0,moveZ:0,attack:null,jump:false,dodge:false,dodgeDir:null,defend:false,rush:null,lastTap:{code:null,time:-9}});
-export const Brain=()=>({attackCd:1.2,skillCd:3.5,jumpCd:2.8});
+// CPU decision state (PHASE 14): think cooldowns, the threat it is reacting to (with its reaction deadline), positioning mode.
+export const Brain=()=>({attackCd:1.2,skillCd:3.5,jumpCd:2.8,threat:false,reactAt:0,reacted:false,mode:'approach',recoverUntil:0,strafeDir:1,strafeUntil:0,ultAt:null});
 export const Dash=({targetId,skill,remaining,onHit})=>({targetId,skill,remaining,onHit});
 export const Projectile=({ownerId,targetId,skill,pos,dir,onHit,wait=0,knockAngle=0,stage=0})=>({ownerId,targetId,skill,pos:{...pos},dir:{...dir},onHit,travelled:0,evaded:false,wait,knockAngle,stage});
 // Singleton match state (stored on world.match)
