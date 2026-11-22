@@ -1,0 +1,32 @@
+// Pose cross-fade (Phase 9). The procedural animator writes an absolute target pose every frame, so a state change
+// (walk -> idle, idle -> windup, hit -> recover) would snap limbs from one pose to the next. This low-pass filter keeps
+// the previous *displayed* pose and eases it toward the new target: exponential, frame-rate independent, and fast in
+// combat states so attack poses still land on their Active frame. Pure (no three import) so it is unit-testable.
+export const BLEND={idle:16,move:20,combat:60,reaction:45,dodge:30,snapAngle:2.6};   // 1/s rates; snapAngle = jump so large it is a teleport, not a pose change
+
+export function blendRate(u){
+  if(u.hitReact>0||u.stun>0||u.landTimer>0||(!u.grounded&&u.airHit))return BLEND.reaction;
+  if(u.dodgeTimer>0)return BLEND.dodge;
+  if(u.phase&&u.phase!=='idle')return BLEND.combat;
+  if(u.guarding)return BLEND.combat;
+  return u.moving?BLEND.move:BLEND.idle;
+}
+const AX=['x','y','z'];
+function nodes(u){return[u.body,u.head,...(u.limbs||[])];}
+
+export function blendPose(u,dt,store){
+  const k=1-Math.exp(-blendRate(u)*dt),list=nodes(u);
+  if(!store.nodes||store.nodes.length!==list.length)store.nodes=list.map(()=>null);
+  list.forEach((n,i)=>{
+    if(!n)return;
+    const tgt={r:AX.map(a=>n.rotation[a]),p:AX.map(a=>n.position[a])},prev=store.nodes[i];
+    if(!prev){store.nodes[i]=tgt;return;}
+    // a respawn / round reset or a flip larger than snapAngle is not blended
+    const big=tgt.r.some((v,j)=>Math.abs(v-prev.r[j])>BLEND.snapAngle);
+    for(let j=0;j<3;j++){
+      if(!big){prev.r[j]+=(tgt.r[j]-prev.r[j])*k;prev.p[j]+=(tgt.p[j]-prev.p[j])*k;}
+      else{prev.r[j]=tgt.r[j];prev.p[j]=tgt.p[j];}
+      n.rotation[AX[j]]=prev.r[j];n.position[AX[j]]=prev.p[j];
+    }
+  });
+}

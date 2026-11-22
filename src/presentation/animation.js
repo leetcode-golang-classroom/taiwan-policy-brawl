@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {blendPose} from './poseBlend.js';
 import {updateRealModel} from '../character/CharacterController.js';
 import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT} from '../config.js';
 
@@ -9,7 +10,7 @@ function stateOf(world,id,f){
   u.grounded=b.grounded;u.movePhase=b.movePhase;u.chargeFwd=b.chargeFwd;u.chargeSide=b.chargeSide;u.stepPhase=b.stepPhase;u.moving=b.moving;
   u.guarding=!!world.get(id,'defense')?.active;
   u.phase=at.phase;u.moveFwd=b.moveFwd;u.moveSide=b.moveSide;u.rushTimer=st.rushTimer;u.hitDir=st.hitDir;u.hitPower=st.hitPower;u.airHit=st.airHit;u.landTimer=st.landTimer;
-  u.rotY=world.get(id,'transform').rotY;
+  u.rotY=world.get(id,'transform').rotY;u.speedRatio=Math.min(1,Math.hypot(b.vx||0,b.vz||0)/(b.moveSpeed||1));
   u.attackTime=at.attackTime;u.attackStyle=at.attackStyle;u.chargeTime=ch?ch.time:0;u.chargeStyle=ch?ch.tier:undefined;
   return u;
 }
@@ -60,7 +61,7 @@ export function updateAnimations(world,dt){
       }
       if(walking&&u.grounded){
         // Direction-aware gait: backing off reverses the stride, strafing shortens it and splays the legs, a rush is a low forward sprint.
-        const sgn=u.moveFwd<-.25?-1:1,sd=u.moveSide,rushing=u.rushTimer>0;stride*=(1-.4*Math.abs(sd))*(rushing?1.3:1);armSwing*=rushing?1.4:1;
+        const sgn=u.moveFwd<-.25?-1:1,sd=u.moveSide,rushing=u.rushTimer>0;stride*=(1-.4*Math.abs(sd))*(rushing?1.3:.6+.4*u.speedRatio);armSwing*=rushing?1.4:1;
         legs[0].rotation.x=step*stride*sgn;legs[1].rotation.x=-step*stride*sgn;arms[0].rotation.x=-step*armSwing*sgn+(rushing?.9:0);arms[1].rotation.x=step*armSwing*sgn+(rushing?.9:0);
         legs[0].rotation.z+=sd*(.2+.2*step)*sway;legs[1].rotation.z+=sd*(.2-.2*step)*sway;
         u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,lean+(Math.sin(gait)*.025+sd*.14)*sway,12,dt);
@@ -256,6 +257,7 @@ export function updateAnimations(world,dt){
         f.position.x+=Math.sin(f.rotation.y)*fwd;f.position.z+=Math.cos(f.rotation.y)*fwd;f.position.y+=h;
       }
     }
+    blendPose(u,dt,f.userData.poseBlend||(f.userData.poseBlend={}));
     updateRealModel(f,u,dt);
     updateGlow(u,world.time,dt);}
 }
