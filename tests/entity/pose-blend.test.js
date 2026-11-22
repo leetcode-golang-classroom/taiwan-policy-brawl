@@ -43,3 +43,11 @@ test('runBlend eases 0->1 over a few frames and back down more slowly, never lea
   assert.ok(RUN_BLEND.up>RUN_BLEND.down);
   assert.ok(Math.abs(stepRunBlend(0,true,1/30)-(1-Math.exp(-RUN_BLEND.up/30)))<1e-9,'frame-rate independent form');
 });
+
+import {brakePose,BRAKE} from '../../src/presentation/poseBlend.js';
+test('brakePose scales with weight: zero at 0, full at 1, clamped, leaning back with the lead foot forward',()=>{
+  const z=brakePose(0);assert.ok(Object.values(z).every(v=>v===0));
+  const f=brakePose(1);assert.equal(f.bodyX,BRAKE.lean);assert.ok(f.bodyX<0&&f.legL<0&&f.legR>0&&f.arms<0);
+  assert.deepEqual(brakePose(7),f);assert.deepEqual(brakePose(-2),z);
+  assert.ok(Math.abs(brakePose(.5).bodyX-BRAKE.lean/2)<1e-12);
+});

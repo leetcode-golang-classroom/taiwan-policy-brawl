@@ -39,3 +39,12 @@ export function stepRunBlend(cur,rushing,dt){
   const tgt=rushing?1:0,k=1-Math.exp(-(rushing?RUN_BLEND.up:RUN_BLEND.down)*dt),v=cur+(tgt-cur)*k;
   return v<.001?0:v>.999?1:v;
 }
+
+// Rush braking pose. w (0..1) is the decaying runBlend while the rush is over and the fighter is not yet walking again
+// (the logic layer's no-input recovery). Torso leans back, the lead foot slides out, arms come forward for balance.
+// Rotations are about x: negative swings a hanging limb forward, positive leans the torso forward.
+export const BRAKE={lean:-.24,leadLeg:-.6,trailLeg:.25,arms:-.45,drop:.05};
+export function brakePose(w){
+  const k=Math.max(0,Math.min(1,w));
+  return{bodyX:BRAKE.lean*k,legL:BRAKE.leadLeg*k,legR:BRAKE.trailLeg*k,arms:BRAKE.arms*k,drop:BRAKE.drop*k};
+}

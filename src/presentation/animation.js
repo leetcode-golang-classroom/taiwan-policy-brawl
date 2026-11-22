@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {blendPose,stepRunBlend} from './poseBlend.js';
+import {blendPose,stepRunBlend,brakePose} from './poseBlend.js';
 import {updateRealModel} from '../character/CharacterController.js';
 import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT} from '../config.js';
 
@@ -256,6 +256,10 @@ export function updateAnimations(world,dt){
         const fwd=c*DEPTH+Math.min(1,c)*.6,h=Math.min(STEPS,fl+e)*RISE;
         f.position.x+=Math.sin(f.rotation.y)*fwd;f.position.z+=Math.cos(f.rotation.y)*fwd;f.position.y+=h;
       }
+    }
+    if(!walking&&u.rushTimer<=0&&rb>.02&&u.grounded&&u.stun<=0&&u.phase==='idle'&&!u.guarding&&!dodging&&u.id!=='leopard'&&u.limbs.length>=4){ // rush braking: overlay on the settling idle pose
+      const bp=brakePose(rb);u.body.rotation.x=bp.bodyX;u.body.position.y-=bp.drop;u.head.position.y-=bp.drop;
+      u.limbs[1].rotation.x=bp.legL;u.limbs[3].rotation.x=bp.legR;u.limbs[0].rotation.x=bp.arms;u.limbs[2].rotation.x=bp.arms;
     }
     blendPose(u,dt,f.userData.poseBlend||(f.userData.poseBlend={}));
     updateRealModel(f,u,dt);
