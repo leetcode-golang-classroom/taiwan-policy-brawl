@@ -14,7 +14,7 @@ export function physicsSystem(world,dt){
     if(!b.grounded){
       b.vy-=GRAVITY*dt;t.y+=b.vy*dt;
       if(t.y<=0){t.y=0;b.vy=0;b.grounded=true;const hard=!!st?.airHit;
-        if(st){st.airHit=false;if(hard){st.landTimer=HIT_REACT.landTime;st.stun=Math.max(st.stun,HIT_REACT.landTime*.6);}}
+        if(st){st.airHit=false;if(hard){st.landTimer=HIT_REACT.landTime;st.stun=Math.max(st.stun,HIT_REACT.landTime);}}
         world.events.emit('land',{id,hard});}
     }
     clampToArena(t);

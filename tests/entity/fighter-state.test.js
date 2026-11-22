@@ -33,3 +33,15 @@ test('a stunned fighter is HitStun (Airborne when launched) and returns to Idle 
   w.world.get(w.player,'transform').y=3;b.grounded=false;step(w.world,1/60);assert.equal(deriveState(w.world,w.player),'Airborne');
   w.world.get(w.player,'transform').y=0;b.vy=0;b.grounded=true;st.stun=0;st.landTimer=0;step(w.world,1/60);assert.equal(w.world.get(w.player,'fstate').name,'Idle');
 });
+
+test('landing after a hard launch goes Down then GetUp then Idle, and input stays locked until up',()=>{
+  const w=startedWorld({p:'cleric',c:'mech'});arrange(w,{dist:2});
+  const names=[];w.world.events.on('stateChange',e=>{if(e.id===w.cpu)names.push(e.to??e.name);});
+  const st=w.world.get(w.cpu,'status'),b=w.world.get(w.cpu,'body'),t=w.world.get(w.cpu,'transform');
+  t.y=2;b.grounded=false;b.vy=-8;st.airHit=true;st.stun=1;
+  for(let i=0;i<120;i++){step(w.world,1/60);}
+  const seq=names.filter((n,i)=>names.indexOf(n)>=0);
+  assert.ok(seq.includes('Down')&&seq.includes('GetUp'),seq.join());
+  assert.ok(seq.indexOf('Down')<seq.indexOf('GetUp'));
+  assert.ok(!['Down','GetUp','HitStun','Airborne'].includes(w.world.get(w.cpu,'fstate').name));
+});
