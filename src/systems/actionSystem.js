@@ -44,6 +44,7 @@ export function canStart(a,tier,locked=false){
   if(tier==='basic'&&cancelWindow&&a.comboStep>0&&a.comboStep<3)return true;   // J -> J on hit ignores the basic cooldown
   if(a.cooldowns[tier]>0)return false;
   if(!busy)return true;
+  if(tier==='ult')return cancelWindow&&a.attackStyle==='basic'&&a.comboStep===3;   // special condition: a landed J3 may cancel into a full-energy L (energy is checked by the caller)
   return cancelWindow&&tier==='skill';
 }
 // Six phases: windup -> charge -> strike (arm thrust, still pending) -> impact (hit/launch frame) -> recovery -> idle.

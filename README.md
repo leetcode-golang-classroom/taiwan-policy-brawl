@@ -15,7 +15,7 @@ pnpm install
 pnpm dev          # 開發模式，http://localhost:5173
 pnpm run build    # 正式建置到 dist/
 pnpm preview      # 預覽建置結果
-pnpm test         # 單元測試（Entity 與 Control，179 項）
+pnpm test         # 單元測試（Entity 與 Control，181 項）
 ```
 
 網址加上 `?debug` 會把 ECS world 掛到 `window.__PB`，僅供測試使用。
@@ -52,7 +52,7 @@ pnpm test         # 單元測試（Entity 與 Control，179 項）
 **改善的機制**
 - **Input Buffer**：180 ms，鎖定中按下的 J／K／閃避會在可行動時執行。
 - **Hit Stop**：只凍結攻守雙方（普攻 .06、技能／擊飛 .1、大招 .15 秒）；冷卻、能量、回合計時、投射物與 UI 不停。
-- **連招與取消**：命中後 J→J（第 1、2 段）、K 可立即接入；L 不可取消。**連打 J 不設上限，這是刻意保留的。** 連招 HIT 數與總傷害由 `comboSystem` 在邏輯層計算（`combo`／`comboEnd` 事件），HUD 只顯示。
+- **連招與取消**：命中後 J→J（第 1、2 段）、K 可立即接入；L 本身不可被取消，但能量滿且 J3 命中時，可由 J3 直接取消成 L。**連打 J 不設上限，這是刻意保留的。** 連招 HIT 數與總傷害由 `comboSystem` 在邏輯層計算（`combo`／`comboEnd` 事件），HUD 只顯示。
 - **Startup / Active / Recovery**：近戰與範圍攻擊的判定只在 Active 窗口內有效，不會重複扣血。
 - **受擊硬直與擊退**：硬直依招式，有上限；擊退為速度式滑行（含角色重量），不再瞬移；角色互相推開不重疊。
 - **移動**：加速／摩擦慣性、平滑轉向、衝刺有加速與收招。
@@ -61,7 +61,7 @@ pnpm test         # 單元測試（Entity 與 Control，179 項）
 - **動畫過渡**：`poseBlend.js` 對每個角色的姿勢做指數淡入淡出（待機慢、戰鬥快，避免出招姿勢延遲），走路步幅隨實際速度縮放；起步與停步不再瞬間切換。
 - **效能**：粒子物件池（上限 450）；技能特效排程改用 `delay()`，隨 Hit Stop 與慢動作暫停；低於 60 FPS 時遊戲迴圈切成每步不超過 1/60 秒的子步。
 
-**驗證**：`pnpm test` 179 項全過，`pnpm run build` 成功。
+**驗證**：`pnpm test` 181 項全過，`pnpm run build` 成功。
 
 ## V3.9 修改摘要
 
@@ -187,7 +187,7 @@ tests/
 9. **電光火球射程 15 大於場地寬 14**：在場內沒有「射程外打不到」的情況。
 10. **沒有自動化的 UI 與畫面測試**：依專案約定，測試只涵蓋 Entity 與 Control。
 11. **沒有音效、連線對戰或骨架模型。**
-12. **V4.0 未做**：Pull（拉近）攻擊、J1–J3 逐段資料表、J→L 特殊取消。
+12. **V4.0 未做**：Pull（拉近）攻擊、J1–J3 逐段資料表。
 13. **V4.0 特效層未在瀏覽器驗證**：粒子池、`delay()`、子步進只有 build 與單元測試；Mage 的 `setInterval` 旋轉特效與 `addFx` 網格未池化。
 14. 部分招式擊飛硬直高於規格（Cleric K .9、Mech K .8、Leopard 普攻 .58），為刻意保留。
 

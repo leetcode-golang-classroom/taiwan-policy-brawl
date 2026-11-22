@@ -70,3 +70,22 @@ test('a whiffed J cannot be cancelled into K', ()=>{
   const a=w.world.get(w.player,'attacker');a.attackTime=.2;a.phase='recovery';a.hitConfirmed=false;
   pressAttack(w.world,'player','skill');step(w.world,1/60);assert.equal(a.charge,null);
 });
+
+test('L cancels only from a LANDED J3 (special condition); never from J1/J2, a whiff, or K',async()=>{
+  const {canStart}=await import('../../src/systems/actionSystem.js');
+  const a=(o)=>({charge:null,attackTime:.3,attackStyle:'basic',hitConfirmed:true,comboStep:3,cooldowns:{basic:0,skill:0,ult:0},...o});
+  assert.equal(canStart(a({}),'ult'),true);
+  assert.equal(canStart(a({comboStep:2}),'ult'),false);
+  assert.equal(canStart(a({hitConfirmed:false}),'ult'),false);
+  assert.equal(canStart(a({attackStyle:'skill'}),'ult'),false);
+  assert.equal(canStart(a({cooldowns:{basic:0,skill:0,ult:2}}),'ult'),false);
+});
+test('integration: full energy + J3 hit lets a buffered L fire; without full energy it does not',()=>{
+  for(const full of [true,false]){
+    const w=startedWorld({p:'cleric'});arrange(w,{dist:1.6});frozenCpu(w);
+    w.world.get(w.player,'energy').value=full?100:50;
+    const a=w.world.get(w.player,'attacker');let ult=0;w.world.events.on('chargeStart',e=>{if(e.id===w.player&&e.tier==='ult')ult++;});
+    for(let t=0;t<2&&!ult;t+=1/60){pressAttack(w.world,'player','basic');if(a.comboStep===3&&a.hitConfirmed&&a.attackTime>0)pressAttack(w.world,'player','ult');step(w.world,1/60);}
+    assert.equal(ult>0,full,`energy full=${full}`);
+  }
+});
