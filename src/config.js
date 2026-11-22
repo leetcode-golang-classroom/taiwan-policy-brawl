@@ -58,7 +58,7 @@ export const PHASES={windup:{basic:.05,skill:.1,ult:.15},strike:{basic:.04,skill
 // Quick rush (double-tap a direction): short, fast, grounded, no invulnerability (that is the dodge's job).
 export const RUSH={duration:.24,speed:13,cooldown:.7,doubleTap:.28,aiRate:.6,aiMinDist:4.5,accel:140,endDecel:100,recovery:.1};   // accel: ramp up to speed; endDecel/recovery: braking + short no-input recovery after the burst
 export const HIT_REACT={landTime:.32,powerRef:36,airborneSpin:.9};
-export const COMBO={window:.92,step2Stun:.42,step3Stun:.62,step3Launch:3.3,step3ChargeBonus:.12};
+export const COMBO={window:.92,step2Stun:.42,step3Stun:.62,step3Launch:3.3,step3ChargeBonus:.12,chainStep:.75};   // chainStep: J2/J3 advance this far on release so the chain keeps up with the knocked-back target
 export const SKILL_ENERGY_BONUS=8;
 // forward lunge while an attack animation plays: units/second (per character, per tier)
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};

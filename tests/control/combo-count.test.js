@@ -32,3 +32,14 @@ test('one attack resolves once, so a long active window cannot inflate the count
   step(w.world,.6);
   assert.equal(ev.length,1);
 });
+import {pressAttack} from '../../src/systems/playerControl.js';
+for(const id of ['cleric','mech','leopard','nun']){
+  test(`${id}: mashing J lands J1-J2-J3 as ONE combo counting 1,2,3 (matches real hits)`, ()=>{
+    const w=startedWorld({p:id,c:'cleric'});arrange(w,{dist:1.6});w.world.get(w.cpu,'defense').cooldown=1e9;
+    const seq=[],hits=[];w.world.events.on('combo',e=>seq.push(e.hits));
+    w.world.events.on('hit',e=>{if(e.attackerId===w.player&&e.amount>0)hits.push(e);});
+    for(let t=0;t<1.3;t+=1/60){if(t%.1<1/60)pressAttack(w.world,'player','basic');step(w.world,1/60);}
+    assert.deepEqual(seq.slice(0,3),[1,2,3],'no reset between steps');
+    assert.equal(seq.length,hits.length,'one count per real hit');
+  });
+}

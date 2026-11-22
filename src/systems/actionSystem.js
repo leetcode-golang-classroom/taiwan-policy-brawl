@@ -30,11 +30,11 @@ export function actionSystem(world,dt){
 }
 // PHASE 4/5 cancel rules. While an attack animation is still running (attackTime>0):
 //  - missed attack: nothing may start until it has fully recovered (no unlimited whiff cancelling);
-//  - connected attack, in recovery: J may chain into the next J (steps 1-2) and K may be used (combo cancel); L may not.
+//  - connected attack: J may chain into the next J (steps 1-2) and K may be used (combo cancel); L may not.
 export function canStart(a,tier,stun=0){
   if(a.charge||stun>0)return false;   // PHASE 6: no attacking while in hit stun (a buffered press fires when it ends)
   const busy=a.attackTime>0;
-  const cancelWindow=busy&&a.hitConfirmed&&a.phase==='recovery';
+  const cancelWindow=busy&&a.hitConfirmed;   // opens as soon as the hit connects (hit stop already delays it); a whiff never opens it
   if(tier==='basic'&&cancelWindow&&a.comboStep>0&&a.comboStep<3)return true;   // J -> J on hit ignores the basic cooldown
   if(a.cooldowns[tier]>0)return false;
   if(!busy)return true;

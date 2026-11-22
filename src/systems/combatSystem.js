@@ -1,4 +1,4 @@
-import {AIRBORNE_BONUS,ARENA,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
+import {AIRBORNE_BONUS,ARENA,COMBO,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
 import {normalize,clamp,horizontalLength} from '../ecs/math.js';
 import {Dash} from '../ecs/components.js';
 import {opponentOf} from '../ecs/entities.js';
@@ -89,7 +89,8 @@ export function attack(world,attackerId,tier,opts={}){
   const f=world.get(attackerId,'fighter'),at=world.get(attackerId,'transform'),att=world.get(attackerId,'attacker');
   const skill=getSkill(f.charId,tier);
   face(world,attackerId,targetId);
-  if(skill.stepIn){const t=world.get(targetId,'transform');const d=normalize({x:t.x-at.x,y:0,z:t.z-at.z});at.x+=d.x*skill.stepIn;at.z+=d.z*skill.stepIn;clampToArena(at);}
+  const stepIn=skill.stepIn||(tier==='basic'&&att.comboStep>=2?COMBO.chainStep:0);
+  if(stepIn){const t=world.get(targetId,'transform');const d=normalize({x:t.x-at.x,y:0,z:t.z-at.z});at.x+=d.x*stepIn;at.z+=d.z*stepIn;clampToArena(at);}
   att.attackTime=ATTACK_TIME[tier];att.attackStyle=tier;
   const info={attackerId,targetId,tier,skill,projectileId:null};
   if(skill.type==='projectile'||skill.type==='homing'){
