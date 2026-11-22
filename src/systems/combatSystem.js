@@ -1,4 +1,4 @@
-import {AIRBORNE_BONUS,ARENA,HIT,HIT_REACT,ATTACK_TIME,getSkill} from '../config.js';
+import {AIRBORNE_BONUS,ARENA,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
 import {normalize,clamp,horizontalLength} from '../ecs/math.js';
 import {Dash} from '../ecs/components.js';
 import {opponentOf} from '../ecs/entities.js';
@@ -48,7 +48,14 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
   if(dealt>0){st.hitDir={x:d.x,z:d.z};st.hitPower=Math.min(1,dealt/HIT_REACT.powerRef);st.rushTimer=0;}   // reaction data: push direction + strength
   if(launched){body.vy=Math.max(body.vy,skill.launch*kb);body.grounded=false;st.airHit=true;st.stun=Math.max(st.stun,skill.stun);}
   else if(dealt>0)st.stun=Math.max(st.stun,skill.stun);
-  world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched});
+  let hitStop=0;
+  if(dealt>0){   // PHASE 3: both sides freeze briefly; ult > skill/launch > basic
+    hitStop=skill.tier==='ult'?HITSTOP.ult:(launched||skill.tier==='skill')?HITSTOP.skill:HITSTOP.basic;
+    st.hitStop=Math.max(st.hitStop,hitStop);
+    const ast=world.get(attackerId,'status');if(ast)ast.hitStop=Math.max(ast.hitStop,hitStop);
+    if(!reflected){const aa=world.get(attackerId,'attacker');if(aa)aa.hitConfirmed=true;}   // enables combo cancel (PHASE 4)
+  }
+  world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched,hitStop});
   if(dealt>0)onHit?.(dealt);
   return dealt>0;
 }
@@ -58,6 +65,7 @@ export function dashSystem(world,dt){
   if(!world.match.running)return;
   for(const id of world.query('dash','transform')){
     const d=world.get(id,'dash'),a=world.get(id,'transform'),t=world.get(d.targetId,'transform');
+    if(world.get(id,'status').frozen)continue;
     if(world.get(id,'status').stun>0){world.remove(id,'dash');continue;}
     const to={x:t.x-a.x,y:0,z:t.z-a.z},dist=horizontalLength(to);
     if(dist<=d.skill.range){world.remove(id,'dash');resolveHit(world,id,d.targetId,d.skill,{dir:to,onHit:d.onHit});continue;}
@@ -93,7 +101,20 @@ export function attack(world,attackerId,tier,opts={}){
     world.events.emit('attackStart',info);return false;
   }
   world.events.emit('attackStart',info);
-  const t=world.get(targetId,'transform');
-  if(Math.hypot(t.x-at.x,t.y-at.y,t.z-at.z)>skill.range)return false;
-  return resolveHit(world,attackerId,targetId,skill,{onHit:opts.onHit});
+  // PHASE 5: the hitbox opens now and stays live for ACTIVE_TIME; it resolves at most once (see tickActiveHitbox).
+  att.active={skill,remaining:ACTIVE_TIME[tier]||ACTIVE_TIME.basic,onHit:opts.onHit};
+  return tickActiveHitbox(world,attackerId,0);
+}
+// Melee/area hitbox. Live only while attacker.active exists: closes on hit/block/evade (one resolution per attack),
+// on timeout, or when the attacker is interrupted (no hit once the animation was cancelled).
+export function tickActiveHitbox(world,id,dt){
+  const att=world.get(id,'attacker'),box=att?.active;if(!box)return false;
+  if(world.get(id,'status').stun>0){att.active=null;return false;}
+  const targetId=opponentOf(world,id),at=world.get(id,'transform'),t=world.get(targetId,'transform');
+  if(Math.hypot(t.x-at.x,t.y-at.y,t.z-at.z)<=box.skill.range){
+    att.active=null;
+    return resolveHit(world,id,targetId,box.skill,{onHit:box.onHit});
+  }
+  box.remaining-=dt;if(box.remaining<=0)att.active=null;
+  return false;
 }

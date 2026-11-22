@@ -16,15 +16,13 @@ export function initGame(world,keys){
   const updateComboCounter=initComboCounter(world);
   const updateDefenseView=initDefenseView(world);
   const updateEventVfx=initVfxEvents(world);
-  // Hit-stop: a few frames of frozen logic on a solid hit give impacts weight (visual feel only; no game rule depends on it).
-  let hitStop=0;
-  world.events.on('hit',e=>{if(e.amount>0)hitStop=Math.max(hitStop,e.skill.tier==='ult'?.09:e.launched?.06:.035);});
   let last=0;
   function loop(now){
     requestAnimationFrame(loop);
     const dt=Math.min((now-last)/1000,.04);last=now;
-    if(hitStop>0)hitStop-=dt;else stepWorld(world,dt,keys);
-    syncViews(world);updateAnimations(world,dt);updateVfx(dt);updateEventVfx();updateDefenseView(dt);
+    stepWorld(world,dt,keys);   // hit stop is per fighter inside the logic step (status.hitStop); UI/clock/cooldowns keep running
+    const frozen=world.query('status').some(id=>world.get(id,'status').frozen);
+    syncViews(world);updateAnimations(world,dt);updateVfx(frozen?0:dt);updateEventVfx();updateDefenseView(dt);   // hit effects hold still with the fighters
     updateHud(world);updateComboCounter();updateCamera(world,dt);
     if(mount.clientWidth>0)renderer.render(scene,camera);   // battle screen hidden: skip drawing
   }

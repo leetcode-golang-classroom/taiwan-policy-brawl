@@ -1,24 +1,44 @@
-import {REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME} from '../config.js';
+import {REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
-import {attack} from './combatSystem.js';
+import {attack,tickActiveHitbox} from './combatSystem.js';
 
 // Consumes intent.attack: starts a charge, then releases the attack when the charge completes.
 export function actionSystem(world,dt){
   const m=world.match;if(!m.running||m.ended)return;
   for(const id of world.query('fighter','intent','attacker','energy')){
-    const intent=world.get(id,'intent'),a=world.get(id,'attacker'),e=world.get(id,'energy');
-    const tier=intent.attack;intent.attack=null;
-    if(tier&&!a.charge&&!world.get(id,'defense')?.active){
-      if(a.cooldowns[tier]>0){}
-      else if(tier==='ult'&&e.value<100)world.events.emit('ultNotReady',{id});
-      else startCharge(world,id,tier);
+    const intent=world.get(id,'intent'),a=world.get(id,'attacker'),e=world.get(id,'energy'),frozen=world.get(id,'status').frozen;
+    // PHASE 2 input buffer: a press is either started now or remembered for INPUT_BUFFER seconds (one slot, newest wins).
+    const pressed=intent.attack;intent.attack=null;
+    if(pressed){
+      if(pressed==='ult'&&e.value<100)world.events.emit('ultNotReady',{id});
+      else if(!world.get(id,'defense')?.active)a.buffer={tier:pressed,time:world.time};
     }
+    if(frozen){if(a.buffer)a.buffer.time+=dt;continue;}   // PHASE 3: hit stop holds the attack/charge/buffer clocks (presses are still recorded above)
+    if(a.buffer&&world.time-a.buffer.time>INPUT_BUFFER)a.buffer=null;   // expired inputs never fire late
+    if(a.buffer){
+      const tier=a.buffer.tier;
+      if(world.get(id,'defense')?.active||(tier==='ult'&&e.value<100))a.buffer=null;   // state changed under the buffered press
+      else if(canStart(a,tier)){a.buffer=null;startCharge(world,id,tier);}
+    }
+    tickActiveHitbox(world,id,dt);
     if(a.charge){
       a.charge.time+=dt;
       if(a.charge.time>=a.charge.duration)release(world,id);
     }
     setPhase(world,id,a,phaseOf(world,id,a));
   }
+}
+// PHASE 4/5 cancel rules. While an attack animation is still running (attackTime>0):
+//  - missed attack: nothing may start until it has fully recovered (no unlimited whiff cancelling);
+//  - connected attack, in recovery: J may chain into the next J (steps 1-2) and K may be used (combo cancel); L may not.
+export function canStart(a,tier){
+  if(a.charge)return false;
+  const busy=a.attackTime>0;
+  const cancelWindow=busy&&a.hitConfirmed&&a.phase==='recovery';
+  if(tier==='basic'&&cancelWindow&&a.comboStep>0&&a.comboStep<3)return true;   // J -> J on hit ignores the basic cooldown
+  if(a.cooldowns[tier]>0)return false;
+  if(!busy)return true;
+  return cancelWindow&&tier==='skill';
 }
 // Six phases: windup -> charge -> strike (arm thrust, still pending) -> impact (hit/launch frame) -> recovery -> idle.
 // The hit itself resolves when `strike` ends (see release), i.e. at the start of `impact`.
@@ -44,7 +64,7 @@ function startCharge(world,id,tier){
   if(tier==='basic'){a.comboStep=a.comboWindow>0?a.comboStep%3+1:1;}
   const duration=chargeDurations[tier]+(tier==='basic'&&a.comboStep===3?COMBO.step3ChargeBonus:0);
   a.charge={tier,time:0,duration,comboStep:tier==='basic'?a.comboStep:0};
-  a.attackTime=0;
+  a.attackTime=0;a.hitConfirmed=false;a.active=null;
   world.events.emit('chargeStart',{id,tier});
 }
 function release(world,id){

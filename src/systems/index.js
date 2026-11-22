@@ -7,6 +7,7 @@ import {projectileSystem} from './projectileSystem.js';
 import {physicsSystem} from './physicsSystem.js';
 import {roundSystem} from './roundSystem.js';
 import {defenseSystem} from './defenseSystem.js';
+import {fighterStateSystem} from './fighterStateSystem.js';
 import {playerControl} from './playerControl.js';
 
 // One logic tick. Order: timers -> control (intents) -> actions -> movement -> combat -> physics -> round rules.
@@ -21,4 +22,5 @@ export function stepWorld(world,dt,keys={}){
   projectileSystem(world,dt);
   physicsSystem(world,dt);
   roundSystem(world,dt);
+  fighterStateSystem(world);
 }

@@ -64,3 +64,12 @@ export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};
 export const MATCH={roundTime:99,transition:2.8,maxRounds:3,winsNeeded:2};
 export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasic:2.45,meleeSkill:4.4,rangedMax:6,
   jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,dodgeChance:.12,defendRange:5.5,defendRate:5,projectileWarn:4.5};
+
+// PHASE 2: a J/K/L press made while the fighter is busy (charging / on cooldown) is remembered this long (s), then discarded.
+export const INPUT_BUFFER=.18;
+
+// PHASE 3 hit stop (s): BOTH attacker and victim freeze their own timers (attack/stun/movement/AI) for this long on a damaging hit.
+// Cooldowns, energy, the round clock, UI and projectiles keep running. Chosen by the hit: ult > skill/launch > basic.
+export const HITSTOP={basic:.06,skill:.1,ult:.15};
+// PHASE 5: Active window (s) during which a melee/area hitbox is live after the strike frame. One attack = one hit at most.
+export const ACTIVE_TIME={basic:.08,skill:.1,ult:.12};

@@ -8,7 +8,7 @@ export function aiControl(world,dt){
   const m=world.match;
   const id=fighterOf(world,'cpu');if(id===undefined)return;
   const it=world.get(id,'intent');it.moveX=0;it.moveZ=0;
-  if(!m.running||m.ended)return;
+  if(!m.running||m.ended||world.get(id,'status').frozen)return;   // hit stop: the CPU cannot start or finish anything
   const pid=opponentOf(world,id);
   const t=world.get(id,'transform'),p=world.get(pid,'transform'),s=world.get(id,'status'),b=world.get(id,'body'),brain=world.get(id,'brain'),a=world.get(id,'attacker');
   const dx=p.x-t.x,dy=p.y-t.y,dz=p.z-t.z,dist=Math.hypot(dx,dy,dz),hd=Math.hypot(dx,dz)||1;

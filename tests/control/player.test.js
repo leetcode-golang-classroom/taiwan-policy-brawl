@@ -49,13 +49,12 @@ test('J starts a charge; the attack only lands after the charge time (wind-up)',
   assert.equal(started.length,1);assert.equal(hp(w,'cpu'),100);   // still charging
   step(w.world,.3);assert.equal(hp(w,'cpu'),91);                   // released: 9 damage
 });
-test('attack cooldown: a second press during cooldown is ignored', ()=>{
-  const w=startedWorld({p:'leopard'});arrange(w,{dist:1.7});
+test('attack cooldown: a second press after a WHIFF cannot cancel the recovery', ()=>{
+  const w=startedWorld({p:'leopard'});arrange(w,{dist:9});      // out of range: the first J misses
   pressAttack(w.world,'player','basic');step(w.world,.31);
-  w.world.get(w.cpu,'status').stun=1e9;
   pressAttack(w.world,'player','basic');step(w.world,.1);
   assert.equal(w.world.get(w.player,'attacker').charge,null);
-  step(w.world,.5);assert.equal(hp(w,'cpu'),91);
+  step(w.world,.5);assert.equal(hp(w,'cpu'),100);
 });
 test('ultimate needs 100% energy', ()=>{
   const w=startedWorld({p:'yu'});arrange(w,{dist:3});const nr=record(w.world,'ultNotReady');

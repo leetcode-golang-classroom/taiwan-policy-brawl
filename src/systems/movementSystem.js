@@ -41,6 +41,7 @@ export function movementSystem(world,dt){
   const m=world.match;if(!m.running||m.ended)return;
   for(const id of world.query('fighter','intent','transform','body','status','attacker')){
     const it=world.get(id,'intent'),t=world.get(id,'transform'),b=world.get(id,'body'),s=world.get(id,'status'),a=world.get(id,'attacker'),f=world.get(id,'fighter');
+    if(s.frozen)continue;   // hit stop: no movement; jump/dodge/rush requests stay queued in the intent
     const jumpReq=it.jump,dodgeReq=it.dodge,dodgeDir=it.dodgeDir,rushReq=it.rush;it.jump=false;it.dodge=false;it.dodgeDir=null;it.rush=null;
     const guarding=world.get(id,'defense')?.active;
     if(dodgeReq&&!guarding)performDodge(world,id,dodgeDir);
