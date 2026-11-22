@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {$} from '../utils/dom.js';
-import {scene,addCameraShake} from '../scene.js';
+import {scene,addCameraShake,camRig} from '../scene.js';
+import {cameraEvent} from './cameraDirector.js';
 import {burst,addFx,hitBurst,freezeFx,throwProjectile} from '../vfx/VFXSystem.js';
 import {slashEffect} from '../skills/slashEffect.js';
 import {showCombatFeedback,showMoveName} from '../ui/hud.js';
@@ -26,6 +27,7 @@ export function initVfxEvents(world){
   const pos=id=>{const t=world.get(id,'transform');return new THREE.Vector3(t.x,t.y,t.z);};
   const up=(v,y)=>v.clone().add(new THREE.Vector3(0,y,0));
   const on=(n,f)=>world.events.on(n,f);
+  for(const n of ['hit','chargeStart'])on(n,e=>cameraEvent(camRig,n,e));   // Phase 10: combat camera
 
   on('attackStart',e=>{
     syncView(world,e.attackerId);syncView(world,e.targetId);

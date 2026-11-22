@@ -15,7 +15,7 @@ pnpm install
 pnpm dev          # 開發模式，http://localhost:5173
 pnpm run build    # 正式建置到 dist/
 pnpm preview      # 預覽建置結果
-pnpm test         # 單元測試（Entity 與 Control，168 項）
+pnpm test         # 單元測試（Entity 與 Control，172 項）
 ```
 
 網址加上 `?debug` 會把 ECS world 掛到 `window.__PB`，僅供測試使用。
@@ -60,7 +60,7 @@ pnpm test         # 單元測試（Entity 與 Control，168 項）
 - **CPU AI**：反應延遲、每次威脅只決策一次、接近／後退／繞圈、避牆、收招後才行動、能量滿時延遲施放大招。
 - **效能**：粒子物件池（上限 450）；技能特效排程改用 `delay()`，隨 Hit Stop 與慢動作暫停；低於 60 FPS 時遊戲迴圈切成每步不超過 1/60 秒的子步。
 
-**驗證**：`pnpm test` 168 項全過，`pnpm run build` 成功。
+**驗證**：`pnpm test` 172 項全過，`pnpm run build` 成功。
 
 ## V3.9 修改摘要
 
@@ -168,7 +168,7 @@ tests/
 | 攻擊 | Startup／Active／Recovery、Hit Stop、硬直、擊退、不重複扣血、Combo Cancel | 通過（自動測試） |
 | 動作 | 走路、後退、側移、衝刺、閃避、跳躍、攻擊、受擊、擊退 | 狀態機與邏輯通過；動畫外觀未驗，前／後／側移沒有各自的動畫 |
 | 動作 | 倒地、起身 | **未完成**：沒有 Down／GetUp 狀態 |
-| 鏡頭 | 近距離、強力技能、大招鏡頭、平滑 | **未完成**：Phase 10 沒有做，鏡頭維持原行為 |
+| 鏡頭 | 近距離、強力技能、大招鏡頭、平滑 | 鏡頭導演邏輯通過（自動測試：縮放範圍、大招拉遠與恢復、單幀位移上限）；畫面效果、是否遮住角色未實機確認 |
 | 戰鬥 | HP、傷害數字、Combo、能量、Cooldown、CPU、三回合、勝負 | 通過（自動測試）；V3.9 的瀏覽器煙霧測試沒有在本版重跑 |
 
 ## 尚未完成或有限制
@@ -186,7 +186,7 @@ tests/
 9. **電光火球射程 15 大於場地寬 14**：在場內沒有「射程外打不到」的情況。
 10. **沒有自動化的 UI 與畫面測試**：依專案約定，測試只涵蓋 Entity 與 Control。
 11. **沒有音效、連線對戰或骨架模型。**
-12. **V4.0 未做**：Phase 9 動畫過渡（AnimationMixer 淡入淡出、前後側移專屬動作）、Phase 10 動態戰鬥鏡頭、倒地／起身狀態、Pull（拉近）攻擊、J1–J3 逐段資料表、J→L 特殊取消、CPU 主動連招。
+12. **V4.0 未做**：Phase 9 動畫過渡（AnimationMixer 淡入淡出、前後側移專屬動作）、倒地／起身狀態、Pull（拉近）攻擊、J1–J3 逐段資料表、J→L 特殊取消、CPU 主動連招。
 13. **V4.0 特效層未在瀏覽器驗證**：粒子池、`delay()`、子步進只有 build 與單元測試；Mage 的 `setInterval` 旋轉特效與 `addFx` 網格未池化。
 14. 部分招式擊飛硬直高於規格（Cleric K .9、Mech K .8、Leopard 普攻 .58），為刻意保留。
 
