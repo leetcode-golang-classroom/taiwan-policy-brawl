@@ -1,4 +1,4 @@
-import {DODGE,DEFENSE,RUSH,MOVE} from '../config.js';
+import {DODGE,DEFENSE,RUSH,MOVE,INPUT_BUFFER} from '../config.js';
 import {LUNGE} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {normalize,horizontalLength} from '../ecs/math.js';
@@ -12,8 +12,9 @@ export function jump(world,id){
 }
 // direction: {x,z} or null (null = sidestep perpendicular to the opponent)
 export function performDodge(world,id,direction){
-  const s=world.get(id,'status'),b=world.get(id,'body'),t=world.get(id,'transform'),f=world.get(id,'fighter');
-  if(!world.match.running||s.dodgeCooldown>0||!b.grounded||s.rootTrap>0)return false;
+  const s=world.get(id,'status'),b=world.get(id,'body'),t=world.get(id,'transform'),f=world.get(id,'fighter'),a=world.get(id,'attacker');
+  // Dodge-cancel rule: a dodge may cancel the RECOVERY of a released attack, never its startup (a.charge) - no free feints.
+  if(!world.match.running||s.dodgeCooldown>0||!b.grounded||s.rootTrap>0||a.charge)return false;
   let move=direction?{x:direction.x,y:0,z:direction.z}:{x:0,y:0,z:0};
   if(horizontalLength(move)<.001){
     const o=world.get(opponentOf(world,id),'transform');
@@ -21,10 +22,12 @@ export function performDodge(world,id,direction){
   }
   move=normalize(move);
   s.dodgeDir={x:move.x,z:move.z};s.dodgeTimer=DODGE.duration;s.dodgeInvuln=DODGE.invuln;s.dodgeCooldown=DODGE.cooldown;
-  s.stun=0;s.hitReact=0;b.movePhase=0;
+  s.stun=0;s.hitReact=0;b.movePhase=0;b.vx=0;b.vz=0;
+  a.attackTime=0;a.active=null;a.hitConfirmed=false;   // cancelling the recovery of the previous attack
   const from={x:t.x,z:t.z},d=DODGE.distance[f.charId]||DODGE.defaultDistance;
-  t.x+=move.x*d;t.z+=move.z*d;
-  world.events.emit('dodge',{id,from,to:{x:t.x,z:t.z},dir:move});
+  // the body slides over DODGE.slide seconds (physicsSystem integrates the push), so walls and hit stop apply and nothing pops
+  s.kbVx=move.x*2*d/DODGE.slide;s.kbVz=move.z*2*d/DODGE.slide;s.kbTime=s.kbDur=DODGE.slide;
+  world.events.emit('dodge',{id,from,to:{x:from.x+move.x*d,z:from.z+move.z*d},dir:move});
   return true;
 }
 // Quick rush (double-tap): fast grounded burst along `direction` (world xz, normalised here).
@@ -50,7 +53,10 @@ export function movementSystem(world,dt){
     if(s.frozen)continue;   // hit stop: no movement; jump/dodge/rush requests stay queued in the intent
     const jumpReq=it.jump,dodgeReq=it.dodge,dodgeDir=it.dodgeDir,rushReq=it.rush;it.jump=false;it.dodge=false;it.dodgeDir=null;it.rush=null;
     const guarding=world.get(id,'defense')?.active;
-    if(dodgeReq&&!guarding)performDodge(world,id,dodgeDir);
+    // a dodge press that cannot start yet (cooldown / still charging) is remembered for INPUT_BUFFER seconds
+    const dreq=dodgeReq?{dir:dodgeDir,time:world.time}:s.dodgeBuf;
+    s.dodgeBuf=null;
+    if(dreq&&!guarding&&world.time-dreq.time<=INPUT_BUFFER){if(!performDodge(world,id,dreq.dir))s.dodgeBuf=dreq;}
     if(jumpReq&&!guarding)jump(world,id);
     if(rushReq&&!guarding)performRush(world,id,rushReq);
     if(s.rushTimer>0&&(s.stun>0||s.rootTrap>0||a.charge||!b.grounded||s.dodgeTimer>0))s.rushTimer=0;

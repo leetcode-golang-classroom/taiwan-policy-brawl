@@ -41,7 +41,8 @@ test('jump: leaves the ground, lands again, only when grounded', ()=>{
 test('dodge grants brief invulnerability, moves along the pressed direction and has a cooldown', ()=>{
   const w=startedWorld();const s=w.world.get(w.player,'status'),t=w.world.get(w.player,'transform');const z0=t.z;
   pressDodge(w.world,'player',{KeyS:true});step(w.world,.02);
-  assert.ok(s.dodgeInvuln>0&&t.z>z0+1.5);
+  assert.ok(s.dodgeInvuln>0&&t.z>z0&&t.z<z0+1.5,'sliding, not teleporting');step(w.world,.3);
+  assert.ok(t.z>z0+1.5,'covers the dodge distance');
   const d1=s.dodgeCooldown;pressDodge(w.world,'player');step(w.world,.02);assert.ok(s.dodgeCooldown<=d1);
   step(w.world,.5);assert.equal(s.dodgeInvuln,0);
 });

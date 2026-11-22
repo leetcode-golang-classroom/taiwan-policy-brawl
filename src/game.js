@@ -9,6 +9,7 @@ import {initMessages} from './ui/messages.js';
 import {initDamageNumbers} from './ui/damageNumbers.js';
 import {initDefenseView} from './presentation/defenseView.js';
 import {initComboCounter} from './ui/comboCounter.js';
+import {SLOWMO} from './config.js';
 
 // Main loop: logic step (ECS systems) -> presentation (sync, animation, effects, HUD, camera) -> render.
 export function initGame(world,keys){
@@ -16,10 +17,14 @@ export function initGame(world,keys){
   const updateComboCounter=initComboCounter(world);
   const updateDefenseView=initDefenseView(world);
   const updateEventVfx=initVfxEvents(world);
+  // Successful dodge by the local player: a brief slow-motion (presentation + logic share the scaled dt; skipped online to keep peers in step).
+  let slow=0;
+  world.events.on('evade',e=>{if(!world.net&&world.get(e.targetId,'fighter').side==='player')slow=SLOWMO.time;});
   let last=0;
   function loop(now){
     requestAnimationFrame(loop);
-    const dt=Math.min((now-last)/1000,.04);last=now;
+    let dt=Math.min((now-last)/1000,.04);last=now;
+    if(slow>0){slow-=dt;dt*=SLOWMO.scale;}
     stepWorld(world,dt,keys);   // hit stop is per fighter inside the logic step (status.hitStop); UI/clock/cooldowns keep running
     const frozen=world.query('status').some(id=>world.get(id,'status').frozen);
     syncViews(world);updateAnimations(world,dt);updateVfx(frozen?0:dt);updateEventVfx();updateDefenseView(dt);   // hit effects hold still with the fighters

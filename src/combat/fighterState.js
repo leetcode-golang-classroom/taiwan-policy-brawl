@@ -48,7 +48,7 @@ export function deriveState(world,id){
   if(st.stun>0)return !b.grounded?'Airborne':st.kbTime>0?'Knockback':'HitStun';
   if(!b.grounded&&!a.charge&&a.attackTime<=0&&a.phase==='idle')return 'Jump';
   if(st.dodgeTimer>0)return 'Dodge';
-  if(world.get(id,'defense')?.active)return 'Defense';
+  const df=world.get(id,'defense');if(df?.active||df?.recovery>0)return 'Defense';   // startup, active guard and the recovery after it
   const tier=a.charge?.tier||(a.attackTime>0?a.attackStyle:null);
   if(tier==='ult')return 'Ultimate';
   if(tier&&a.phase!=='idle')return ATTACK_STATE[tier][a.phase]||'AttackRecovery';

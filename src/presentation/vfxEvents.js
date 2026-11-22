@@ -119,6 +119,12 @@ export function initVfxEvents(world){
   on('evade',e=>{
     syncView(world,e.targetId);const T=obj(e.targetId);if(!T)return;
     showCombatFeedback(side(e.targetId),'evade');burst(up(T.position,.8),0x8cdcff,18);
+    // afterimage: a few fading ghosts trailing behind the evader (cheap capsules, no model clones)
+    const back=new THREE.Vector3(-(world.get(e.targetId,'status').dodgeDir?.x||0),0,-(world.get(e.targetId,'status').dodgeDir?.z||0));
+    for(let i=0;i<3;i++){
+      const g=new THREE.Mesh(new THREE.CapsuleGeometry(.42,1.0,4,10),new THREE.MeshBasicMaterial({color:0x8feaff,transparent:true,opacity:.42-i*.1,depthWrite:false}));
+      g.position.copy(T.position).addScaledVector(back,.55*(i+1)).add(new THREE.Vector3(0,1.15,0));addFx(g,.45+i*.08,'fade');
+    }
   });
   on('comboHit',e=>{
     syncView(world,e.targetId);const T=obj(e.targetId);if(!T)return;
@@ -128,11 +134,11 @@ export function initVfxEvents(world){
   });
   on('dodge',e=>{
     syncView(world,e.id);const F=obj(e.id);if(!F)return;
-    const from=new THREE.Vector3(e.from.x,0,e.from.z);
+    const from=new THREE.Vector3(e.from.x,0,e.from.z),to=new THREE.Vector3(e.to.x,0,e.to.z);   // the body is still at `from` (it slides)
     const trail=new THREE.Mesh(new THREE.BoxGeometry(1.9,.08,.22),new THREE.MeshBasicMaterial({color:0x8feaff,transparent:true,opacity:.9,depthWrite:false}));
-    trail.position.copy(from).lerp(F.position,.5).add(new THREE.Vector3(0,.22,0));trail.rotation.y=Math.atan2(e.dir.x,e.dir.z);addFx(trail,.48,'fade');
+    trail.position.copy(from).lerp(to,.5).add(new THREE.Vector3(0,.22,0));trail.rotation.y=Math.atan2(e.dir.x,e.dir.z);addFx(trail,.48,'fade');
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.075,8,36),new THREE.MeshBasicMaterial({color:0x9deaff,transparent:true,opacity:.95,depthWrite:false}));
-    ring.position.copy(F.position).add(new THREE.Vector3(0,.12,0));ring.rotation.x=Math.PI/2;addFx(ring,.58,'ring');
+    ring.position.copy(from).add(new THREE.Vector3(0,.12,0));ring.rotation.x=Math.PI/2;addFx(ring,.58,'ring');
     burst(up(F.position,.55),DODGE_COLORS[charId(e.id)]||0x8cdcff,charId(e.id)==='nun'?18:11);
   });
   on('jump',e=>{syncView(world,e.id);burst(up(obj(e.id).position,.12),0x9ddcff,9);});

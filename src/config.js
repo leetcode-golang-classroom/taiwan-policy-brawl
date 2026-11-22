@@ -5,7 +5,9 @@ export const ARENA={halfX:7,halfZ:5};
 export const AIRBORNE_BONUS=4;          // extra damage when the attacker is airborne
 // I-key exclusive defense. Projectiles/homing are fully blocked; melee/area/dash are reduced by `reduction`.
 // cooldown starts when the guard ends. layers: characters whose barrier breaks after N absorbed hits.
-export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3}};
+// PHASE 12: raising the guard has a startup (not protective yet), then the active guard, then a recovery (no actions) after it drops.
+// duration = startup + active.
+export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3},startup:.08,recovery:.2};
 
 // Unified skill data (spec 6.2). type: melee | projectile | homing | area | dash
 // range    = max reach (melee/area/dash-hit) or max flight distance (projectile/homing)
@@ -44,7 +46,9 @@ export const cooldownFor=(charId,tier)=>getSkill(charId,tier).cooldown;   // per
 export const cooldownDurations={basic:SKILL_DEFAULTS.basic.cooldown,skill:SKILL_DEFAULTS.skill.cooldown,ult:SKILL_DEFAULTS.ult.cooldown};
 
 // ---- Gameplay constants shared by systems (kept here so balance is tuned in one place) ----
-export const DODGE={duration:.68,invuln:.42,cooldown:1.1,defaultDistance:2.1,
+// PHASE 12 dodge: invuln for the first `invuln` s, vulnerable recovery until `duration`. The body SLIDES `slide` s (not a teleport).
+// attackAfter: attacks (counter-attacks) are locked for this long after the dodge starts; a press just before it is buffered.
+export const DODGE={duration:.68,invuln:.42,cooldown:1.1,slide:.2,attackAfter:.5,defaultDistance:2.1,
   distance:{mech:2.55,leopard:2.25,admiral:1.9,mage:2.35,cleric:2.2,brawler:2.0,nun:1.9,yu:2.15,'bubble':2.2}};
 // 乾坤之動 (08 basic): a tai-chi stance that reflects incoming attacks for `duration` seconds after it is released.
 export const REFLECT={duration:.5,charId:'yu'};
@@ -81,3 +85,6 @@ export const KNOCK={duration:{basic:.16,skill:.26,ult:.4},minSep:.8,sepHeight:1.
 export const WEIGHT={mech:1.2,brawler:1.15,cleric:1,admiral:1,leopard:.95,nun:.9,yu:.9,mage:.85,bubble:.85};
 // PHASE 8 locomotion: velocity chases the input direction at `accel` (also turns it), decays at `friction` with no input; speed is capped by body.moveSpeed.
 export const MOVE={accel:42,friction:34,turnRate:16,moveEps:.3};
+
+// PHASE 12: brief slow-motion after the local player successfully dodges (real seconds, time scale while it lasts).
+export const SLOWMO={time:.35,scale:.35};

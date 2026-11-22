@@ -1,4 +1,4 @@
-import {REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
+import {DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {attack,tickActiveHitbox} from './combatSystem.js';
 
@@ -18,7 +18,7 @@ export function actionSystem(world,dt){
     if(a.buffer){
       const tier=a.buffer.tier;
       if(world.get(id,'defense')?.active||(tier==='ult'&&e.value<100))a.buffer=null;   // state changed under the buffered press
-      else if(canStart(a,tier,world.get(id,'status').stun)){a.buffer=null;startCharge(world,id,tier);}
+      else if(canStart(a,tier,actionLocked(world,id))){a.buffer=null;startCharge(world,id,tier);}
     }
     tickActiveHitbox(world,id,dt);
     if(a.charge){
@@ -31,8 +31,14 @@ export function actionSystem(world,dt){
 // PHASE 4/5 cancel rules. While an attack animation is still running (attackTime>0):
 //  - missed attack: nothing may start until it has fully recovered (no unlimited whiff cancelling);
 //  - connected attack: J may chain into the next J (steps 1-2) and K may be used (combo cancel); L may not.
-export function canStart(a,tier,stun=0){
-  if(a.charge||stun>0)return false;   // PHASE 6: no attacking while in hit stun (a buffered press fires when it ends)
+// Why a fighter cannot START an attack right now (a buffered press fires when the lock ends):
+// hit stun (PHASE 6), guard recovery and the committed part of a dodge (PHASE 12).
+export function actionLocked(world,id){
+  const st=world.get(id,'status'),d=world.get(id,'defense');
+  return st.stun>0||(d?.recovery>0)||(st.dodgeTimer>0&&DODGE.duration-st.dodgeTimer<DODGE.attackAfter);
+}
+export function canStart(a,tier,locked=false){
+  if(a.charge||locked)return false;
   const busy=a.attackTime>0;
   const cancelWindow=busy&&a.hitConfirmed;   // opens as soon as the hit connects (hit stop already delays it); a whiff never opens it
   if(tier==='basic'&&cancelWindow&&a.comboStep>0&&a.comboStep<3)return true;   // J -> J on hit ignores the basic cooldown
