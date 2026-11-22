@@ -4,6 +4,7 @@ import {Dash} from '../ecs/components.js';
 import {opponentOf} from '../ecs/entities.js';
 import {applyDefense} from './defenseSystem.js';
 import {spawnProjectile} from './projectileSystem.js';
+import {registerComboHit} from './comboSystem.js';
 
 export const bodyCenter=(world,id)=>{const t=world.get(id,'transform');return {x:t.x,y:t.y+1.15,z:t.z};};
 const forwardOf=t=>({x:Math.sin(t.rotY),y:0,z:Math.cos(t.rotY)});
@@ -55,6 +56,8 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
     const ast=world.get(attackerId,'status');if(ast)ast.hitStop=Math.max(ast.hitStop,hitStop);
     if(!reflected){const aa=world.get(attackerId,'attacker');if(aa)aa.hitConfirmed=true;}   // enables combo cancel (PHASE 4)
   }
+  if(dealt>0&&!def.blocked&&!def.reduced)registerComboHit(world,attackerId,targetId,dealt);   // defended hits do not count
+  if(dealt>0)st.stun=Math.min(st.stun,HIT.maxStun);
   world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched,hitStop});
   if(dealt>0)onHit?.(dealt);
   return dealt>0;

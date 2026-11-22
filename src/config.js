@@ -48,7 +48,8 @@ export const DODGE={duration:.68,invuln:.42,cooldown:1.1,defaultDistance:2.1,
   distance:{mech:2.55,leopard:2.25,admiral:1.9,mage:2.35,cleric:2.2,brawler:2.0,nun:1.9,yu:2.15,'bubble':2.2}};
 // 乾坤之動 (08 basic): a tai-chi stance that reflects incoming attacks for `duration` seconds after it is released.
 export const REFLECT={duration:.5,charId:'yu'};
-export const HIT={reactTime:.38,baseStun:.28,airborneThreshold:.25};
+// maxStun: hit stun is re-computed (not summed) on every hit and can never exceed this, so nobody is stun-locked forever.
+export const HIT={reactTime:.38,baseStun:.28,airborneThreshold:.25,maxStun:1.4};
 export const GRAVITY=20;
 export const ATTACK_TIME={basic:.32,skill:.48,ult:.72};
 // Six-phase attack (spec 3.3): windup -> charge -> strike | impact (hit / launch frame) -> recovery -> idle.

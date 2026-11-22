@@ -8,6 +8,8 @@ export const Status=()=>({stun:0,rootTrap:0,hitReact:0,hitSide:0,dodgeTimer:0,do
 export const Attacker=()=>({cooldowns:{basic:0,skill:0,ult:0},charge:null,attackTime:0,attackStyle:null,phase:'idle',comboStep:0,comboWindow:0,comboHits:0,buffer:null,active:null,hitConfirmed:false});
 // Combat state machine record (PHASE 1): current state name, entry time (world.time), expected duration, previous state.
 export const FState=()=>({name:'Idle',prev:null,enteredAt:0,duration:0});
+// Running combo of this fighter as the ATTACKER (PHASE 11): effective hits and total damage on one victim.
+export const Combo=()=>({hits:0,damage:0,targetId:null,lastHit:-9});
 // Control output. Control systems (player input / AI) write it, gameplay systems consume it.
 export const Defense=()=>({active:false,timer:0,cooldown:0,layers:0});
 export const Intent=()=>({moveX:0,moveZ:0,attack:null,jump:false,dodge:false,dodgeDir:null,defend:false,rush:null,lastTap:{code:null,time:-9}});
