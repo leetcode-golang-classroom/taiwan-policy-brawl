@@ -20,3 +20,17 @@ for(const [name,final] of [['round end',false],['match end',true]]){
     }
   });
 }
+
+// Regression: physicsSystem used to skip entirely when the match was not running, so a fighter airborne at the KO
+// (launched, or mid-jump) hung in the air for the whole round transition and forever after the final round.
+for(const [name,final] of [['round end',false],['match end',true]]){
+  test(`${name}: a fighter airborne at the KO still falls and lands`,()=>{
+    const w=startedWorld({p:'cleric',c:'leopard'});arrange(w,{dist:3});
+    const t=w.world.get(w.player,'transform'),b=w.world.get(w.player,'body');
+    t.y=2.5;b.grounded=false;b.vy=0;
+    const m=w.world.match;if(final){m.playerRounds=1;m.cpuRounds=0;}
+    endRound(w.world,'cpu','test');
+    step(w.world,.2);assert.ok(t.y<2.5,'already falling: '+t.y);
+    step(w.world,1.5);assert.equal(t.y,0);assert.equal(b.grounded,true);
+  });
+}

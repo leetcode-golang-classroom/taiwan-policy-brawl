@@ -2,7 +2,8 @@ import {GRAVITY,HIT_REACT,KNOCK} from '../config.js';
 import {clampToArena} from './combatSystem.js';
 
 export function physicsSystem(world,dt){
-  if(!world.match.running||world.match.ended)return;
+  // No running/ended guard: a fighter airborne at the KO (launched or mid-jump) must still fall and land, otherwise it hangs
+  // in the air through the round transition and forever after the last round. Standing fighters are a no-op here.
   for(const id of world.query('transform','body')){
     const t=world.get(id,'transform'),b=world.get(id,'body'),st=world.get(id,'status');
     if(st?.frozen)continue;   // hit stop: hold position and arc
