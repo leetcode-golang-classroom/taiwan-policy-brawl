@@ -78,11 +78,25 @@ export const COMBO_STEPS=Object.freeze([
   Object.freeze({chargeBonus:.12, stun:.62, launch:3.3, stepIn:.75, cancels:Object.freeze(['K','L'])}),
 ]);
 export const COMBO={window:.92,steps:COMBO_STEPS};
+// PHASE 8 per-character combo routes. A character listed here replaces the generic J1-J2-J3 data (and may tune the air juggle);
+// everyone else keeps the defaults. 神職人員 (cleric) 聖光連擊: J1 jab -> J2 palm -> J3 rising-light launcher (higher than the generic one),
+// K/L cancel only from the launcher, and a longer, harder-hitting air juggle that ends in the 天罰 slam.
+export const COMBO_BY_CHAR=Object.freeze({
+  cleric:Object.freeze([
+    Object.freeze({chargeBonus:0,  stun:0,   launch:0,   stepIn:.55,cancels:Object.freeze(['J','K'])}),
+    Object.freeze({chargeBonus:0,  stun:.42, launch:0,   stepIn:.85,cancels:Object.freeze(['J','K'])}),
+    Object.freeze({chargeBonus:.1, stun:.7,  launch:5.4, stepIn:.9, cancels:Object.freeze(['K','L'])}),
+  ]),
+});
+export const comboStepsFor=id=>COMBO_BY_CHAR[id]||COMBO_STEPS;
 // PHASE 3 juggle (launcher -> chase -> air combo -> slam). Limits apply ONLY to hits on an airborne victim; the grounded J chain stays uncapped.
 //   minHeight: victim/attacker counts as airborne above this   maxHits: air hits that still re-lift (after that the victim falls)
 //   decay: damage multiplier per previous air hit               lift/stun: per air hit re-lift velocity and hit stun
 //   maxChase: chase dashes per combo   chaseTime/Speed/Range: glide to the airborne victim   slam*: K from the air spikes the victim down
-export const AIR={minHeight:.5,maxHits:4,decay:.8,lift:4.6,stun:.55,maxChase:2,chaseTime:.22,chaseSpeed:26,chaseRange:1.7,slamSpeed:17,slamDamage:12,slamStun:1,slamHitStop:.13,hoverGravity:.35,juggleGravity:.5};   // juggled victims fall slower so a K (longer charge) can still connect
+export const AIR={minHeight:.5,maxHits:4,decay:.8,lift:4.6,stun:.55,maxChase:2,chaseTime:.22,chaseSpeed:26,chaseRange:1.7,slamSpeed:17,slamDamage:12,slamStun:1,slamHitStop:.13,hoverGravity:.35,juggleGravity:.5};
+const AIR_BY_CHAR={cleric:{maxHits:5,lift:4.9,decay:.82,slamDamage:16,slamSpeed:19}};
+const AIR_CACHE=Object.fromEntries(Object.entries(AIR_BY_CHAR).map(([k,v])=>[k,Object.freeze({...AIR,...v})]));
+export const airFor=id=>AIR_CACHE[id]||AIR;   // per-character juggle tuning   // juggled victims fall slower so a K (longer charge) can still connect
 export const SKILL_ENERGY_BONUS=8;
 // forward lunge while an attack animation plays: units/second (per character, per tier)
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};

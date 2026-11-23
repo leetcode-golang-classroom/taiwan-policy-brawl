@@ -11,7 +11,7 @@ function stateOf(world,id,f){
   u.guarding=!!world.get(id,'defense')?.active;
   u.phase=at.phase;u.moveFwd=b.moveFwd;u.moveSide=b.moveSide;u.rushTimer=st.rushTimer;u.hitDir=st.hitDir;u.hitPower=st.hitPower;u.airHit=st.airHit;u.landTimer=st.landTimer;
   u.rotY=world.get(id,'transform').rotY;u.speedRatio=Math.min(1,Math.hypot(b.vx||0,b.vz||0)/(b.moveSpeed||1));
-  u.attackTime=at.attackTime;u.attackStyle=at.attackStyle;u.chargeTime=ch?ch.time:0;u.chargeStyle=ch?ch.tier:undefined;
+  u.comboStep=at.comboStep;u.attackTime=at.attackTime;u.attackStyle=at.attackStyle;u.chargeTime=ch?ch.time:0;u.chargeStyle=ch?ch.tier:undefined;
   return u;
 }
 // Weapon / energy-focus feedback (spec 7): rotates while charging, glows progressively, flashes on impact; a pooled PointLight (1 per fighter) follows it.
@@ -177,6 +177,24 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.z=THREE.MathUtils.damp(u.limbs[0].rotation.z,-2.7+slam*.9,24,dt);u.limbs[2].rotation.z=THREE.MathUtils.damp(u.limbs[2].rotation.z,2.7-slam*.9,24,dt);
         u.limbs[0].rotation.x=THREE.MathUtils.damp(u.limbs[0].rotation.x,-slam*1.2,24,dt);u.limbs[2].rotation.x=THREE.MathUtils.damp(u.limbs[2].rotation.x,-slam*1.2,24,dt);
         u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,slam?.32:-.28,20,dt);
+      }
+      if(u.id==='cleric'&&tier==='basic'){ // 聖光連擊: J1 right jab, J2 left palm thrust, J3 rising two-handed light strike (the launcher)
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact',step=u.comboStep||1;
+        if(step===1){u.body.rotation.y=D(u.body.rotation.y,.35,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.12,24,dt);
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.58,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.05,30,dt);u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.7,26,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.5,26,dt);}
+        else if(step===2){u.body.rotation.y=D(u.body.rotation.y,-.45,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.18,24,dt);u.body.position.y=1.2;
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.62,36,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.1,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.6,26,dt);}
+        else{u.body.rotation.y=D(u.body.rotation.y,0,26,dt);u.body.rotation.x=D(u.body.rotation.x,hit?-.4:.3,26,dt);u.body.position.y=hit?1.42:1.08;u.head.position.y=hit?2.3:1.95;   // crouch, then rise with both hands sweeping up
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-3.0:-.4,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.0:-.4,30,dt);
+          u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?-.25:-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.25:.5,26,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.1:.55,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?.2:-.45,24,dt);}
+      }
+      if(u.id==='cleric'&&tier==='skill'&&!u.grounded){ // 天罰: air finisher — both hands raised overhead, then hammered down
+        const D=THREE.MathUtils.damp,down=u.phase==='impact';
+        u.body.rotation.x=D(u.body.rotation.x,down?.7:-.3,28,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,down?-.4:-3.1,32,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,down?-.4:-3.1,32,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.2,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.2,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,down?.6:-.3,26,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,down?.6:-.3,26,dt);
       }
       if(u.id==='brawler'&&tier==='basic'){ // 重拳出擊: alternating straight punches, torso twisting into each one
         const D=THREE.MathUtils.damp,first=u.phase==='strike';

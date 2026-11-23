@@ -1,4 +1,4 @@
-import {DEFENSE,AIR,COMBO_STEPS,AIRBORNE_BONUS,ARENA,COMBO,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
+import {DEFENSE,airFor,comboStepsFor,AIRBORNE_BONUS,ARENA,COMBO,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
 import {normalize,clamp,horizontalLength} from '../ecs/math.js';
 import {Dash} from '../ecs/components.js';
 import {opponentOf} from '../ecs/entities.js';
@@ -29,6 +29,7 @@ export function damage(world,targetId,amount,sourceId){
 // Order: dodge invulnerability -> defense modifier -> damage() -> knockback -> event.
 export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=false}={}){
   const st=world.get(targetId,'status'),tt=world.get(targetId,'transform'),at=world.get(attackerId,'transform');
+  const AIR=airFor(world.get(attackerId,'fighter').charId);
   if(st.dodgeInvuln>0){world.events.emit('evade',{attackerId,targetId,skill});return false;}
   if(st.reflect>0&&!reflected){   // 乾坤之動: the attack is turned back on its sender (no damage to the reflector)
     world.events.emit('reflect',{attackerId,targetId,skill,projectileId:null});
@@ -109,7 +110,7 @@ export function attack(world,attackerId,tier,opts={}){
   const f=world.get(attackerId,'fighter'),at=world.get(attackerId,'transform'),att=world.get(attackerId,'attacker');
   const skill=getSkill(f.charId,tier);
   face(world,attackerId,targetId);
-  const stepIn=skill.stepIn||(tier==='basic'?COMBO_STEPS[att.comboStep-1]?.stepIn||0:0);
+  const stepIn=skill.stepIn||(tier==='basic'?comboStepsFor(f.charId)[att.comboStep-1]?.stepIn||0:0);
   if(stepIn){const t=world.get(targetId,'transform');const d=normalize({x:t.x-at.x,y:0,z:t.z-at.z});at.x+=d.x*stepIn;at.z+=d.z*stepIn;clampToArena(at);}
   att.attackTime=ATTACK_TIME[tier];att.attackStyle=tier;
   const info={attackerId,targetId,tier,skill,projectileId:null};
@@ -149,10 +150,10 @@ export function tickActiveHitbox(world,id,dt){
 // PHASE 3 chase dash: during a combo, SPACE while the victim is juggled in the air glides the attacker up to them
 // (a short fast burst, gravity off) so the air combo can continue. Limited to AIR.maxChase per combo.
 export function startChase(world,id){
-  const c=world.get(id,'combo'),b=world.get(id,'body'),s=world.get(id,'status');
+  const c=world.get(id,'combo'),b=world.get(id,'body'),s=world.get(id,'status'),AIR=airFor(world.get(id,'fighter').charId);
   if(!c||c.hits<=0||!world.match.running||s.stun>0||s.chaseTimer>0||c.chases>=AIR.maxChase)return false;
   const tid=c.targetId,tt=world.get(tid,'transform'),tb=world.get(tid,'body');
-  if(tid==null||tb.grounded||tt.y<=AIR.minHeight||world.get(tid,'status').stun<=0)return false;
+  if(tid==null||tb.grounded||world.get(tid,'status').stun<=0)return false;   // airborne and still in hit stun (right after the launch counts)
   s.chaseTimer=AIR.chaseTime;c.chases++;b.grounded=false;b.vy=0;
   world.get(id,'attacker').attackTime=0;
   world.events.emit('chase',{id,targetId:tid,n:c.chases});return true;
@@ -160,6 +161,7 @@ export function startChase(world,id){
 export function chaseSystem(world,dt){
   for(const id of world.query('status','combo','transform','body')){
     const s=world.get(id,'status');if(s.chaseTimer<=0||s.frozen)continue;
+    const AIR=airFor(world.get(id,'fighter').charId);
     const c=world.get(id,'combo'),t=world.get(id,'transform'),b=world.get(id,'body'),tt=world.get(c.targetId??-1,'transform');
     if(!tt||s.stun>0){s.chaseTimer=0;continue;}
     s.chaseTimer=Math.max(0,s.chaseTimer-dt);b.vy=0;b.grounded=false;

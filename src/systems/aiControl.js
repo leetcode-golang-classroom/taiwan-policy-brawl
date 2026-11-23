@@ -1,4 +1,4 @@
-import {DEFENSE,AIR,AI,ARENA,RUSH,getSkill} from '../config.js';
+import {DEFENSE,airFor,AI,ARENA,RUSH,getSkill} from '../config.js';
 import {fighterOf,opponentOf} from '../ecs/entities.js';
 import {dist as dist3} from '../ecs/math.js';
 import {actionLocked} from './actionSystem.js';
@@ -89,7 +89,7 @@ function think(world,dt){
     if(now>=brain.counterAt&&dist<basicReach+.3){brain.counterAt=null;it.attack='basic';return;}
   }else brain.counterAt=null;
   // ---- juggle: the CPU also chases a launched opponent, air-combos and finishes with a slam (limits live in resolveHit / startChase) ----
-  const cb=world.get(id,'combo'),pbody=world.get(pid,'body');
+  const AIR=airFor(charId),cb=world.get(id,'combo'),pbody=world.get(pid,'body');
   const juggling=cb.hits>0&&cb.targetId===pid&&!pbody.grounded&&p.y>AIR.minHeight&&ps.stun>0;
   if(!juggling)brain.airAt=null;
   else{
