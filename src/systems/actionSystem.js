@@ -1,4 +1,4 @@
-import {COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
+import {AIR,COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {attack,tickActiveHitbox} from './combatSystem.js';
 
@@ -96,6 +96,7 @@ function comboHit(world,id,step){
   a.comboHits++;
   const d=COMBO_STEPS[step-1];
   if(d.stun)st.stun=d.stun;
-  if(d.launch){body.vy=Math.max(body.vy,d.launch);body.grounded=false;}
+  const tt=world.get(tid,'transform');
+  if(d.launch&&!(tt.y>AIR.minHeight&&st.airHits>=AIR.maxHits)){body.vy=Math.max(body.vy,d.launch);body.grounded=false;}
   world.events.emit('comboHit',{attackerId:id,targetId:tid,step});
 }

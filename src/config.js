@@ -72,6 +72,11 @@ export const COMBO_STEPS=Object.freeze([
   Object.freeze({chargeBonus:.12, stun:.62, launch:3.3, stepIn:.75, cancels:Object.freeze(['K','L'])}),
 ]);
 export const COMBO={window:.92,steps:COMBO_STEPS};
+// PHASE 3 juggle (launcher -> chase -> air combo -> slam). Limits apply ONLY to hits on an airborne victim; the grounded J chain stays uncapped.
+//   minHeight: victim/attacker counts as airborne above this   maxHits: air hits that still re-lift (after that the victim falls)
+//   decay: damage multiplier per previous air hit               lift/stun: per air hit re-lift velocity and hit stun
+//   maxChase: chase dashes per combo   chaseTime/Speed/Range: glide to the airborne victim   slam*: K from the air spikes the victim down
+export const AIR={minHeight:.5,maxHits:4,decay:.8,lift:4.6,stun:.55,maxChase:2,chaseTime:.22,chaseSpeed:26,chaseRange:1.7,slamSpeed:17,slamDamage:12,slamStun:1,slamHitStop:.13,hoverGravity:.35,juggleGravity:.5};   // juggled victims fall slower so a K (longer charge) can still connect
 export const SKILL_ENERGY_BONUS=8;
 // forward lunge while an attack animation plays: units/second (per character, per tier)
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};

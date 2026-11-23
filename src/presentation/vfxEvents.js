@@ -9,7 +9,7 @@ import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
 import {buildDie,buildZhongTile} from '../skills/admiral.js';
-import {playSwing,playHit} from '../audio/sfx.js';
+import {playSwing,playHit,playLand} from '../audio/sfx.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -77,6 +77,12 @@ export function initVfxEvents(world){
       entry.orb=new THREE.Mesh(new THREE.SphereGeometry(Math.max(.3,e.skill.radius*.55),14,12),new THREE.MeshBasicMaterial({color:0xf4f4f4,transparent:true,opacity:.95}));
       entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
     }
+  });
+  on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);playSwing('skill');addCameraShake(.06,.12);});   // chase dash: air-streak burst
+  on('slamLand',e=>{   // ground slam impact: shockwave ring, dust, heavy shake
+    const T=obj(e.targetId);if(!T)return;
+    const c=up(T.position,.15);burst(c,0xd9c9a3,40);burst(c,0xffe08a,20);playLand();addCameraShake(.5,.4);
+    const r=new THREE.Mesh(new THREE.TorusGeometry(1.1,.1,8,36),new THREE.MeshBasicMaterial({color:0xffe9b0,transparent:true,opacity:.95,depthWrite:false}));r.position.copy(c);r.rotation.x=Math.PI/2;addFx(r,.5,'ring');
   });
   on('projectileEnd',e=>{
     const entry=bound.get(e.id);if(!entry)return;

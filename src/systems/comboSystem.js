@@ -13,7 +13,7 @@ export function registerComboHit(world,attackerId,targetId,dealt){
 export function endCombo(world,attackerId){
   const c=world.get(attackerId,'combo');if(!c||c.hits===0)return;
   const e={attackerId,targetId:c.targetId,hits:c.hits,damage:c.damage};
-  c.hits=0;c.damage=0;c.targetId=null;
+  c.hits=0;c.damage=0;c.chases=0;c.targetId=null;
   world.events.emit('comboEnd',e);
 }
 export function comboSystem(world){

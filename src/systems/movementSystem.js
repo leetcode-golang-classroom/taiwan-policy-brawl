@@ -2,7 +2,7 @@ import {DODGE,DEFENSE,RUSH,MOVE,INPUT_BUFFER} from '../config.js';
 import {LUNGE} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {normalize,horizontalLength} from '../ecs/math.js';
-import {face,clampToArena} from './combatSystem.js';
+import {face,clampToArena,startChase} from './combatSystem.js';
 
 export function jump(world,id){
   const b=world.get(id,'body'),s=world.get(id,'status');
@@ -57,7 +57,7 @@ export function movementSystem(world,dt){
     const dreq=dodgeReq?{dir:dodgeDir,time:world.time}:s.dodgeBuf;
     s.dodgeBuf=null;
     if(dreq&&!guarding&&world.time-dreq.time<=INPUT_BUFFER){if(!performDodge(world,id,dreq.dir))s.dodgeBuf=dreq;}
-    if(jumpReq&&!guarding)jump(world,id);
+    if(jumpReq&&!guarding&&!(b.grounded&&startChase(world,id)))jump(world,id);   // juggled victim in the air: SPACE chases instead of jumping
     if(rushReq&&!guarding)performRush(world,id,rushReq);
     if(s.rushTimer>0&&(s.stun>0||s.rootTrap>0||a.charge||!b.grounded||s.dodgeTimer>0))s.rushTimer=0;
     const mag=Math.hypot(it.moveX,it.moveZ);
