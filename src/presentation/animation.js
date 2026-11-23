@@ -11,7 +11,7 @@ function stateOf(world,id,f){
   u.guarding=!!world.get(id,'defense')?.active;
   u.phase=at.phase;u.moveFwd=b.moveFwd;u.moveSide=b.moveSide;u.rushTimer=st.rushTimer;u.hitDir=st.hitDir;u.hitPower=st.hitPower;u.airHit=st.airHit;u.landTimer=st.landTimer;
   u.rotY=world.get(id,'transform').rotY;u.speedRatio=Math.min(1,Math.hypot(b.vx||0,b.vz||0)/(b.moveSpeed||1));
-  u.attackTime=at.attackTime;u.attackStyle=at.attackStyle;u.chargeTime=ch?ch.time:0;u.chargeStyle=ch?ch.tier:undefined;
+  u.comboStep=at.comboStep;u.attackTime=at.attackTime;u.attackStyle=at.attackStyle;u.chargeTime=ch?ch.time:0;u.chargeStyle=ch?ch.tier:undefined;
   return u;
 }
 // Weapon / energy-focus feedback (spec 7): rotates while charging, glows progressively, flashes on impact; a pooled PointLight (1 per fighter) follows it.
@@ -42,6 +42,41 @@ const SIGNATURE={
   yu:{basic:[[-.3,-.3,-2.9,.2,.1],[-.3,-.3,-.7,.2,.3]],skill:[[-1.5,-.8,-1.5,.8,-.1],[-1.5,-.3,-1.5,.3,-.2]],ult:[[-3,-.8,-3,.8,-.2],[-1.6,-.2,-1.6,.2,.3]]},
   bubble:{basic:[[-1.35,.55,-1.35,-.55,-.05],[-1.3,.5,-1.3,-.5,-.05]],skill:[[-2.75,.5,.2,.15,0],[-2.7,.5,.1,.1,0]],ult:[[-1.2,.35,-1.57,0,-.05],[-1.2,.3,-1.57,0,-.05]]}   // basic: hands together in a heart; skill: left-hand salute; ult: finger-gun pointing at the target
 };
+// Data-driven combo poses: [leftArmX,leftArmZ,rightArmX,rightArmZ,bodyLean,bodyYaw,bodyHeight] for [windup/strike, impact], per J step (1-3) and the air finisher.
+const STEP_POSES={
+  nun:{ // 光明使者: J1 two-hand push, J2 overhand chop, J3 scoop-lift launcher, air: overhead double slam
+    1:[[-.9,-.4,-.9,.4,.1,0,1.2],[-1.5,-.2,-1.5,.2,-.15,0,1.2]],
+    2:[[-.3,-.3,-2.6,.3,-.1,-.4,1.25],[-.3,-.3,-.6,.2,.3,.5,1.2]],
+    3:[[-.4,-.7,-.4,.7,.35,0,1.05],[-3.0,-.3,-3.0,.3,-.4,0,1.42]],
+    air:[[-3,-.4,-3,.4,-.3,0,1.3],[-.5,-.2,-.5,.2,.8,0,1.2]]},
+  mage:{ // 教育推廣者: J1 right-hand book flip, J2 left-hand pointer flick, J3 both hands raising the book (launcher), air: book slammed down
+    1:[[-.3,-.3,-.9,.5,0,.3,1.25],[-.3,-.3,-1.7,.1,-.1,.3,1.25]],
+    2:[[-1.0,-.9,-.3,.4,0,-.3,1.25],[-1.6,-.2,-.3,.4,-.1,-.35,1.25]],
+    3:[[-.5,-.7,-.5,.7,.3,0,1.1],[-2.9,-.4,-2.9,.4,-.3,0,1.4]],
+    air:[[-3,-.3,-3,.3,-.3,0,1.3],[-.6,-.2,-.6,.2,.8,0,1.2]]},
+  brawler:{ // 健身肌肉大叔: J1 right straight, J2 left hook, J3 haymaker uppercut, air: overhead double axe-handle
+    1:[[-.5,-.6,-.9,.5,-.1,.4,1.18],[-.5,-.6,-1.6,.1,-.2,.5,1.18]],
+    2:[[-1.0,-.8,-.5,.6,-.1,-.4,1.18],[-1.55,-.4,-.5,.6,-.2,-.6,1.18]],
+    3:[[-.6,-.8,-.4,.8,.4,0,1.0],[-1.2,-.5,-3.1,.1,-.5,.3,1.4]],
+    air:[[-3.1,-.3,-3.1,.3,-.35,0,1.3],[-.3,-.3,-.3,.3,.9,0,1.2]]},
+  bubble:{ // 家庭計畫推廣員: J1 hands-together gesture push, J2 wide open-hand slap, J3 megaphone raise (launcher), air: arms thrown down
+    1:[[-1.2,.5,-1.2,-.5,-.05,0,1.2],[-1.35,.55,-1.35,-.55,-.05,0,1.2]],
+    2:[[-.4,-.4,-2.2,1.0,0,-.3,1.25],[-.4,-.4,-1.4,-.3,.1,.5,1.22]],
+    3:[[-.5,-.8,-.5,.8,.3,0,1.1],[-2.8,.4,-2.8,-.4,-.3,0,1.4]],
+    air:[[-3,.3,-3,-.3,-.3,0,1.3],[-.8,.2,-.8,-.2,.75,0,1.2]]},
+  admiral:{ // 麻將大叔 (heavy): J1 right-hand throw, J2 left-hand fling, J3 two-hand heave upward, air: tile smash
+    1:[[-.4,-.4,-2.4,.4,-.1,-.3,1.15],[-.4,-.4,-1.2,.2,.1,.35,1.12]],
+    2:[[-2.4,-.4,-.4,.4,-.1,.3,1.15],[-1.2,-.2,-.4,.4,.1,-.35,1.12]],
+    3:[[-.6,-.8,-.6,.8,.45,0,.95],[-2.9,-.3,-2.9,.3,-.45,0,1.35]],
+    air:[[-3,-.4,-3,.4,-.3,0,1.25],[-.3,-.3,-.3,.3,.95,0,1.1]]},
+  yu:{ // 工程總指揮 (tai-chi): J1 right palm push, J2 left palm circle, J3 cloud-hands rising palms, air: both palms pressed down
+    1:[[-.5,-.5,-.8,.6,0,.3,1.25],[-.5,-.5,-1.55,.1,-.1,.3,1.25]],
+    2:[[-1.2,-1.0,-.4,.6,0,-.3,1.25],[-1.55,-.1,-.5,.5,-.1,-.4,1.25]],
+    3:[[-.4,-.9,-.4,.9,.3,0,1.1],[-2.9,-.3,-2.9,.3,-.35,0,1.4]],
+    air:[[-2.9,-.5,-2.9,.5,-.3,0,1.3],[-1.2,-.1,-1.2,.1,.7,0,1.2]]},
+};
+// Characters whose basic / air-skill pose is fully authored (their old single SIGNATURE pose must not fight it).
+const customAttack=(u,tier)=>(tier==='basic'||(tier==='skill'&&!u.grounded))&&(u.id==='cleric'||!!STEP_POSES[u.id]);
 export function updateAnimations(world,dt){
   for(const id of world.query('view','fighter','status','body','attacker')){const f=world.get(id,'view').obj;const u=stateOf(world,id,f);
     if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const rb=f.userData.runBlend=stepRunBlend(f.userData.runBlend||0,u.rushTimer>0,dt);const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
@@ -178,6 +213,24 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.x=THREE.MathUtils.damp(u.limbs[0].rotation.x,-slam*1.2,24,dt);u.limbs[2].rotation.x=THREE.MathUtils.damp(u.limbs[2].rotation.x,-slam*1.2,24,dt);
         u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,slam?.32:-.28,20,dt);
       }
+      if(u.id==='cleric'&&tier==='basic'){ // 聖光連擊: J1 right jab, J2 left palm thrust, J3 rising two-handed light strike (the launcher)
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact',step=u.comboStep||1;
+        if(step===1){u.body.rotation.y=D(u.body.rotation.y,.35,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.12,24,dt);
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.58,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.05,30,dt);u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.7,26,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.5,26,dt);}
+        else if(step===2){u.body.rotation.y=D(u.body.rotation.y,-.45,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.18,24,dt);u.body.position.y=1.2;
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.62,36,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.1,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.6,26,dt);}
+        else{u.body.rotation.y=D(u.body.rotation.y,0,26,dt);u.body.rotation.x=D(u.body.rotation.x,hit?-.4:.3,26,dt);u.body.position.y=hit?1.42:1.08;u.head.position.y=hit?2.3:1.95;   // crouch, then rise with both hands sweeping up
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-3.0:-.4,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.0:-.4,30,dt);
+          u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?-.25:-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.25:.5,26,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.1:.55,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?.2:-.45,24,dt);}
+      }
+      if(u.id==='cleric'&&tier==='skill'&&!u.grounded){ // 天罰: air finisher — both hands raised overhead, then hammered down
+        const D=THREE.MathUtils.damp,down=u.phase==='impact';
+        u.body.rotation.x=D(u.body.rotation.x,down?.7:-.3,28,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,down?-.4:-3.1,32,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,down?-.4:-3.1,32,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.2,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.2,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,down?.6:-.3,26,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,down?.6:-.3,26,dt);
+      }
       if(u.id==='brawler'&&tier==='basic'){ // 重拳出擊: alternating straight punches, torso twisting into each one
         const D=THREE.MathUtils.damp,first=u.phase==='strike';
         u.body.position.y=1.2;u.body.rotation.y=D(u.body.rotation.y,first?.45:-.45,28,dt);u.body.rotation.x=D(u.body.rotation.x,-.25,22,dt);
@@ -185,7 +238,20 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,first?-.5:-1.75,34,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,first?-.7:-.1,28,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.3,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.3,22,dt);
       }
-      if(u.id==='leopard'&&tier==='basic'){ // 都市縫合: arms sweep wide (windup), then clap together in front (strike)
+      if(u.id==='leopard'&&tier==='basic'&&(u.comboStep||1)===2){ // J2 側掃爪: one heavy paw sweeps across from the far side, body twisting through it
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact';
+        u.body.position.y=1.1;u.body.rotation.x=D(u.body.rotation.x,.25,24,dt);u.body.rotation.y=D(u.body.rotation.y,hit?-.7:.5,30,dt);u.head.rotation.x=D(u.head.rotation.x,-.1,20,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.3,32,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?.5:-1.5,34,dt);
+        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.5,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.4,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.3,22,dt);
+      }else if(u.id==='leopard'&&tier==='basic'&&(u.comboStep||1)===3){ // J3 升爪: crouch low, then rear up and scoop both forepaws skyward (launcher)
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact';
+        u.body.position.y=hit?1.45:.95;u.body.rotation.x=D(u.body.rotation.x,hit?-.55:.7,28,dt);u.body.rotation.y=D(u.body.rotation.y,0,24,dt);
+        u.head.position.y=hit?2.2:1.65;u.head.rotation.x=D(u.head.rotation.x,hit?-.6:-.1,22,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-3.0:-.4,34,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.0:-.4,34,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?-.4:-.8,28,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.4:.8,28,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.2:.7,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?-.2:.7,24,dt);
+      }else if(u.id==='leopard'&&tier==='basic'){ // 都市縫合 (J1): arms sweep wide (windup), then clap together in front (strike)
         const clap=u.phase==='strike',D=THREE.MathUtils.damp;
         u.body.position.y=1.15;u.body.rotation.x=D(u.body.rotation.x,clap?.15:-.1,24,dt);u.body.rotation.y=D(u.body.rotation.y,0,24,dt);
         u.head.rotation.x=D(u.head.rotation.x,0,20,dt);
@@ -193,7 +259,14 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,clap?-.25:-1.4,30,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,clap?.25:1.4,30,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,clap?.3:0,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,clap?-.3:0,22,dt);
       }
-      if(u.id==='leopard'&&tier==='skill'){ // 工人隊: low double paw rake, left then right, as the pack is sent forward
+      if(u.id==='leopard'&&tier==='skill'&&!u.grounded){ // air finisher: pounce — body pitched steeply down, forepaws raised then driven into the target
+        const D=THREE.MathUtils.damp,down=u.phase==='impact';
+        u.body.position.y=1.2;u.body.rotation.x=D(u.body.rotation.x,down?1.0:.3,30,dt);u.head.rotation.x=D(u.head.rotation.x,down?-.5:-.2,24,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,down?-.5:-2.8,34,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,down?-.5:-2.8,34,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.3,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.3,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,down?.9:.2,26,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,down?.9:.2,26,dt);
+      }
+      if(u.id==='leopard'&&tier==='skill'&&u.grounded){ // 工人隊: low double paw rake, left then right, as the pack is sent forward
         const D=THREE.MathUtils.damp,air=u.phase==='strike';
         u.body.position.y=1.1;u.body.rotation.x=D(u.body.rotation.x,.55,24,dt);u.body.rotation.y=D(u.body.rotation.y,air?.5:-.5,22,dt);u.head.rotation.x=D(u.head.rotation.x,-.3,20,dt);
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,air?-2.3:-1.0,28,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,air?-1.0:-2.4,28,dt);
@@ -208,12 +281,32 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,up?-.9:-.2,24,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,up?.9:.2,24,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,up?-.2:.6,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,up?-.2:.6,24,dt);
       }
-      if(u.id==='mech'&&tier==='basic'){ // 揮拳: full-body cross punch, hips and shoulders unwinding into a straight right fist
-        const D=THREE.MathUtils.damp;
-        u.body.rotation.y=D(u.body.rotation.y,.6,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.22,24,dt);u.body.position.y=1.2;
-        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.62,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.08,30,dt);
-        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.5,28,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.7,28,dt);
-        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.4,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.45,24,dt);
+      if(u.id==='mech'&&tier==='basic'){ // 揮拳連擊: J1 right cross, J2 left hook (opposite twist), J3 rising scoop uppercut (the launcher)
+        const D=THREE.MathUtils.damp,step=u.comboStep||1,hit=u.phase==='impact';
+        if(step===2){ // left hook: hips unwind the other way into the left fist
+          u.body.rotation.y=D(u.body.rotation.y,-.65,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.2,24,dt);u.body.position.y=1.2;
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.45,36,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.55,30,dt);
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,28,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.7,28,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,-.45,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,.4,24,dt);
+        }else if(step===3){ // scoop: sink low, drive up through the legs, right fist rising overhead
+          u.body.rotation.y=D(u.body.rotation.y,hit?.25:.5,28,dt);u.body.rotation.x=D(u.body.rotation.x,hit?-.4:.3,26,dt);
+          u.body.position.y=hit?1.42:1.05;u.head.position.y=hit?2.3:1.92;
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.05:-.5,34,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.1:.5,28,dt);
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-1.2:-.3,28,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.6,26,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.15:.6,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?.25:-.5,24,dt);
+        }else{ // J1 right cross
+          u.body.rotation.y=D(u.body.rotation.y,.6,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.22,24,dt);u.body.position.y=1.2;
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.62,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.08,30,dt);
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.5,28,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.7,28,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.4,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.45,24,dt);
+        }
+      }
+      if(u.id==='mech'&&tier==='skill'&&!u.grounded){ // air finisher: both fists clasped overhead, then a diving double-hammer with a knee drive
+        const D=THREE.MathUtils.damp,down=u.phase==='impact';
+        u.body.rotation.x=D(u.body.rotation.x,down?.85:-.35,30,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,down?-.6:-3.0,34,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,down?-.6:-3.0,34,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.1,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.1,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,down?-.9:-.2,28,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,down?.7:-.2,28,dt);
       }
       if(u.id==='mech'&&tier==='skill'){ // 階梯往上爬: final big step up — rear knee driven high, arms reaching upward
         const D=THREE.MathUtils.damp,top=u.phase==='impact';
@@ -232,13 +325,18 @@ export function updateAnimations(world,dt){
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,0,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,0,22,dt);
       }
       // Signature strike poses per character: [leftArmX,leftArmZ,rightArmX,rightArmZ,bodyLean]. x<0 raises the arm forward/up; z<0 (left) and z>0 (right) swing outward.
-      const sig=SIGNATURE[u.id]?.[tier];
+      const stepPose=STEP_POSES[u.id]?.[tier==='basic'?(u.comboStep||1):tier==='skill'&&!u.grounded?'air':0];
+      if(stepPose){const P=stepPose[u.phase==='impact'?1:0],D=THREE.MathUtils.damp;
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,P[0],30,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,P[1],30,dt);
+        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,P[2],30,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,P[3],30,dt);
+        u.body.rotation.x=D(u.body.rotation.x,P[4],26,dt);u.body.rotation.y=D(u.body.rotation.y,P[5],26,dt);u.body.position.y=D(u.body.position.y,P[6],26,dt);}
+      const sig=customAttack(u,tier)?null:SIGNATURE[u.id]?.[tier];
       if(sig){const P=sig[u.phase==='strike'?0:1],D=THREE.MathUtils.damp;
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,P[0],26,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,P[1],26,dt);
         u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,P[2],26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,P[3],26,dt);
         u.body.rotation.x=D(u.body.rotation.x,P[4],22,dt);}
       // per-character flavour on top of the tier pose (kept from V3.8)
-      if(u.id==='nun')u.body.rotation.z=Math.sin(t*Math.PI)*.35;
+      if(u.id==='nun'&&!customAttack(u,tier))u.body.rotation.z=Math.sin(t*Math.PI)*.35;
       if(u.id==='brawler'||u.id==='admiral')u.body.position.y-=.06;
     }
     else if(u.phase==='recovery'){ // 5. recovery: weight settles, arms drop back (limbs relax via the idle damping above)

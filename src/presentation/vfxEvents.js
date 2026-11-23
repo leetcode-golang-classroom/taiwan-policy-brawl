@@ -9,16 +9,19 @@ import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
 import {buildDie,buildZhongTile} from '../skills/admiral.js';
+import {playCharge} from '../audio/sfx.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
 const DODGE_COLORS={mech:0x8beaff,leopard:0x8eea9a,admiral:0xffd36c,mage:0xffc4a5,cleric:0xfff1c7,brawler:0xffbd69,nun:0xffa34a,yu:0x9dc7ef,'bubble':0xe8b6dc};
+const LAUNCHER_COLOR={cleric:0xfff1c7,mech:0x8beaff,leopard:0x8eea9a,nun:0xffa34a,yu:0x9dc7ef,brawler:0xffbd69,bubble:0xe8b6dc,admiral:0xffd36c,mage:0xffc4a5};   // J3 launcher light pillar per character
 const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 function fireBurst(c,n=3){for(let i=0;i<n;i++)burst(c,FIRE[i%3],24);}
 const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};
 
 function disposeOrb(o){scene.remove(o);o.traverse(c=>{c.geometry?.dispose();c.material?.dispose();});}
 export function initVfxEvents(world){
+  const bodyFlash=new Map();   // fighter id -> {start,dur,peak}: white-hot body tint right after a hit
   const bound=new Map();   // projectile entity id -> {meshes, orb}
   const rings=new Map();   // fighter id -> charge ring mesh
   const obj=id=>world.get(id,'view')?.obj;
@@ -27,7 +30,7 @@ export function initVfxEvents(world){
   const pos=id=>{const t=world.get(id,'transform');return new THREE.Vector3(t.x,t.y,t.z);};
   const up=(v,y)=>v.clone().add(new THREE.Vector3(0,y,0));
   const on=(n,f)=>world.events.on(n,f);
-  for(const n of ['hit','chargeStart'])on(n,e=>cameraEvent(camRig,n,e));   // Phase 10: combat camera
+  for(const n of ['hit','chargeStart','slamLand'])on(n,e=>cameraEvent(camRig,n,e));   // Phase 10: combat camera
 
   on('attackStart',e=>{
     syncView(world,e.attackerId);syncView(world,e.targetId);
@@ -75,6 +78,21 @@ export function initVfxEvents(world){
       entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
     }
   });
+  const chargeSnd=new Map();   // fighter id -> stop(completed) of its KOF-style charge sound
+  on('chargeStart',e=>{chargeSnd.get(e.id)?.(false);const ch=world.get(e.id,'attacker').charge;chargeSnd.set(e.id,playCharge(e.tier,ch?ch.duration:.3));});
+  on('guardCounter',e=>{showCombatFeedback(side(e.id),'counter');const A=obj(e.id);if(A)burst(up(A.position,1.2),0x7dff9a,26);});
+  on('comboHit',e=>{   // J3 launcher: a pillar of light in the character's colour under the target (聖光升擊 / 數位升擊)
+    const col=LAUNCHER_COLOR[charId(e.attackerId)];if(e.step!==3||col==null)return;const T=obj(e.targetId);if(!T)return;
+      const c=up(T.position,.1);burst(c,col,34);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.8,.09,8,32),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.95,depthWrite:false}));ring.position.copy(c);ring.rotation.x=Math.PI/2;addFx(ring,.45,'ring');
+      const beam=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,4,16,1,true),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,side:THREE.DoubleSide}));beam.position.copy(c).add(new THREE.Vector3(0,2,0));addFx(beam,.4,'fade');
+      });
+  on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);addCameraShake(.06,.12);});   // chase dash: air-streak burst
+  on('slamLand',e=>{   // ground slam impact: shockwave ring, dust, heavy shake
+    const T=obj(e.targetId);if(!T)return;
+    const c=up(T.position,.15);burst(c,0xd9c9a3,40);burst(c,0xffe08a,20);addCameraShake(.5,.4);
+    const r=new THREE.Mesh(new THREE.TorusGeometry(1.1,.1,8,36),new THREE.MeshBasicMaterial({color:0xffe9b0,transparent:true,opacity:.95,depthWrite:false}));r.position.copy(c);r.rotation.x=Math.PI/2;addFx(r,.5,'ring');
+  });
   on('projectileEnd',e=>{
     const entry=bound.get(e.id);if(!entry)return;
     if(e.hit)freezeFx(entry.meshes);
@@ -84,6 +102,9 @@ export function initVfxEvents(world){
   on('hit',e=>{
     syncView(world,e.targetId);
     const T=obj(e.targetId);if(!T)return;
+    if(e.amount>0)bodyFlash.set(e.targetId,{start:world.time,dur:e.skill.tier==='ult'?.26:e.launched||e.skill.tier==='skill'?.2:.13,peak:e.skill.tier==='ult'?1.6:e.launched||e.skill.tier==='skill'?1.1:.8});
+    if(e.perfect){showCombatFeedback(side(e.targetId),'perfect');addCameraShake(.2,.2);burst(up(T.position,1.3),0xffe36b,40);return;}
+    if(e.broken){showCombatFeedback(side(e.targetId),'break');addCameraShake(.35,.3);burst(up(T.position,1.3),0xff5a5a,36);}
     if(e.blocked){showCombatFeedback(side(e.targetId),'block');addCameraShake(.06,.12);return;}
     if(e.reduced)showCombatFeedback(side(e.targetId),'block');
     if(e.amount>0){
@@ -157,6 +178,7 @@ export function initVfxEvents(world){
   on('chargeStart',e=>{
     syncView(world,e.id);const F=obj(e.id);if(!F)return;
     const color=TIER_COLOR[e.tier];
+    dropRing(e.id);   // a new charge can start before update() has dropped the previous one (chained J, cancels): never orphan the old ring
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.065,8,40),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthWrite:false}));
     ring.rotation.x=Math.PI/2;scene.add(ring);rings.set(e.id,ring);
     showMoveName(side(e.id),e.tier,charId(e.id));
@@ -184,7 +206,25 @@ export function initVfxEvents(world){
     g.userData.bolts=[];for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,1),new THREE.MeshBasicMaterial({color:0xcff6ff}));g.add(b);g.userData.bolts.push(b);}
     scene.add(g);arcs.set(id,g);return g;}
   function dropArc(id){const g=arcs.get(id);if(!g)return;scene.remove(g);g.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});arcs.delete(id);}
+  // Body hit flash: tint every emissive material of the victim white, fading out; originals are restored exactly.
+  const flashMats=new Map();   // material -> {color,intensity}
+  function applyFlash(id,k){
+    const root=obj(id);if(!root)return;
+    root.traverse(m=>{
+      if(!m.isMesh||!m.material||!('emissive' in m.material))return;
+      if(!m.userData.flashCloned){m.material=m.material.clone();m.userData.flashCloned=true;}
+      const mat=m.material;let o=flashMats.get(mat);
+      if(!o){o={color:mat.emissive.clone(),intensity:mat.emissiveIntensity};flashMats.set(mat,o);}
+      if(k>0){mat.emissive.set(0xffffff);mat.emissiveIntensity=k;}
+      else{mat.emissive.copy(o.color);mat.emissiveIntensity=o.intensity;flashMats.delete(mat);}
+    });
+  }
   return function update(){
+    for(const [id,stop] of chargeSnd){const ch=world.get(id,'attacker')?.charge;if(!ch){stop(world.get(id,'attacker')?.attackTime>0);chargeSnd.delete(id);}}   // released (attack running) -> snap; otherwise interrupted -> fade
+    for(const [id,f] of bodyFlash){
+      const k=1-(world.time-f.start)/f.dur;
+      if(k<=0){applyFlash(id,0);bodyFlash.delete(id);}else applyFlash(id,f.peak*k);
+    }
     for(const id of world.query('attacker','fighter')){
       const ch=world.get(id,'attacker').charge;
       if(!(ch&&ch.tier==='skill'&&charId(id)==='nun')){dropArc(id);continue;}

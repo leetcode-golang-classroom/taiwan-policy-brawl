@@ -1,6 +1,7 @@
-import {COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
+import {DEFENSE,airFor,comboStepsFor,COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {attack,tickActiveHitbox} from './combatSystem.js';
+import {endDefense} from './defenseSystem.js';
 
 // Consumes intent.attack: starts a charge, then releases the attack when the charge completes.
 export function actionSystem(world,dt){
@@ -11,6 +12,10 @@ export function actionSystem(world,dt){
     const pressed=intent.attack;intent.attack=null;
     if(pressed){
       if(pressed==='ult'&&e.value<100)world.events.emit('ultNotReady',{id});
+      else if(world.get(id,'defense')?.active&&pressed==='basic'&&world.get(id,'defense').counter>0){   // GUARD COUNTER: cancel the guard into a boosted J
+        const d=world.get(id,'defense');endDefense(world,id);d.recovery=0;d.cooldown*=.5;a.counterBoost=DEFENSE.counterBoost;
+        world.events.emit('guardCounter',{id});a.buffer={tier:pressed,time:world.time};
+      }
       else if(!world.get(id,'defense')?.active)a.buffer={tier:pressed,time:world.time};
     }
     if(frozen){if(a.buffer)a.buffer.time+=dt;continue;}   // PHASE 3: hit stop holds the attack/charge/buffer clocks (presses are still recorded above)
@@ -18,7 +23,7 @@ export function actionSystem(world,dt){
     if(a.buffer){
       const tier=a.buffer.tier;
       if(world.get(id,'defense')?.active||(tier==='ult'&&e.value<100))a.buffer=null;   // state changed under the buffered press
-      else if(canStart(a,tier,actionLocked(world,id))){a.buffer=null;startCharge(world,id,tier);}
+      else if(canStart(a,tier,actionLocked(world,id),comboStepsFor(world.get(id,'fighter').charId))){a.buffer=null;startCharge(world,id,tier);}
     }
     tickActiveHitbox(world,id,dt);
     if(a.charge){
@@ -37,11 +42,11 @@ export function actionLocked(world,id){
   const st=world.get(id,'status'),d=world.get(id,'defense');
   return st.stun>0||(d?.recovery>0)||(st.dodgeTimer>0&&DODGE.duration-st.dodgeTimer<DODGE.attackAfter);
 }
-export function canStart(a,tier,locked=false){
+export function canStart(a,tier,locked=false,steps=COMBO_STEPS){
   if(a.charge||locked)return false;
   const busy=a.attackTime>0;
   const cancelWindow=busy&&a.hitConfirmed;   // opens as soon as the hit connects (hit stop already delays it); a whiff never opens it
-  const cancels=COMBO_STEPS[a.comboStep-1]?.cancels||[];
+  const cancels=steps[a.comboStep-1]?.cancels||[];
   if(tier==='basic'&&cancelWindow&&cancels.includes('J'))return true;   // J -> J on hit ignores the basic cooldown
   if(a.cooldowns[tier]>0)return false;
   if(!busy)return true;
@@ -70,7 +75,7 @@ function setPhase(world,id,a,phase){
 function startCharge(world,id,tier){
   const a=world.get(id,'attacker');
   if(tier==='basic'){a.comboStep=a.comboWindow>0?a.comboStep%3+1:1;}
-  const duration=chargeDurations[tier]+(tier==='basic'?COMBO_STEPS[a.comboStep-1].chargeBonus:0);
+  const duration=chargeDurations[tier]+(tier==='basic'?comboStepsFor(world.get(id,'fighter').charId)[a.comboStep-1].chargeBonus:0);
   a.charge={tier,time:0,duration,comboStep:tier==='basic'?a.comboStep:0};
   a.attackTime=0;a.hitConfirmed=false;a.active=null;
   world.events.emit('chargeStart',{id,tier});
@@ -94,8 +99,9 @@ function release(world,id){
 function comboHit(world,id,step){
   const a=world.get(id,'attacker'),tid=opponentOf(world,id),st=world.get(tid,'status'),body=world.get(tid,'body');
   a.comboHits++;
-  const d=COMBO_STEPS[step-1];
+  const charId=world.get(id,'fighter').charId,d=comboStepsFor(charId)[step-1],AIR=airFor(charId);
   if(d.stun)st.stun=d.stun;
-  if(d.launch){body.vy=Math.max(body.vy,d.launch);body.grounded=false;}
+  const tt=world.get(tid,'transform');
+  if(d.launch&&!(tt.y>AIR.minHeight&&st.airHits>=AIR.maxHits)){body.vy=Math.max(body.vy,d.launch);body.grounded=false;st.airHit=true;}   // airHit: hard landing (Down) + slower juggle fall
   world.events.emit('comboHit',{attackerId:id,targetId:tid,step});
 }

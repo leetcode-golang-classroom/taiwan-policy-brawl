@@ -43,7 +43,7 @@ export function updateHud(world){
 }
 export function showCombatFeedback(side,kind){
   const node=$('#combat-feedback');const who=side==='player'?'P1':'P2';
-  node.textContent=kind==='hit'?`${who}　被擊中！`:kind==='block'?`${who}　防禦成功！`:kind==='root'?`${who}　被老樹盤根纏住！`:`${who}　閃避成功！`;
+  node.textContent=kind==='perfect'?`${who}　完美防禦！`:kind==='break'?`${who}　防禦被擊破！`:kind==='counter'?`${who}　防禦反擊！`:kind==='hit'?`${who}　被擊中！`:kind==='block'?`${who}　防禦成功！`:kind==='root'?`${who}　被老樹盤根纏住！`:`${who}　閃避成功！`;
   node.className=`combat-feedback ${kind} show`;
   void node.offsetWidth;
 }

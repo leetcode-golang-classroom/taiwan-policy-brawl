@@ -6,7 +6,7 @@ import {getSkill,DEFENSE} from '../../src/config.js';
 import {startedWorld,step,arrange,record,hp} from '../helpers.js';
 
 const def=(w,who='player')=>w.world.get(who==='player'?w.player:w.cpu,'defense');
-const guard=(w,who)=>{const d=def(w,who);d.active=true;d.timer=DEFENSE.duration;d.layers=DEFENSE.layers[w.world.get(who==='player'?w.player:w.cpu,'fighter').charId]||0;};
+const guard=(w,who)=>{const d=def(w,who);d.active=true;d.timer=DEFENSE.duration-.6;d.layers=DEFENSE.layers[w.world.get(who==='player'?w.player:w.cpu,'fighter').charId]||0;};
 
 test('I key: guard lasts 1.5s, then a 6s cooldown, then can be used again', ()=>{
   const w=startedWorld();arrange(w,{dist:9});const ev=record(w.world,'defenseStart'),end=record(w.world,'defenseEnd');

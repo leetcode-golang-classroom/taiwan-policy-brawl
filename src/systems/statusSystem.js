@@ -17,7 +17,7 @@ export function statusSystem(world,dt){
     for(const k of Object.keys(a.cooldowns))a.cooldowns[k]=Math.max(0,a.cooldowns[k]-dt);
     if(frozen.has(id))continue;   // hit stop: combo window / recovery hold still too
     a.comboWindow=Math.max(0,a.comboWindow-dt);if(a.comboWindow===0&&a.comboStep>0)a.comboStep=0;
-    a.attackTime=Math.max(0,a.attackTime-dt);
+    a.attackTime=Math.max(0,a.attackTime-dt);a.counterBoost=Math.max(0,a.counterBoost-dt);
   }
   const m=world.match;
   if(m.running&&!m.ended)for(const id of world.query('energy')){const e=world.get(id,'energy');e.value=Math.min(100,e.value+dt*e.regen);}

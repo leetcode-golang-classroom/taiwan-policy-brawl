@@ -9,7 +9,7 @@ const calm=w=>{const c=w.world.get(w.cpu,'defense');c.cooldown=1e9;const s=w.wor
 
 test('defense: startup is NOT protective, then the guard works, then a recovery with no actions', ()=>{
   const w=startedWorld({p:'cleric',c:'cleric'});arrange(w,{dist:1.5});const cs=w.world.get(w.cpu,'status');
-  const d=w.world.get(w.cpu,'defense');d.active=true;d.timer=DEFENSE.duration;d.startup=DEFENSE.startup;
+  const d=w.world.get(w.cpu,'defense');d.active=true;d.timer=DEFENSE.duration-.6;d.startup=DEFENSE.startup;
   const h0=hp(w,'cpu');resolveHit(w.world,w.player,w.cpu,getSkill('cleric','basic'));
   assert.equal(h0-hp(w,'cpu'),9,'full damage during startup');
   cs.hitStop=0;d.startup=0;const h1=hp(w,'cpu');resolveHit(w.world,w.player,w.cpu,getSkill('cleric','basic'));

@@ -7,7 +7,13 @@ export const AIRBORNE_BONUS=4;          // extra damage when the attacker is air
 // cooldown starts when the guard ends. layers: characters whose barrier breaks after N absorbed hits.
 // PHASE 12: raising the guard has a startup (not protective yet), then the active guard, then a recovery (no actions) after it drops.
 // duration = startup + active.
-export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3},startup:.08,recovery:.2};
+export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3},startup:.08,recovery:.2,
+  // PHASE 5 guard depth. perfect: a hit landing within this many seconds of raising the guard is fully negated, stuns the attacker and refunds most of the cooldown.
+  // durability: guard health; every guarded hit wears it down by damage x breakMul[tier]; at 0 the guard BREAKS (breakStun, the hit goes through at breakMult).
+  // counter: after any successful block, J within counterWindow cancels the guard into a boosted counter attack (counterMul damage + launch).
+  perfect:.2,perfectStun:.6,perfectEnergy:12,perfectCooldownMul:.25,
+  durability:45,breakMul:{basic:1,skill:1.6,ult:3},breakStun:1,breakMult:.6,
+  counterWindow:.5,counterBoost:.9,counterMul:1.5,counterLaunch:4};
 
 // Unified skill data (spec 6.2). type: melee | projectile | homing | area | dash
 // range    = max reach (melee/area/dash-hit) or max flight distance (projectile/homing)
@@ -72,6 +78,54 @@ export const COMBO_STEPS=Object.freeze([
   Object.freeze({chargeBonus:.12, stun:.62, launch:3.3, stepIn:.75, cancels:Object.freeze(['K','L'])}),
 ]);
 export const COMBO={window:.92,steps:COMBO_STEPS};
+// PHASE 8 per-character combo routes. A character listed here replaces the generic J1-J2-J3 data (and may tune the air juggle);
+// everyone else keeps the defaults. 神職人員 (cleric) 聖光連擊: J1 jab -> J2 palm -> J3 rising-light launcher (higher than the generic one),
+// K/L cancel only from the launcher, and a longer, harder-hitting air juggle that ends in the 天罰 slam.
+const F=Object.freeze,K=F(['J','K']),KL=F(['K','L']);
+const step=(chargeBonus,stun,launch,stepIn,cancels)=>F({chargeBonus,stun,launch,stepIn,cancels});
+export const COMBO_BY_CHAR=Object.freeze({
+  // 01 AI 推廣者 (rush): fast, light chain; J2 may also cancel into K. Mid launcher.
+  mech:F([step(0,0,0,0,K),step(0,.4,0,0,K),step(.06,.6,4.4,0,KL)]),
+  // 02 大樹守護者: its J is already a launching area hit, so the chain keeps small stuns and the J3 launcher only adds height.
+  leopard:F([step(0,0,0,0,K),step(0,.42,0,0,K),step(.1,.62,3.6,0,KL)]),
+  // 03 麻將大叔 (heavy): slow, heavy chain with a big late launcher.
+  admiral:F([step(.04,0,0,.3,K),step(.06,.46,0,.3,K),step(.16,.7,4.8,.3,KL)]),
+  // 04 教育推廣者 (sonic): quick area chain, light high launcher.
+  mage:F([step(0,0,0,0,K),step(0,.38,0,0,K),step(.04,.58,4.1,0,KL)]),
+  // 06 健身肌肉大叔 (athlete): punchy chain, J2 cancels into the dash K, strong launcher.
+  brawler:F([step(0,0,0,.35,K),step(0,.44,0,.35,K),step(.12,.66,5.1,.35,KL)]),
+  // 07 光明使者 (planner): measured chain, projectile launcher.
+  nun:F([step(0,0,0,.3,K),step(.02,.42,0,.3,K),step(.1,.64,4.3,.3,KL)]),
+  // 08 工程總指揮 (engineer): melee chain, steady launcher.
+  yu:F([step(0,0,0,.5,K),step(0,.44,0,.6,K),step(.1,.64,4.7,.6,KL)]),
+  // 09 家庭計畫推廣員 (disruptor): wide area chain, mid launcher.
+  bubble:F([step(0,0,0,0,K),step(0,.4,0,0,K),step(.08,.6,4.2,0,KL)]),
+  cleric:Object.freeze([
+    Object.freeze({chargeBonus:0,  stun:0,   launch:0,   stepIn:.55,cancels:Object.freeze(['J','K'])}),
+    Object.freeze({chargeBonus:0,  stun:.42, launch:0,   stepIn:.85,cancels:Object.freeze(['J','K'])}),
+    Object.freeze({chargeBonus:.1, stun:.7,  launch:5.4, stepIn:.9, cancels:Object.freeze(['K','L'])}),
+  ]),
+});
+export const comboStepsFor=id=>COMBO_BY_CHAR[id]||COMBO_STEPS;
+// PHASE 3 juggle (launcher -> chase -> air combo -> slam). Limits apply ONLY to hits on an airborne victim; the grounded J chain stays uncapped.
+//   minHeight: victim/attacker counts as airborne above this   maxHits: air hits that still re-lift (after that the victim falls)
+//   decay: damage multiplier per previous air hit               lift/stun: per air hit re-lift velocity and hit stun
+//   maxChase: chase dashes per combo   chaseTime/Speed/Range: glide to the airborne victim   slam*: K from the air spikes the victim down
+export const AIR={minHeight:.5,maxHits:4,decay:.8,lift:4.6,stun:.55,maxChase:2,chaseTime:.22,chaseSpeed:26,chaseRange:1.7,slamSpeed:17,slamDamage:12,slamStun:1,slamHitStop:.13,hoverGravity:.35,juggleGravity:.5};
+// Juggle tuning per character (maxHits air hits before the victim falls, lift per hit, damage decay, slam damage/speed, chase speed).
+const AIR_BY_CHAR={
+  mech:{maxHits:4,lift:4.5,decay:.85,slamDamage:13,slamSpeed:18,chaseSpeed:30},      // rush: fastest chase
+  leopard:{maxHits:3,lift:4.2,decay:.75,slamDamage:14,slamSpeed:18,chaseSpeed:28},  // its J relaunches by itself: shorter air chain
+  admiral:{maxHits:3,lift:4.2,decay:.8,slamDamage:18,slamSpeed:17,chaseSpeed:22},   // heavy: short juggle, hardest slam, slow chase
+  mage:{maxHits:5,lift:4.8,decay:.85,slamDamage:12,slamSpeed:17,chaseSpeed:26},     // sonic: longest chain, lightest slam
+  cleric:{maxHits:5,lift:4.9,decay:.82,slamDamage:16,slamSpeed:19},
+  brawler:{maxHits:4,lift:4.6,decay:.8,slamDamage:17,slamSpeed:19,chaseSpeed:27},
+  nun:{maxHits:4,lift:4.5,decay:.82,slamDamage:15,slamSpeed:18},
+  yu:{maxHits:4,lift:4.5,decay:.8,slamDamage:15,slamSpeed:18,chaseSpeed:24},
+  bubble:{maxHits:4,lift:4.5,decay:.82,slamDamage:14,slamSpeed:17},
+};
+const AIR_CACHE=Object.fromEntries(Object.entries(AIR_BY_CHAR).map(([k,v])=>[k,Object.freeze({...AIR,...v})]));
+export const airFor=id=>AIR_CACHE[id]||AIR;   // per-character juggle tuning   // juggled victims fall slower so a K (longer charge) can still connect
 export const SKILL_ENERGY_BONUS=8;
 // forward lunge while an attack animation plays: units/second (per character, per tier)
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};
@@ -85,6 +139,8 @@ export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasi
   wallMargin:1.2,strafeSpeed:.35,strafeMin:.5,strafeMax:1.3,rangedPref:4.2,retreatSpeed:.5,
   ultThinkMin:.4,ultThinkMax:1.1,ultReachMul:.8,   // delay between "energy full" and casting the ultimate
   punishBoost:1.5,
+  ultReactChance:.9,whiffRecover:.55,punishChance:.75,   // react to a charging ultimate almost always; a whiffed attack leaves the CPU open for this long; chance to punish a visible whiff
+  perfectChance:.4,perfectJitter:.07,counterChance:.55,counterMin:.06,counterMax:.18,   // guard skill: of the guards it picks, this share is TIMED for a perfect guard (aimed at the visible strike frame +/- jitter); after a block it counters within counterMin..Max
   chainChance:.55,cancelSkillChance:.3};   // after a confirmed J hit: chance to chain the next J / cancel into K (otherwise back off)                         // think cooldowns tick this much faster while the player is stunned / recovering
 
 // PHASE 2: a J/K/L press made while the fighter is busy (charging / on cooldown) is remembered this long (s), then discarded.

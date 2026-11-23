@@ -52,7 +52,7 @@ test('AI makes ONE reaction decision per threat, not one roll per frame', ()=>{
   assert.ok(!w.world.get(w.cpu,'intent').dodge,'already decided for this threat');
 });
 test('AI falls back to guarding when its dodge is on cooldown', ()=>{
-  const w=startedWorld({rng:()=>0,c:'yu'});place(w,4);charging(w);w.world.get(w.cpu,'status').dodgeCooldown=5;
+  const w=startedWorld({rng:()=>.5,c:'yu'});place(w,4);charging(w);w.world.get(w.cpu,'status').dodgeCooldown=5;   // rng .5: reacts, picks a guard, and does not roll the delayed perfect-guard timing
   aiControl(w.world,.016);w.world.time+=.4;aiControl(w.world,.016);assert.ok(w.world.get(w.cpu,'intent').defend);
 });
 test('AI does not blindly attack into the strike frame of the player; it attacks once the threat is read', ()=>{

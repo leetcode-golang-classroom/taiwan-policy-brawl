@@ -1,5 +1,6 @@
-import {GRAVITY,HIT_REACT,KNOCK} from '../config.js';
-import {clampToArena} from './combatSystem.js';
+import {AIR,airFor,GRAVITY,HIT_REACT,KNOCK} from '../config.js';
+import {clampToArena,damage} from './combatSystem.js';
+import {registerComboHit} from './comboSystem.js';
 
 export function physicsSystem(world,dt){
   // No running/ended guard: a fighter airborne at the KO (launched or mid-jump) must still fall and land, otherwise it hangs
@@ -13,10 +14,20 @@ export function physicsSystem(world,dt){
       st.kbTime=Math.max(0,st.kbTime-dt);if(st.kbTime===0){st.kbVx=0;st.kbVz=0;}
     }
     if(!b.grounded){
-      b.vy-=GRAVITY*dt;t.y+=b.vy*dt;
+      if(st?.chaseTimer>0){clampToArena(t);continue;}   // chase glide: chaseSystem owns the height
+      const cb=world.get(id,'combo'),hover=cb?.hits>0&&!world.get(cb.targetId,'body')?.grounded;   // attacker juggling an airborne victim floats so the air combo can connect
+      b.vy-=GRAVITY*(hover?AIR.hoverGravity:st?.airHit&&st.stun>0&&st.slamBy==null?AIR.juggleGravity:1)*dt;t.y+=b.vy*dt;
       if(t.y<=0){t.y=0;b.vy=0;b.grounded=true;const hard=!!st?.airHit;
         if(st){st.airHit=false;if(hard){st.landTimer=HIT_REACT.landTime;st.stun=Math.max(st.stun,HIT_REACT.landTime);}}
-        world.events.emit('land',{id,hard});}
+        let slam=false;
+        if(st?.slamBy!=null){   // ground slam impact: bonus damage, counts in the attacker's combo
+          slam=true;const by=st.slamBy;st.slamBy=null;const AIR=airFor(world.get(by,'fighter').charId);
+          const dealt=damage(world,id,AIR.slamDamage,by);st.stun=Math.max(st.stun,AIR.slamStun*.6);st.hitStop=Math.max(st.hitStop,AIR.slamHitStop);
+          registerComboHit(world,by,id,dealt);
+          world.events.emit('slamLand',{attackerId:by,targetId:id,amount:dealt});
+        }
+        if(st)st.airHits=0;
+        world.events.emit('land',{id,hard,slam});}
     }
     clampToArena(t);
   }
