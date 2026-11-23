@@ -178,6 +178,7 @@ export function initVfxEvents(world){
   on('chargeStart',e=>{
     syncView(world,e.id);const F=obj(e.id);if(!F)return;
     const color=TIER_COLOR[e.tier];
+    dropRing(e.id);   // a new charge can start before update() has dropped the previous one (chained J, cancels): never orphan the old ring
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.065,8,40),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthWrite:false}));
     ring.rotation.x=Math.PI/2;scene.add(ring);rings.set(e.id,ring);
     showMoveName(side(e.id),e.tier,charId(e.id));
