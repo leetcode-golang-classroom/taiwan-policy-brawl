@@ -81,7 +81,25 @@ export const COMBO={window:.92,steps:COMBO_STEPS};
 // PHASE 8 per-character combo routes. A character listed here replaces the generic J1-J2-J3 data (and may tune the air juggle);
 // everyone else keeps the defaults. 神職人員 (cleric) 聖光連擊: J1 jab -> J2 palm -> J3 rising-light launcher (higher than the generic one),
 // K/L cancel only from the launcher, and a longer, harder-hitting air juggle that ends in the 天罰 slam.
+const F=Object.freeze,K=F(['J','K']),KL=F(['K','L']);
+const step=(chargeBonus,stun,launch,stepIn,cancels)=>F({chargeBonus,stun,launch,stepIn,cancels});
 export const COMBO_BY_CHAR=Object.freeze({
+  // 01 AI 推廣者 (rush): fast, light chain; J2 may also cancel into K. Mid launcher.
+  mech:F([step(0,0,0,0,K),step(0,.4,0,0,K),step(.06,.6,4.4,0,KL)]),
+  // 02 大樹守護者: its J is already a launching area hit, so the chain keeps small stuns and the J3 launcher only adds height.
+  leopard:F([step(0,0,0,0,K),step(0,.42,0,0,K),step(.1,.62,3.6,0,KL)]),
+  // 03 麻將大叔 (heavy): slow, heavy chain with a big late launcher.
+  admiral:F([step(.04,0,0,.3,K),step(.06,.46,0,.3,K),step(.16,.7,4.8,.3,KL)]),
+  // 04 教育推廣者 (sonic): quick area chain, light high launcher.
+  mage:F([step(0,0,0,0,K),step(0,.38,0,0,K),step(.04,.58,4.1,0,KL)]),
+  // 06 健身肌肉大叔 (athlete): punchy chain, J2 cancels into the dash K, strong launcher.
+  brawler:F([step(0,0,0,.35,K),step(0,.44,0,.35,K),step(.12,.66,5.1,.35,KL)]),
+  // 07 光明使者 (planner): measured chain, projectile launcher.
+  nun:F([step(0,0,0,.3,K),step(.02,.42,0,.3,K),step(.1,.64,4.3,.3,KL)]),
+  // 08 工程總指揮 (engineer): melee chain, steady launcher.
+  yu:F([step(0,0,0,.5,K),step(0,.44,0,.6,K),step(.1,.64,4.7,.6,KL)]),
+  // 09 家庭計畫推廣員 (disruptor): wide area chain, mid launcher.
+  bubble:F([step(0,0,0,0,K),step(0,.4,0,0,K),step(.08,.6,4.2,0,KL)]),
   cleric:Object.freeze([
     Object.freeze({chargeBonus:0,  stun:0,   launch:0,   stepIn:.55,cancels:Object.freeze(['J','K'])}),
     Object.freeze({chargeBonus:0,  stun:.42, launch:0,   stepIn:.85,cancels:Object.freeze(['J','K'])}),
@@ -94,7 +112,18 @@ export const comboStepsFor=id=>COMBO_BY_CHAR[id]||COMBO_STEPS;
 //   decay: damage multiplier per previous air hit               lift/stun: per air hit re-lift velocity and hit stun
 //   maxChase: chase dashes per combo   chaseTime/Speed/Range: glide to the airborne victim   slam*: K from the air spikes the victim down
 export const AIR={minHeight:.5,maxHits:4,decay:.8,lift:4.6,stun:.55,maxChase:2,chaseTime:.22,chaseSpeed:26,chaseRange:1.7,slamSpeed:17,slamDamage:12,slamStun:1,slamHitStop:.13,hoverGravity:.35,juggleGravity:.5};
-const AIR_BY_CHAR={cleric:{maxHits:5,lift:4.9,decay:.82,slamDamage:16,slamSpeed:19}};
+// Juggle tuning per character (maxHits air hits before the victim falls, lift per hit, damage decay, slam damage/speed, chase speed).
+const AIR_BY_CHAR={
+  mech:{maxHits:4,lift:4.5,decay:.85,slamDamage:13,slamSpeed:18,chaseSpeed:30},      // rush: fastest chase
+  leopard:{maxHits:3,lift:4.2,decay:.75,slamDamage:14,slamSpeed:18,chaseSpeed:28},  // its J relaunches by itself: shorter air chain
+  admiral:{maxHits:3,lift:4.2,decay:.8,slamDamage:18,slamSpeed:17,chaseSpeed:22},   // heavy: short juggle, hardest slam, slow chase
+  mage:{maxHits:5,lift:4.8,decay:.85,slamDamage:12,slamSpeed:17,chaseSpeed:26},     // sonic: longest chain, lightest slam
+  cleric:{maxHits:5,lift:4.9,decay:.82,slamDamage:16,slamSpeed:19},
+  brawler:{maxHits:4,lift:4.6,decay:.8,slamDamage:17,slamSpeed:19,chaseSpeed:27},
+  nun:{maxHits:4,lift:4.5,decay:.82,slamDamage:15,slamSpeed:18},
+  yu:{maxHits:4,lift:4.5,decay:.8,slamDamage:15,slamSpeed:18,chaseSpeed:24},
+  bubble:{maxHits:4,lift:4.5,decay:.82,slamDamage:14,slamSpeed:17},
+};
 const AIR_CACHE=Object.fromEntries(Object.entries(AIR_BY_CHAR).map(([k,v])=>[k,Object.freeze({...AIR,...v})]));
 export const airFor=id=>AIR_CACHE[id]||AIR;   // per-character juggle tuning   // juggled victims fall slower so a K (longer charge) can still connect
 export const SKILL_ENERGY_BONUS=8;

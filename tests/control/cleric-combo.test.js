@@ -6,10 +6,10 @@ import {canStart} from '../../src/systems/actionSystem.js';
 import {startedWorld,step,arrange,record,hp} from '../helpers.js';
 
 test('data: cleric has its own route (higher launcher, longer juggle, harder slam); other characters are unchanged',()=>{
-  assert.notEqual(comboStepsFor('cleric'),COMBO_STEPS);assert.equal(comboStepsFor('mech'),COMBO_STEPS);
+  assert.notEqual(comboStepsFor('cleric'),COMBO_STEPS);assert.equal(comboStepsFor('nobody'),COMBO_STEPS);
   assert.ok(comboStepsFor('cleric')[2].launch>COMBO_STEPS[2].launch);
   assert.ok(airFor('cleric').maxHits>AIR.maxHits&&airFor('cleric').slamDamage>AIR.slamDamage);
-  assert.equal(airFor('mech'),AIR);
+  assert.equal(airFor('nobody'),AIR);
 });
 test('cancel path: only the launcher (J3) cancels into K/L; J1/J2 cancel into J or K',()=>{
   const st=comboStepsFor('cleric'),a=(step,o={})=>({charge:null,attackTime:.2,hitConfirmed:true,comboStep:step,attackStyle:'basic',cooldowns:{basic:0,skill:0,ult:0},...o});
