@@ -28,3 +28,13 @@ test('camera never jumps: per-frame change stays small even on a sudden ult',()=
   for(let i=0;i<120;i++){updateCameraRig(rig,w,1/60);max=Math.max(max,Math.abs(rig.radius-prev));prev=rig.radius;}
   assert.ok(max<.15,`max step ${max}`);
 });
+test('launched fighter: focus rides up and the camera widens, then returns when they land',()=>{
+  const H=startedWorld(),w=H.world;const rig=createCameraRig();arrange(H,{dist:3});settle(rig,w,3);
+  const fy0=rig.fy,r0=rig.radius;
+  const t=w.get(H.cpu,'transform');t.y=4;settle(rig,w,2);
+  assert.ok(rig.fy>fy0+1,'focus follows the airborne fighter');assert.ok(rig.radius>r0,'widens to keep both in frame');assert.ok(rig.radius<=CAM.airMaxRadius);
+  t.y=0;settle(rig,w,5);assert.ok(Math.abs(rig.fy-fy0)<.05&&Math.abs(rig.radius-r0)<.1);
+});
+test('slam landing punches the camera in',()=>{
+  const rig=createCameraRig();cameraEvent(rig,'slamLand',{});assert.ok(rig.power>0);
+});
