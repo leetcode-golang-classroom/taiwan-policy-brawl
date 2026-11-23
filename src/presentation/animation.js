@@ -226,12 +226,32 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,up?-.9:-.2,24,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,up?.9:.2,24,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,up?-.2:.6,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,up?-.2:.6,24,dt);
       }
-      if(u.id==='mech'&&tier==='basic'){ // 揮拳: full-body cross punch, hips and shoulders unwinding into a straight right fist
-        const D=THREE.MathUtils.damp;
-        u.body.rotation.y=D(u.body.rotation.y,.6,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.22,24,dt);u.body.position.y=1.2;
-        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.62,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.08,30,dt);
-        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.5,28,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.7,28,dt);
-        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.4,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.45,24,dt);
+      if(u.id==='mech'&&tier==='basic'){ // 揮拳連擊: J1 right cross, J2 left hook (opposite twist), J3 rising scoop uppercut (the launcher)
+        const D=THREE.MathUtils.damp,step=u.comboStep||1,hit=u.phase==='impact';
+        if(step===2){ // left hook: hips unwind the other way into the left fist
+          u.body.rotation.y=D(u.body.rotation.y,-.65,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.2,24,dt);u.body.position.y=1.2;
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.45,36,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.55,30,dt);
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,28,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.7,28,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,-.45,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,.4,24,dt);
+        }else if(step===3){ // scoop: sink low, drive up through the legs, right fist rising overhead
+          u.body.rotation.y=D(u.body.rotation.y,hit?.25:.5,28,dt);u.body.rotation.x=D(u.body.rotation.x,hit?-.4:.3,26,dt);
+          u.body.position.y=hit?1.42:1.05;u.head.position.y=hit?2.3:1.92;
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.05:-.5,34,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.1:.5,28,dt);
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-1.2:-.3,28,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.6,26,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.15:.6,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?.25:-.5,24,dt);
+        }else{ // J1 right cross
+          u.body.rotation.y=D(u.body.rotation.y,.6,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.22,24,dt);u.body.position.y=1.2;
+          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.62,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.08,30,dt);
+          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.5,28,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.7,28,dt);
+          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.4,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.45,24,dt);
+        }
+      }
+      if(u.id==='mech'&&tier==='skill'&&!u.grounded){ // air finisher: both fists clasped overhead, then a diving double-hammer with a knee drive
+        const D=THREE.MathUtils.damp,down=u.phase==='impact';
+        u.body.rotation.x=D(u.body.rotation.x,down?.85:-.35,30,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,down?-.6:-3.0,34,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,down?-.6:-3.0,34,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.1,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.1,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,down?-.9:-.2,28,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,down?.7:-.2,28,dt);
       }
       if(u.id==='mech'&&tier==='skill'){ // 階梯往上爬: final big step up — rear knee driven high, arms reaching upward
         const D=THREE.MathUtils.damp,top=u.phase==='impact';

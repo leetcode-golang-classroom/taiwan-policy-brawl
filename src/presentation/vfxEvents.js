@@ -14,6 +14,7 @@ import {playCharge} from '../audio/sfx.js';
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
 const DODGE_COLORS={mech:0x8beaff,leopard:0x8eea9a,admiral:0xffd36c,mage:0xffc4a5,cleric:0xfff1c7,brawler:0xffbd69,nun:0xffa34a,yu:0x9dc7ef,'bubble':0xe8b6dc};
+const LAUNCHER_COLOR={cleric:0xfff1c7,mech:0x8beaff};   // J3 launcher light pillar per character
 const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 function fireBurst(c,n=3){for(let i=0;i<n;i++)burst(c,FIRE[i%3],24);}
 const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};
@@ -80,11 +81,11 @@ export function initVfxEvents(world){
   const chargeSnd=new Map();   // fighter id -> stop(completed) of its KOF-style charge sound
   on('chargeStart',e=>{chargeSnd.get(e.id)?.(false);const ch=world.get(e.id,'attacker').charge;chargeSnd.set(e.id,playCharge(e.tier,ch?ch.duration:.3));});
   on('guardCounter',e=>{showCombatFeedback(side(e.id),'counter');const A=obj(e.id);if(A)burst(up(A.position,1.2),0x7dff9a,26);});
-  on('comboHit',e=>{   // 聖光升擊: the cleric's J3 launcher puts a pillar of light under the target
-    if(e.step!==3||charId(e.attackerId)!=='cleric')return;const T=obj(e.targetId);if(!T)return;
-      const c=up(T.position,.1);burst(c,0xfff1c7,34);
-      const ring=new THREE.Mesh(new THREE.TorusGeometry(.8,.09,8,32),new THREE.MeshBasicMaterial({color:0xfff1c7,transparent:true,opacity:.95,depthWrite:false}));ring.position.copy(c);ring.rotation.x=Math.PI/2;addFx(ring,.45,'ring');
-      const beam=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,4,16,1,true),new THREE.MeshBasicMaterial({color:0xfff6d8,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide}));beam.position.copy(c).add(new THREE.Vector3(0,2,0));addFx(beam,.4,'fade');
+  on('comboHit',e=>{   // J3 launcher: a pillar of light in the character's colour under the target (聖光升擊 / 數位升擊)
+    const col=LAUNCHER_COLOR[charId(e.attackerId)];if(e.step!==3||col==null)return;const T=obj(e.targetId);if(!T)return;
+      const c=up(T.position,.1);burst(c,col,34);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.8,.09,8,32),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.95,depthWrite:false}));ring.position.copy(c);ring.rotation.x=Math.PI/2;addFx(ring,.45,'ring');
+      const beam=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,4,16,1,true),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5,depthWrite:false,side:THREE.DoubleSide}));beam.position.copy(c).add(new THREE.Vector3(0,2,0));addFx(beam,.4,'fade');
       });
   on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);addCameraShake(.06,.12);});   // chase dash: air-streak burst
   on('slamLand',e=>{   // ground slam impact: shockwave ring, dust, heavy shake
