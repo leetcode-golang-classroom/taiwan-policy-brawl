@@ -9,7 +9,7 @@ import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
 import {buildDie,buildZhongTile} from '../skills/admiral.js';
-import {playSwing,playHit,playLand} from '../audio/sfx.js';
+import {playSwing,playHit,playLand,playCharge} from '../audio/sfx.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -34,7 +34,6 @@ export function initVfxEvents(world){
   on('attackStart',e=>{
     syncView(world,e.attackerId);syncView(world,e.targetId);
     showMoveName(side(e.attackerId),e.tier,charId(e.attackerId));
-    playSwing(e.tier);
     const A=obj(e.attackerId),T=obj(e.targetId);if(!A||!T)return;
     // 乾坤一擲 (die) and 紅中旋風 (tiles): visuals follow the logical projectile(s) every frame.
     if(charId(e.attackerId)==='admiral'&&e.tier!=='ult'&&e.projectileId!=null){
@@ -78,6 +77,8 @@ export function initVfxEvents(world){
       entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
     }
   });
+  const chargeSnd=new Map();   // fighter id -> stop() of its charge-up sound
+  on('chargeStart',e=>{chargeSnd.get(e.id)?.();const ch=world.get(e.id,'attacker').charge;chargeSnd.set(e.id,playCharge(e.tier,ch?ch.duration:.3));});
   on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);playSwing('skill');addCameraShake(.06,.12);});   // chase dash: air-streak burst
   on('slamLand',e=>{   // ground slam impact: shockwave ring, dust, heavy shake
     const T=obj(e.targetId);if(!T)return;
@@ -209,6 +210,7 @@ export function initVfxEvents(world){
     });
   }
   return function update(){
+    for(const [id,stop] of chargeSnd)if(!world.get(id,'attacker')?.charge){stop();chargeSnd.delete(id);}   // released / interrupted / cancelled
     for(const [id,f] of bodyFlash){
       const k=1-(world.time-f.start)/f.dur;
       if(k<=0){applyFlash(id,0);bodyFlash.delete(id);}else applyFlash(id,f.peak*k);

@@ -40,3 +40,21 @@ export function playHit(tier,{blocked=false,launched=false,combo=1}={}){
   else{tone('sine',210*pitch,80,.13,.55);noise(.09,.4,2200,1.1,'bandpass');}
 }
 export function playLand(){if(sfxState.muted||!ensure())return;tone('sine',90,35,.25,.7);noise(.18,.3,300,.8,'lowpass');}
+// Charge-up ("集氣") sound: a rising tone + swelling airy noise that lasts as long as the charge. Returns a stop() handle
+// (fades out fast) so an interrupted or released charge never keeps sounding.
+export function playCharge(tier,duration){
+  if(sfxState.muted||!ensure())return ()=>{};
+  const t=ctx.currentTime,d=Math.max(.15,duration),big=tier==='ult'?1:tier==='skill'?.7:.45;
+  const g=ctx.createGain(),o=ctx.createOscillator(),o2=ctx.createOscillator(),s=ctx.createBufferSource(),f=ctx.createBiquadFilter();
+  o.type='sawtooth';o2.type='sine';
+  const f0=tier==='ult'?110:tier==='skill'?160:230;
+  o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*(tier==='ult'?5:3.2),t+d);
+  o2.frequency.setValueAtTime(f0*2,t);o2.frequency.exponentialRampToValueAtTime(f0*(tier==='ult'?10:6.4),t+d);
+  s.buffer=noiseBuf;s.loop=true;f.type='bandpass';f.Q.value=2;f.frequency.setValueAtTime(400,t);f.frequency.exponentialRampToValueAtTime(3000,t+d);
+  g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.22*big+.05,t+d);
+  const mix=ctx.createGain();mix.gain.value=1;
+  o.connect(mix);o2.connect(mix);s.connect(f);f.connect(mix);mix.connect(g);g.connect(master);
+  o.start(t);o2.start(t);s.start(t);
+  let done=false;
+  return ()=>{if(done)return;done=true;const n=ctx.currentTime;g.gain.cancelScheduledValues(n);g.gain.setValueAtTime(Math.max(.001,g.gain.value),n);g.gain.exponentialRampToValueAtTime(.001,n+.06);o.stop(n+.08);o2.stop(n+.08);s.stop(n+.08);};
+}
