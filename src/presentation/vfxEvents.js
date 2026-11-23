@@ -9,6 +9,7 @@ import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
 import {buildDie,buildZhongTile} from '../skills/admiral.js';
+import {playSwing,playHit} from '../audio/sfx.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -19,6 +20,7 @@ const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};
 
 function disposeOrb(o){scene.remove(o);o.traverse(c=>{c.geometry?.dispose();c.material?.dispose();});}
 export function initVfxEvents(world){
+  const bodyFlash=new Map();   // fighter id -> {start,dur,peak}: white-hot body tint right after a hit
   const bound=new Map();   // projectile entity id -> {meshes, orb}
   const rings=new Map();   // fighter id -> charge ring mesh
   const obj=id=>world.get(id,'view')?.obj;
@@ -32,6 +34,7 @@ export function initVfxEvents(world){
   on('attackStart',e=>{
     syncView(world,e.attackerId);syncView(world,e.targetId);
     showMoveName(side(e.attackerId),e.tier,charId(e.attackerId));
+    playSwing(e.tier);
     const A=obj(e.attackerId),T=obj(e.targetId);if(!A||!T)return;
     // 乾坤一擲 (die) and 紅中旋風 (tiles): visuals follow the logical projectile(s) every frame.
     if(charId(e.attackerId)==='admiral'&&e.tier!=='ult'&&e.projectileId!=null){
@@ -84,6 +87,8 @@ export function initVfxEvents(world){
   on('hit',e=>{
     syncView(world,e.targetId);
     const T=obj(e.targetId);if(!T)return;
+    playHit(e.skill.tier,{blocked:e.blocked,launched:e.launched,combo:world.get(e.attackerId,'combo')?.hits||1});
+    if(e.amount>0)bodyFlash.set(e.targetId,{start:world.time,dur:e.skill.tier==='ult'?.26:e.launched||e.skill.tier==='skill'?.2:.13,peak:e.skill.tier==='ult'?1.6:e.launched||e.skill.tier==='skill'?1.1:.8});
     if(e.blocked){showCombatFeedback(side(e.targetId),'block');addCameraShake(.06,.12);return;}
     if(e.reduced)showCombatFeedback(side(e.targetId),'block');
     if(e.amount>0){
@@ -184,7 +189,24 @@ export function initVfxEvents(world){
     g.userData.bolts=[];for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(.04,.04,1),new THREE.MeshBasicMaterial({color:0xcff6ff}));g.add(b);g.userData.bolts.push(b);}
     scene.add(g);arcs.set(id,g);return g;}
   function dropArc(id){const g=arcs.get(id);if(!g)return;scene.remove(g);g.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});arcs.delete(id);}
+  // Body hit flash: tint every emissive material of the victim white, fading out; originals are restored exactly.
+  const flashMats=new Map();   // material -> {color,intensity}
+  function applyFlash(id,k){
+    const root=obj(id);if(!root)return;
+    root.traverse(m=>{
+      if(!m.isMesh||!m.material||!('emissive' in m.material))return;
+      if(!m.userData.flashCloned){m.material=m.material.clone();m.userData.flashCloned=true;}
+      const mat=m.material;let o=flashMats.get(mat);
+      if(!o){o={color:mat.emissive.clone(),intensity:mat.emissiveIntensity};flashMats.set(mat,o);}
+      if(k>0){mat.emissive.set(0xffffff);mat.emissiveIntensity=k;}
+      else{mat.emissive.copy(o.color);mat.emissiveIntensity=o.intensity;flashMats.delete(mat);}
+    });
+  }
   return function update(){
+    for(const [id,f] of bodyFlash){
+      const k=1-(world.time-f.start)/f.dur;
+      if(k<=0){applyFlash(id,0);bodyFlash.delete(id);}else applyFlash(id,f.peak*k);
+    }
     for(const id of world.query('attacker','fighter')){
       const ch=world.get(id,'attacker').charge;
       if(!(ch&&ch.tier==='skill'&&charId(id)==='nun')){dropArc(id);continue;}
