@@ -3,7 +3,7 @@
 // sweeping upward, and a crackle of ki sparks (amplitude-chopped noise) that speeds up as the charge fills.
 // On a completed charge a bright "ting" snap marks the release. An interrupted charge just fades out.
 let ctx=null,master=null,noiseBuf=null;
-export const sfxState={muted:false};
+export const sfxState={muted:true};   // sound is OFF by default (too loud); press M to turn the charge sound on
 function ensure(){
   if(ctx)return ctx;
   const AC=globalThis.AudioContext||globalThis.webkitAudioContext;if(!AC)return null;
