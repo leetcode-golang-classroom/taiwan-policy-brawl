@@ -1,4 +1,4 @@
-import {AIR,AI,ARENA,RUSH,getSkill} from '../config.js';
+import {DEFENSE,AIR,AI,ARENA,RUSH,getSkill} from '../config.js';
 import {fighterOf,opponentOf} from '../ecs/entities.js';
 import {dist as dist3} from '../ecs/math.js';
 import {actionLocked} from './actionSystem.js';
@@ -49,10 +49,26 @@ export function aiControl(world,dt){
       const canDodge=s.dodgeCooldown<=0&&b.grounded,canGuard=!!d&&d.cooldown<=0&&d.recovery<=0&&b.grounded;
       const wantDodge=world.rng()<AI.dodgePref;
       if((wantDodge&&canDodge)||(!canGuard&&canDodge)){it.dodge=true;it.dodgeDir={x:-ux,z:-uz};}
-      else if(canGuard)it.defend=true;
+      else if(canGuard){
+        // Perfect guard: the strike frame of a visible charge is predictable, so the CPU sometimes waits and raises the guard
+        // just before it lands (as a skilled human would). It only ever reads the player's on-screen action, never its input.
+        const left=threat.kind==='charge'?pa.charge.duration-pa.charge.time:-1;
+        const lead=DEFENSE.startup+DEFENSE.perfect*.5;
+        if(left>lead&&world.rng()<AI.perfectChance)brain.guardAt=now+left-lead+between(world,-AI.perfectJitter,AI.perfectJitter);
+        else it.defend=true;
+      }
     }
   }
 
+  if(brain.guardAt!=null){   // the planned perfect-guard press
+    if(!threat&&!pa.charge&&!pa.active)brain.guardAt=null;     // the attack was cancelled: stand down
+    else if(now>=brain.guardAt){brain.guardAt=null;if(!busy&&s.stun<=0)it.defend=true;}
+  }
+  // ---- guard counter: right after a successful block, sometimes cancel the guard into a boosted J ----
+  if(d?.active&&d.counter>0){
+    if(brain.counterAt==null)brain.counterAt=world.rng()<AI.counterChance?now+between(world,AI.counterMin,AI.counterMax):Infinity;
+    if(now>=brain.counterAt&&dist<basicReach+.3){brain.counterAt=null;it.attack='basic';return;}
+  }else brain.counterAt=null;
   // ---- juggle: the CPU also chases a launched opponent, air-combos and finishes with a slam (limits live in resolveHit / startChase) ----
   const cb=world.get(id,'combo'),pbody=world.get(pid,'body');
   const juggling=cb.hits>0&&cb.targetId===pid&&!pbody.grounded&&p.y>AIR.minHeight&&ps.stun>0;
