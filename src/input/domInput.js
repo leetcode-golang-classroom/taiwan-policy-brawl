@@ -1,7 +1,6 @@
 import {renderer,camState} from '../scene.js';
 import * as ctl from '../systems/playerControl.js';
 import {fighterOf} from '../ecs/entities.js';
-import {unlockAudio} from '../audio/sfx.js';
 
 // DOM -> Control layer. Only records raw input; all decisions are made by the Control systems.
 export function initInput(world){
@@ -17,7 +16,7 @@ export function initInput(world){
   const attackKeys={KeyJ:'basic',KeyK:'skill',KeyL:'ult'};
   window.addEventListener('keydown',e=>{
     if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;   // typing a connection code
-    keys[e.code]=true;unlockAudio();
+    keys[e.code]=true;
     if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
     if(e.repeat)return;
     pressMoveKey(world,'player',e.code,keys);

@@ -1,4 +1,4 @@
-import {AI,ARENA,RUSH,getSkill} from '../config.js';
+import {AIR,AI,ARENA,RUSH,getSkill} from '../config.js';
 import {fighterOf,opponentOf} from '../ecs/entities.js';
 import {dist as dist3} from '../ecs/math.js';
 import {actionLocked} from './actionSystem.js';
@@ -53,6 +53,22 @@ export function aiControl(world,dt){
     }
   }
 
+  // ---- juggle: the CPU also chases a launched opponent, air-combos and finishes with a slam (limits live in resolveHit / startChase) ----
+  const cb=world.get(id,'combo'),pbody=world.get(pid,'body');
+  const juggling=cb.hits>0&&cb.targetId===pid&&!pbody.grounded&&p.y>AIR.minHeight&&ps.stun>0;
+  if(!juggling)brain.airAt=null;
+  else{
+    if(brain.airAt==null)brain.airAt=now+between(world,.12,.25);   // reads the launch first, like a human would
+    if(now>=brain.airAt&&!busy&&!actionLocked(world,id)){
+      if(b.grounded){if(cb.chases<AIR.maxChase)it.jump=true;}   // chase dash (movementSystem turns SPACE into a chase)
+      else if(dist<basicReach+.5){
+        const fin=ps.airHits>=AIR.maxHits-1||(ps.airHits>=2&&world.rng()<.3);
+        if(fin&&a.cooldowns.skill<=0&&t.y>AIR.minHeight){it.attack='skill';brain.recoverUntil=now+between(world,AI.recoverMin,AI.recoverMax);}
+        else it.attack='basic';
+      }
+    }
+    return;
+  }
   // ---- positioning: approach / keep distance / circle (never just stand there, never chase forever) --------
   if(!a.charge&&a.attackTime<=0)brain.chain=false;
   const recovering=now<brain.recoverUntil&&!brain.chain;   // a chosen combo follow-up is not a back-off

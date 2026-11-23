@@ -9,7 +9,8 @@ import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
 import {buildDie,buildZhongTile} from '../skills/admiral.js';
-import {playSwing,playHit,playLand,playCharge} from '../audio/sfx.js';
+import {shoutMove} from '../audio/voice.js';
+import {rosterById} from '../roster.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -77,12 +78,14 @@ export function initVfxEvents(world){
       entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
     }
   });
-  const chargeSnd=new Map();   // fighter id -> stop() of its charge-up sound
-  on('chargeStart',e=>{chargeSnd.get(e.id)?.();const ch=world.get(e.id,'attacker').charge;chargeSnd.set(e.id,playCharge(e.tier,ch?ch.duration:.3));});
-  on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);playSwing('skill');addCameraShake(.06,.12);});   // chase dash: air-streak burst
+  on('chargeStart',e=>{   // candidates shout the name of the move they are charging
+    const f=world.get(e.id,'fighter'),pr=rosterById(f.charId);if(!pr)return;
+    shoutMove(e.tier==='ult'?pr.ult:e.tier==='skill'?pr.skill:pr.basic,{tier:e.tier,charId:f.charId,id:e.id});
+  });
+  on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);addCameraShake(.06,.12);});   // chase dash: air-streak burst
   on('slamLand',e=>{   // ground slam impact: shockwave ring, dust, heavy shake
     const T=obj(e.targetId);if(!T)return;
-    const c=up(T.position,.15);burst(c,0xd9c9a3,40);burst(c,0xffe08a,20);playLand();addCameraShake(.5,.4);
+    const c=up(T.position,.15);burst(c,0xd9c9a3,40);burst(c,0xffe08a,20);addCameraShake(.5,.4);
     const r=new THREE.Mesh(new THREE.TorusGeometry(1.1,.1,8,36),new THREE.MeshBasicMaterial({color:0xffe9b0,transparent:true,opacity:.95,depthWrite:false}));r.position.copy(c);r.rotation.x=Math.PI/2;addFx(r,.5,'ring');
   });
   on('projectileEnd',e=>{
@@ -94,7 +97,6 @@ export function initVfxEvents(world){
   on('hit',e=>{
     syncView(world,e.targetId);
     const T=obj(e.targetId);if(!T)return;
-    playHit(e.skill.tier,{blocked:e.blocked,launched:e.launched,combo:world.get(e.attackerId,'combo')?.hits||1});
     if(e.amount>0)bodyFlash.set(e.targetId,{start:world.time,dur:e.skill.tier==='ult'?.26:e.launched||e.skill.tier==='skill'?.2:.13,peak:e.skill.tier==='ult'?1.6:e.launched||e.skill.tier==='skill'?1.1:.8});
     if(e.blocked){showCombatFeedback(side(e.targetId),'block');addCameraShake(.06,.12);return;}
     if(e.reduced)showCombatFeedback(side(e.targetId),'block');
@@ -210,7 +212,6 @@ export function initVfxEvents(world){
     });
   }
   return function update(){
-    for(const [id,stop] of chargeSnd)if(!world.get(id,'attacker')?.charge){stop();chargeSnd.delete(id);}   // released / interrupted / cancelled
     for(const [id,f] of bodyFlash){
       const k=1-(world.time-f.start)/f.dur;
       if(k<=0){applyFlash(id,0);bodyFlash.delete(id);}else applyFlash(id,f.peak*k);
