@@ -203,7 +203,20 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,first?-.5:-1.75,34,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,first?-.7:-.1,28,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.3,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.3,22,dt);
       }
-      if(u.id==='leopard'&&tier==='basic'){ // 都市縫合: arms sweep wide (windup), then clap together in front (strike)
+      if(u.id==='leopard'&&tier==='basic'&&(u.comboStep||1)===2){ // J2 側掃爪: one heavy paw sweeps across from the far side, body twisting through it
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact';
+        u.body.position.y=1.1;u.body.rotation.x=D(u.body.rotation.x,.25,24,dt);u.body.rotation.y=D(u.body.rotation.y,hit?-.7:.5,30,dt);u.head.rotation.x=D(u.head.rotation.x,-.1,20,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.3,32,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?.5:-1.5,34,dt);
+        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.5,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,.4,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,-.3,22,dt);
+      }else if(u.id==='leopard'&&tier==='basic'&&(u.comboStep||1)===3){ // J3 升爪: crouch low, then rear up and scoop both forepaws skyward (launcher)
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact';
+        u.body.position.y=hit?1.45:.95;u.body.rotation.x=D(u.body.rotation.x,hit?-.55:.7,28,dt);u.body.rotation.y=D(u.body.rotation.y,0,24,dt);
+        u.head.position.y=hit?2.2:1.65;u.head.rotation.x=D(u.head.rotation.x,hit?-.6:-.1,22,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-3.0:-.4,34,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.0:-.4,34,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?-.4:-.8,28,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.4:.8,28,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.2:.7,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?-.2:.7,24,dt);
+      }else if(u.id==='leopard'&&tier==='basic'){ // 都市縫合 (J1): arms sweep wide (windup), then clap together in front (strike)
         const clap=u.phase==='strike',D=THREE.MathUtils.damp;
         u.body.position.y=1.15;u.body.rotation.x=D(u.body.rotation.x,clap?.15:-.1,24,dt);u.body.rotation.y=D(u.body.rotation.y,0,24,dt);
         u.head.rotation.x=D(u.head.rotation.x,0,20,dt);
@@ -211,7 +224,14 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,clap?-.25:-1.4,30,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,clap?.25:1.4,30,dt);
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,clap?.3:0,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,clap?-.3:0,22,dt);
       }
-      if(u.id==='leopard'&&tier==='skill'){ // 工人隊: low double paw rake, left then right, as the pack is sent forward
+      if(u.id==='leopard'&&tier==='skill'&&!u.grounded){ // air finisher: pounce — body pitched steeply down, forepaws raised then driven into the target
+        const D=THREE.MathUtils.damp,down=u.phase==='impact';
+        u.body.position.y=1.2;u.body.rotation.x=D(u.body.rotation.x,down?1.0:.3,30,dt);u.head.rotation.x=D(u.head.rotation.x,down?-.5:-.2,24,dt);
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,down?-.5:-2.8,34,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,down?-.5:-2.8,34,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.3,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.3,26,dt);
+        u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,down?.9:.2,26,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,down?.9:.2,26,dt);
+      }
+      if(u.id==='leopard'&&tier==='skill'&&u.grounded){ // 工人隊: low double paw rake, left then right, as the pack is sent forward
         const D=THREE.MathUtils.damp,air=u.phase==='strike';
         u.body.position.y=1.1;u.body.rotation.x=D(u.body.rotation.x,.55,24,dt);u.body.rotation.y=D(u.body.rotation.y,air?.5:-.5,22,dt);u.head.rotation.x=D(u.head.rotation.x,-.3,20,dt);
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,air?-2.3:-1.0,28,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,air?-1.0:-2.4,28,dt);
