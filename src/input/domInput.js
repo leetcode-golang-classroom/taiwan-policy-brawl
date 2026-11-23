@@ -1,6 +1,7 @@
 import {renderer,camState} from '../scene.js';
 import * as ctl from '../systems/playerControl.js';
 import {fighterOf} from '../ecs/entities.js';
+import {voiceState,stopVoice} from '../audio/voice.js';
 
 // DOM -> Control layer. Only records raw input; all decisions are made by the Control systems.
 export function initInput(world){
@@ -19,6 +20,7 @@ export function initInput(world){
     keys[e.code]=true;
     if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
     if(e.repeat)return;
+    if(e.code==='KeyM'){voiceState.muted=!voiceState.muted;if(voiceState.muted)stopVoice();}   // M: mute / unmute the move calls
     pressMoveKey(world,'player',e.code,keys);
     if(attackKeys[e.code])pressAttack(world,'player',attackKeys[e.code]);
     if(e.code==='KeyI')pressDefend(world,'player');
