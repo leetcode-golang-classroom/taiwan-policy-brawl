@@ -10,7 +10,7 @@ const between=(world,lo,hi)=>lo+world.rng()*(hi-lo);
 function playerThreat(world,id,pid,dist){
   const pa=world.get(pid,'attacker');
   if(pa.active)return {kind:'melee',imminent:true};
-  if(pa.charge){const left=pa.charge.duration-pa.charge.time;if(dist<AI.dodgeRange)return {kind:'charge',imminent:left<.3};}
+  if(pa.charge){const left=pa.charge.duration-pa.charge.time;if(dist<AI.dodgeRange)return {kind:'charge',tier:pa.charge.tier,imminent:left<.3};}
   const t=world.get(id,'transform');
   for(const j of world.query('projectile')){const pr=world.get(j,'projectile');
     if(pr.targetId===id&&dist3(pr.pos,{x:t.x,y:t.y+1.15,z:t.z})<AI.projectileWarn)return {kind:'projectile',imminent:true};}
@@ -18,8 +18,24 @@ function playerThreat(world,id,pid,dist){
 }
 // CONTROL (CPU): reads world state, writes the CPU's Intent component. Uses world.rng and world.time (combat clock) only,
 // so it is deterministic per seed and unaffected by frame rate. Frozen by hit stop like every other fighter.
+// Explicit CPU state (spec: Neutral / Approach / Attack / Defense / Punish / Chase / Recovery), derived from what it is doing.
+// Pure read of the world + brain; the behaviour itself lives in think(). Exposed on brain.state for tests and debugging.
+export function classifyAi(world,id){
+  const brain=world.get(id,'brain'),a=world.get(id,'attacker'),d=world.get(id,'defense'),cb=world.get(id,'combo'),pid=opponentOf(world,id);
+  const pb=world.get(pid,'body'),ps=world.get(pid,'status');
+  if(d?.active||brain.guardAt!=null)return 'Defense';
+  if(cb.hits>0&&cb.targetId===pid&&!pb.grounded&&ps.stun>0)return 'Chase';
+  if(a.charge||a.attackTime>0)return brain.punished?'Punish':'Attack';
+  if(world.time<brain.recoverUntil)return 'Recovery';
+  if(brain.punished)return 'Punish';
+  return brain.mode==='approach'?'Approach':'Neutral';
+}
 export function aiControl(world,dt){
   if(world.net)return;   // online match: both sides are human
+  think(world,dt);
+  const id=fighterOf(world,'cpu');if(id!==undefined)world.get(id,'brain').state=classifyAi(world,id);
+}
+function think(world,dt){
   const m=world.match;
   const id=fighterOf(world,'cpu');if(id===undefined)return;
   const it=world.get(id,'intent');it.moveX=0;it.moveZ=0;
@@ -45,7 +61,7 @@ export function aiControl(world,dt){
   const incoming=!!threat&&threat.imminent;
   if(brain.threat&&!brain.reacted&&now>=brain.reactAt&&!busy){
     brain.reacted=true;   // ONE decision per threat, not one roll per frame
-    if(world.rng()<AI.reactChance){
+    if(world.rng()<(threat.tier==='ult'?AI.ultReactChance:AI.reactChance)){
       const canDodge=s.dodgeCooldown<=0&&b.grounded,canGuard=!!d&&d.cooldown<=0&&d.recovery<=0&&b.grounded;
       const wantDodge=world.rng()<AI.dodgePref;
       if((wantDodge&&canDodge)||(!canGuard&&canDodge)){it.dodge=true;it.dodgeDir={x:-ux,z:-uz};}
@@ -60,6 +76,9 @@ export function aiControl(world,dt){
     }
   }
 
+  // own whiff: the attack finished without connecting -> the CPU is open and backs off before pressing again
+  if(brain.wasAttacking&&a.attackTime<=0&&!a.charge&&!a.hitConfirmed&&!brain.chain)brain.recoverUntil=Math.max(brain.recoverUntil,now+AI.whiffRecover);
+  brain.wasAttacking=a.attackTime>0||!!a.charge;
   if(brain.guardAt!=null){   // the planned perfect-guard press
     if(!threat&&!pa.charge&&!pa.active)brain.guardAt=null;     // the attack was cancelled: stand down
     else if(now>=brain.guardAt){brain.guardAt=null;if(!busy&&s.stun<=0)it.defend=true;}
@@ -130,6 +149,14 @@ export function aiControl(world,dt){
     if(a.attackStyle==='basic'&&a.comboStep>=1&&a.comboStep<3&&dist<basicReach&&world.rng()<AI.chainChance){brain.chain=true;it.attack='basic';return;}
     if(a.attackStyle==='basic'&&a.cooldowns.skill<=0&&brain.skillCd<=0&&dist<skillReach&&world.rng()<AI.cancelSkillChance){brain.chain=false;brain.skillCd=3.2+world.rng()*1.2;brain.recoverUntil=now+between(world,AI.recoverMin,AI.recoverMax)+.2;it.attack='skill';return;}
     brain.chain=false;
+  }
+  // punish: the player's attack finished without connecting and it is still recovering -> hit back once, at once
+  const whiffed=pa.attackTime>0&&!pa.charge&&!pa.active&&!pa.hitConfirmed&&ps.stun<=0;
+  if(!whiffed&&pa.attackTime<=0)brain.punished=false;
+  if(whiffed&&!brain.punished&&!recovering&&world.rng()<AI.punishChance){
+    brain.punished=true;
+    if(a.cooldowns.skill<=0&&dist<skillReach){brain.skillCd=3.2+world.rng()*1.2;brain.recoverUntil=now+between(world,AI.recoverMin,AI.recoverMax)+.2;it.attack='skill';return;}
+    if(a.cooldowns.basic<=0&&dist<basicReach){brain.attackCd=1+world.rng()*.5;brain.recoverUntil=now+between(world,AI.recoverMin,AI.recoverMax);it.attack='basic';return;}
   }
   if(recovering)return;                 // attack -> recovery: no new attack until the back-off is over
   if(incoming&&!brain.reacted)return;   // do not blindly attack into the player's strike frame while still reading it
