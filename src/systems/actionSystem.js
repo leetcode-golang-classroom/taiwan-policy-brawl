@@ -1,6 +1,7 @@
-import {AIR,COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
+import {DEFENSE,AIR,COMBO_STEPS,DODGE,REFLECT,chargeDurations,cooldownFor,COMBO,SKILL_ENERGY_BONUS,PHASES,ATTACK_TIME,INPUT_BUFFER} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {attack,tickActiveHitbox} from './combatSystem.js';
+import {endDefense} from './defenseSystem.js';
 
 // Consumes intent.attack: starts a charge, then releases the attack when the charge completes.
 export function actionSystem(world,dt){
@@ -11,6 +12,10 @@ export function actionSystem(world,dt){
     const pressed=intent.attack;intent.attack=null;
     if(pressed){
       if(pressed==='ult'&&e.value<100)world.events.emit('ultNotReady',{id});
+      else if(world.get(id,'defense')?.active&&pressed==='basic'&&world.get(id,'defense').counter>0){   // GUARD COUNTER: cancel the guard into a boosted J
+        const d=world.get(id,'defense');endDefense(world,id);d.recovery=0;d.cooldown*=.5;a.counterBoost=DEFENSE.counterBoost;
+        world.events.emit('guardCounter',{id});a.buffer={tier:pressed,time:world.time};
+      }
       else if(!world.get(id,'defense')?.active)a.buffer={tier:pressed,time:world.time};
     }
     if(frozen){if(a.buffer)a.buffer.time+=dt;continue;}   // PHASE 3: hit stop holds the attack/charge/buffer clocks (presses are still recorded above)

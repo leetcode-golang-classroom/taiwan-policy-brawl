@@ -7,7 +7,13 @@ export const AIRBORNE_BONUS=4;          // extra damage when the attacker is air
 // cooldown starts when the guard ends. layers: characters whose barrier breaks after N absorbed hits.
 // PHASE 12: raising the guard has a startup (not protective yet), then the active guard, then a recovery (no actions) after it drops.
 // duration = startup + active.
-export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3},startup:.08,recovery:.2};
+export const DEFENSE={duration:1.5,cooldown:6,reduction:.7,knockbackMult:.3,moveMult:.4,layers:{'bubble':3},startup:.08,recovery:.2,
+  // PHASE 5 guard depth. perfect: a hit landing within this many seconds of raising the guard is fully negated, stuns the attacker and refunds most of the cooldown.
+  // durability: guard health; every guarded hit wears it down by damage x breakMul[tier]; at 0 the guard BREAKS (breakStun, the hit goes through at breakMult).
+  // counter: after any successful block, J within counterWindow cancels the guard into a boosted counter attack (counterMul damage + launch).
+  perfect:.2,perfectStun:.6,perfectEnergy:12,perfectCooldownMul:.25,
+  durability:45,breakMul:{basic:1,skill:1.6,ult:3},breakStun:1,breakMult:.6,
+  counterWindow:.5,counterBoost:.9,counterMul:1.5,counterLaunch:4};
 
 // Unified skill data (spec 6.2). type: melee | projectile | homing | area | dash
 // range    = max reach (melee/area/dash-hit) or max flight distance (projectile/homing)

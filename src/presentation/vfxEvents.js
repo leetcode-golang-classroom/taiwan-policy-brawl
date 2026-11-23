@@ -82,6 +82,7 @@ export function initVfxEvents(world){
     const f=world.get(e.id,'fighter'),pr=rosterById(f.charId);if(!pr)return;
     shoutMove(e.tier==='ult'?pr.ult:e.tier==='skill'?pr.skill:pr.basic,{tier:e.tier,charId:f.charId,id:e.id});
   });
+  on('guardCounter',e=>{showCombatFeedback(side(e.id),'counter');const A=obj(e.id);if(A)burst(up(A.position,1.2),0x7dff9a,26);});
   on('chase',e=>{const A=obj(e.id);if(!A)return;burst(up(A.position,1),0xbfe8ff,22);addCameraShake(.06,.12);});   // chase dash: air-streak burst
   on('slamLand',e=>{   // ground slam impact: shockwave ring, dust, heavy shake
     const T=obj(e.targetId);if(!T)return;
@@ -98,6 +99,8 @@ export function initVfxEvents(world){
     syncView(world,e.targetId);
     const T=obj(e.targetId);if(!T)return;
     if(e.amount>0)bodyFlash.set(e.targetId,{start:world.time,dur:e.skill.tier==='ult'?.26:e.launched||e.skill.tier==='skill'?.2:.13,peak:e.skill.tier==='ult'?1.6:e.launched||e.skill.tier==='skill'?1.1:.8});
+    if(e.perfect){showCombatFeedback(side(e.targetId),'perfect');addCameraShake(.2,.2);burst(up(T.position,1.3),0xffe36b,40);return;}
+    if(e.broken){showCombatFeedback(side(e.targetId),'break');addCameraShake(.35,.3);burst(up(T.position,1.3),0xff5a5a,36);}
     if(e.blocked){showCombatFeedback(side(e.targetId),'block');addCameraShake(.06,.12);return;}
     if(e.reduced)showCombatFeedback(side(e.targetId),'block');
     if(e.amount>0){

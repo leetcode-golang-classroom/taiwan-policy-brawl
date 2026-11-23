@@ -1,4 +1,4 @@
-import {AIR,COMBO_STEPS,AIRBORNE_BONUS,ARENA,COMBO,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
+import {DEFENSE,AIR,COMBO_STEPS,AIRBORNE_BONUS,ARENA,COMBO,KNOCK,WEIGHT,HIT,HIT_REACT,ATTACK_TIME,ACTIVE_TIME,HITSTOP,getSkill} from '../config.js';
 import {normalize,clamp,horizontalLength} from '../ecs/math.js';
 import {Dash} from '../ecs/components.js';
 import {opponentOf} from '../ecs/entities.js';
@@ -40,7 +40,14 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
   const airHitsBefore=victimAir?st.airHits:0;
   const airMul=victimAir?Math.pow(AIR.decay,airHitsBefore):1;   // air damage decay
   const base=(skill.damage*(roll||1)+(at.y>HIT.airborneThreshold?AIRBORNE_BONUS:0))*airMul;
-  const amount=def.blocked?0:Math.max(1,Math.round(base*def.multiplier));
+  const att0=world.get(attackerId,'attacker'),counter=att0?.counterBoost>0&&!def.blocked;   // GUARD COUNTER: boosted hit right after a block
+  const amount=def.blocked?0:Math.max(1,Math.round(base*def.multiplier*(counter?DEFENSE.counterMul:1)));
+  if(def.perfect&&!reflected){   // attacker is staggered, defender is rewarded
+    const ast=world.get(attackerId,'status');ast.stun=Math.max(ast.stun,DEFENSE.perfectStun);ast.hitStop=Math.max(ast.hitStop,HITSTOP.skill);
+    const ae=world.get(attackerId,'attacker');ae.active=null;ae.hitConfirmed=false;
+    const de=world.get(targetId,'energy');de.value=Math.min(100,de.value+DEFENSE.perfectEnergy);
+    st.hitStop=Math.max(st.hitStop,HITSTOP.skill);
+  }
   const dealt=amount>0?damage(world,targetId,amount,attackerId):0;
   // knockback: direction of the attack, scaled by defense, kept inside the arena
   let d=dir?{x:dir.x,y:0,z:dir.z}:{x:tt.x-at.x,y:0,z:tt.z-at.z};
@@ -53,7 +60,8 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
   body.vx=0;body.vz=0;   // a hit interrupts locomotion
   const juggleOver=victimAir&&airHitsBefore>=AIR.maxHits;   // chase limit reached: no more lifting, the victim falls
   const slam=dealt>0&&victimAir&&at.y>AIR.minHeight&&skill.tier==='skill'&&!def.reduced&&kb>0&&airHitsBefore>0;   // air K on a juggled victim = ground slam
-  const launched=skill.launch>0&&!def.reduced&&kb>0&&!juggleOver&&!slam;
+  const launched=(skill.launch>0&&!def.reduced&&kb>0&&!juggleOver&&!slam)||(counter&&dealt>0&&!victimAir);
+  if(counter&&dealt>0){att0.counterBoost=0;skill=skill.launch>=DEFENSE.counterLaunch?skill:{...skill,launch:DEFENSE.counterLaunch};}
   if(dealt>0){st.hitDir={x:d.x,z:d.z};st.hitPower=Math.min(1,dealt/HIT_REACT.powerRef);st.rushTimer=0;}   // reaction data: push direction + strength
   if(launched){body.vy=Math.max(body.vy,skill.launch*kb);body.grounded=false;st.airHit=true;st.stun=Math.max(st.stun,skill.stun);}
   else if(dealt>0)st.stun=Math.max(st.stun,skill.stun);
@@ -71,8 +79,9 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
     if(!reflected){const aa=world.get(attackerId,'attacker');if(aa)aa.hitConfirmed=true;}   // enables combo cancel (PHASE 4)
   }
   if(dealt>0&&!def.blocked&&!def.reduced)registerComboHit(world,attackerId,targetId,dealt);   // defended hits do not count
+  if(def.broken)st.stun=Math.max(st.stun,DEFENSE.breakStun);
   if(dealt>0)st.stun=Math.min(st.stun,HIT.maxStun);
-  world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched,slam,airHits:st.airHits,hitStop});
+  world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched,slam,perfect:!!def.perfect,broken:!!def.broken,counter,airHits:st.airHits,hitStop});
   if(dealt>0)onHit?.(dealt);
   return dealt>0;
 }
