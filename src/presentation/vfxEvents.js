@@ -9,7 +9,6 @@ import {syncView} from './renderSync.js';
 import {createSkillContext} from '../skills/context.js';
 import {taiChiDisc} from '../skills/yu.js';
 import {buildDie,buildZhongTile} from '../skills/admiral.js';
-import {playCharge} from '../audio/sfx.js';
 
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
@@ -78,8 +77,6 @@ export function initVfxEvents(world){
       entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
     }
   });
-  const chargeSnd=new Map();   // fighter id -> stop(completed) of its KOF-style charge sound
-  on('chargeStart',e=>{chargeSnd.get(e.id)?.(false);const ch=world.get(e.id,'attacker').charge;chargeSnd.set(e.id,playCharge(e.tier,ch?ch.duration:.3));});
   on('guardCounter',e=>{showCombatFeedback(side(e.id),'counter');const A=obj(e.id);if(A)burst(up(A.position,1.2),0x7dff9a,26);});
   on('comboHit',e=>{   // J3 launcher: a pillar of light in the character's colour under the target (聖光升擊 / 數位升擊)
     const col=LAUNCHER_COLOR[charId(e.attackerId)];if(e.step!==3||col==null)return;const T=obj(e.targetId);if(!T)return;
@@ -220,7 +217,6 @@ export function initVfxEvents(world){
     });
   }
   return function update(){
-    for(const [id,stop] of chargeSnd){const ch=world.get(id,'attacker')?.charge;if(!ch){stop(world.get(id,'attacker')?.attackTime>0);chargeSnd.delete(id);}}   // released (attack running) -> snap; otherwise interrupted -> fade
     for(const [id,f] of bodyFlash){
       const k=1-(world.time-f.start)/f.dur;
       if(k<=0){applyFlash(id,0);bodyFlash.delete(id);}else applyFlash(id,f.peak*k);

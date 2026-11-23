@@ -1,8 +1,8 @@
 // Battle BGM: one looping <audio> element (streamed, so the ~1 MB file is not decoded into RAM). Presentation layer only.
 // Plays on the battle screen, stops on character select; the volume fades in/out so cuts never click.
-// Default volume is deliberately low (the game was reported as too loud); B toggles mute, the choice is kept in localStorage.
+// Default volume is moderate (0.22 was too quiet); B toggles mute, the choice is kept in localStorage.
 const SRC=`${import.meta.env.BASE_URL}audio/bgm/battle.mp3`;
-const KEY='pb.bgm',DEFAULT_VOL=.22,FADE=.9;   // FADE: seconds
+const KEY='pb.bgm.v2',DEFAULT_VOL=.45,FADE=.9;   // FADE: seconds
 export const bgmState={muted:false,volume:DEFAULT_VOL};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');if(typeof s.muted==='boolean')bgmState.muted=s.muted;if(Number.isFinite(s.volume))bgmState.volume=Math.min(1,Math.max(0,s.volume));}catch{}
 let el=null,want=false,fade=0,raf=0,last=0;   // fade: 0 (silent) .. 1 (full)
