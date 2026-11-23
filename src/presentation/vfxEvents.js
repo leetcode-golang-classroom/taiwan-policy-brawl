@@ -14,7 +14,7 @@ import {playCharge} from '../audio/sfx.js';
 // Presentation layer: subscribes to logic events and turns them into effects.
 // Nothing here changes gameplay state; it only reads components and creates Three.js/DOM output.
 const DODGE_COLORS={mech:0x8beaff,leopard:0x8eea9a,admiral:0xffd36c,mage:0xffc4a5,cleric:0xfff1c7,brawler:0xffbd69,nun:0xffa34a,yu:0x9dc7ef,'bubble':0xe8b6dc};
-const LAUNCHER_COLOR={cleric:0xfff1c7,mech:0x8beaff,leopard:0x8eea9a};   // J3 launcher light pillar per character
+const LAUNCHER_COLOR={cleric:0xfff1c7,mech:0x8beaff,leopard:0x8eea9a,nun:0xffa34a,yu:0x9dc7ef};   // J3 launcher light pillar per character
 const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 function fireBurst(c,n=3){for(let i=0;i<n;i++)burst(c,FIRE[i%3],24);}
 const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};

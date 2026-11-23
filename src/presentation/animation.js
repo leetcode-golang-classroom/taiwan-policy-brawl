@@ -42,6 +42,21 @@ const SIGNATURE={
   yu:{basic:[[-.3,-.3,-2.9,.2,.1],[-.3,-.3,-.7,.2,.3]],skill:[[-1.5,-.8,-1.5,.8,-.1],[-1.5,-.3,-1.5,.3,-.2]],ult:[[-3,-.8,-3,.8,-.2],[-1.6,-.2,-1.6,.2,.3]]},
   bubble:{basic:[[-1.35,.55,-1.35,-.55,-.05],[-1.3,.5,-1.3,-.5,-.05]],skill:[[-2.75,.5,.2,.15,0],[-2.7,.5,.1,.1,0]],ult:[[-1.2,.35,-1.57,0,-.05],[-1.2,.3,-1.57,0,-.05]]}   // basic: hands together in a heart; skill: left-hand salute; ult: finger-gun pointing at the target
 };
+// Data-driven combo poses: [leftArmX,leftArmZ,rightArmX,rightArmZ,bodyLean,bodyYaw,bodyHeight] for [windup/strike, impact], per J step (1-3) and the air finisher.
+const STEP_POSES={
+  nun:{ // 光明使者: J1 two-hand push, J2 overhand chop, J3 scoop-lift launcher, air: overhead double slam
+    1:[[-.9,-.4,-.9,.4,.1,0,1.2],[-1.5,-.2,-1.5,.2,-.15,0,1.2]],
+    2:[[-.3,-.3,-2.6,.3,-.1,-.4,1.25],[-.3,-.3,-.6,.2,.3,.5,1.2]],
+    3:[[-.4,-.7,-.4,.7,.35,0,1.05],[-3.0,-.3,-3.0,.3,-.4,0,1.42]],
+    air:[[-3,-.4,-3,.4,-.3,0,1.3],[-.5,-.2,-.5,.2,.8,0,1.2]]},
+  yu:{ // 工程總指揮 (tai-chi): J1 right palm push, J2 left palm circle, J3 cloud-hands rising palms, air: both palms pressed down
+    1:[[-.5,-.5,-.8,.6,0,.3,1.25],[-.5,-.5,-1.55,.1,-.1,.3,1.25]],
+    2:[[-1.2,-1.0,-.4,.6,0,-.3,1.25],[-1.55,-.1,-.5,.5,-.1,-.4,1.25]],
+    3:[[-.4,-.9,-.4,.9,.3,0,1.1],[-2.9,-.3,-2.9,.3,-.35,0,1.4]],
+    air:[[-2.9,-.5,-2.9,.5,-.3,0,1.3],[-1.2,-.1,-1.2,.1,.7,0,1.2]]},
+};
+// Characters whose basic / air-skill pose is fully authored (their old single SIGNATURE pose must not fight it).
+const customAttack=(u,tier)=>(tier==='basic'||(tier==='skill'&&!u.grounded))&&(u.id==='cleric'||!!STEP_POSES[u.id]);
 export function updateAnimations(world,dt){
   for(const id of world.query('view','fighter','status','body','attacker')){const f=world.get(id,'view').obj;const u=stateOf(world,id,f);
     if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const rb=f.userData.runBlend=stepRunBlend(f.userData.runBlend||0,u.rushTimer>0,dt);const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
@@ -290,13 +305,18 @@ export function updateAnimations(world,dt){
         u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,0,22,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,0,22,dt);
       }
       // Signature strike poses per character: [leftArmX,leftArmZ,rightArmX,rightArmZ,bodyLean]. x<0 raises the arm forward/up; z<0 (left) and z>0 (right) swing outward.
-      const sig=SIGNATURE[u.id]?.[tier];
+      const stepPose=STEP_POSES[u.id]?.[tier==='basic'?(u.comboStep||1):tier==='skill'&&!u.grounded?'air':0];
+      if(stepPose){const P=stepPose[u.phase==='impact'?1:0],D=THREE.MathUtils.damp;
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,P[0],30,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,P[1],30,dt);
+        u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,P[2],30,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,P[3],30,dt);
+        u.body.rotation.x=D(u.body.rotation.x,P[4],26,dt);u.body.rotation.y=D(u.body.rotation.y,P[5],26,dt);u.body.position.y=D(u.body.position.y,P[6],26,dt);}
+      const sig=customAttack(u,tier)?null:SIGNATURE[u.id]?.[tier];
       if(sig){const P=sig[u.phase==='strike'?0:1],D=THREE.MathUtils.damp;
         u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,P[0],26,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,P[1],26,dt);
         u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,P[2],26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,P[3],26,dt);
         u.body.rotation.x=D(u.body.rotation.x,P[4],22,dt);}
       // per-character flavour on top of the tier pose (kept from V3.8)
-      if(u.id==='nun')u.body.rotation.z=Math.sin(t*Math.PI)*.35;
+      if(u.id==='nun'&&!customAttack(u,tier))u.body.rotation.z=Math.sin(t*Math.PI)*.35;
       if(u.id==='brawler'||u.id==='admiral')u.body.position.y-=.06;
     }
     else if(u.phase==='recovery'){ // 5. recovery: weight settles, arms drop back (limbs relax via the idle damping above)
