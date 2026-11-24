@@ -1,7 +1,8 @@
 import {renderer,camState} from '../scene.js';
 import * as ctl from '../systems/playerControl.js';
 import {fighterOf} from '../ecs/entities.js';
-import {sfxState,unlockAudio} from '../audio/sfx.js';
+import {toggleBgmMute} from '../audio/bgm.js';
+import {toggleSfxMute} from '../audio/soundManager.js';
 
 // DOM -> Control layer. Only records raw input; all decisions are made by the Control systems.
 export function initInput(world){
@@ -20,8 +21,8 @@ export function initInput(world){
     keys[e.code]=true;
     if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
     if(e.repeat)return;
-    unlockAudio();   // browsers need a key press before audio may start
-    if(e.code==='KeyM')sfxState.muted=!sfxState.muted;   // M: mute / unmute the charge sound
+    if(e.code==='KeyB')toggleBgmMute();   // B: mute / unmute the battle BGM
+    if(e.code==='KeyN')toggleSfxMute();   // N: mute / unmute combat SFX
     pressMoveKey(world,'player',e.code,keys);
     if(attackKeys[e.code])pressAttack(world,'player',attackKeys[e.code]);
     if(e.code==='KeyI')pressDefend(world,'player');

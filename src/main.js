@@ -13,6 +13,7 @@ import {initGame} from './game.js';
 import {showScreen} from './ui/screens.js';
 import {resetRound} from './systems/roundSystem.js';
 import {$} from './utils/dom.js';
+import {initSfxControls} from './ui/sfxControls.js';
 
 const world=new World();
 createFighter(world,{side:'player',...fighterParams(roster[0]),view:makeFighter(roster[0])});
@@ -27,7 +28,7 @@ function swapFighter(side,profile){
   Object.assign(world.get(id,'body'),{moveSpeed:p.moveSpeed,jumpPower:p.jumpPower});
   syncView(world,id);
 }
-initResize();
+initResize();initSfxControls();
 // Both sides locked in on the select screen -> apply the picks and switch to the battle screen.
 initRosterPicker((p1,p2)=>{swapFighter('player',p1);swapFighter('cpu',p2);resetRound(world);world.events.emit('ready');showScreen('battle');});
 // Leave the battle screen back to character select (stops the match). `notify`: tell the online peer to do the same.

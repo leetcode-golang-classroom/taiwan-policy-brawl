@@ -2,6 +2,7 @@ import {scene,camera,renderer,mount,updateCamera} from './scene.js';
 import {stepWorld} from './systems/index.js';
 import {syncViews} from './presentation/renderSync.js';
 import {updateAnimations} from './presentation/animation.js';
+import {initCombatAudio} from './audio/combatAudio.js';
 import {initVfxEvents} from './presentation/vfxEvents.js';
 import {updateVfx} from './vfx/VFXSystem.js';
 import {updateHud} from './ui/hud.js';
@@ -17,6 +18,7 @@ export function initGame(world,keys){
   const updateComboCounter=initComboCounter(world);
   const updateDefenseView=initDefenseView(world);
   const updateEventVfx=initVfxEvents(world);
+  const updateCombatAudio=initCombatAudio(world);
   // Successful dodge by the local player: a brief slow-motion (presentation + logic share the scaled dt; skipped online to keep peers in step).
   let slow=0;
   world.events.on('evade',e=>{if(!world.net&&world.get(e.targetId,'fighter').side==='player')slow=SLOWMO.time;});
@@ -29,7 +31,7 @@ export function initGame(world,keys){
     // a fast display (60+ Hz) still runs exactly one step per frame, so motion stays smooth. Hit stop is per fighter inside the step.
     const n=Math.max(1,Math.ceil(dt*60-1e-6));for(let i=0;i<n;i++)stepWorld(world,dt/n,keys);
     const frozen=world.query('status').some(id=>world.get(id,'status').frozen);
-    syncViews(world);updateAnimations(world,dt);updateVfx(frozen?0:dt);updateEventVfx();updateDefenseView(dt);   // hit effects hold still with the fighters
+    syncViews(world);updateAnimations(world,dt);updateVfx(frozen?0:dt);updateEventVfx();updateCombatAudio();updateDefenseView(dt);   // hit effects hold still with the fighters
     updateHud(world);updateComboCounter();updateCamera(world,dt);
     if(mount.clientWidth>0)renderer.render(scene,camera);   // battle screen hidden: skip drawing
   }
