@@ -10,6 +10,8 @@ function stateOf(world,id,f){
   u.grounded=b.grounded;u.movePhase=b.movePhase;u.chargeFwd=b.chargeFwd;u.chargeSide=b.chargeSide;u.stepPhase=b.stepPhase;u.moving=b.moving;
   u.guarding=!!world.get(id,'defense')?.active;
   u.phase=at.phase;u.moveFwd=b.moveFwd;u.moveSide=b.moveSide;u.rushTimer=st.rushTimer;u.hitDir=st.hitDir;u.hitPower=st.hitPower;u.airHit=st.airHit;u.landTimer=st.landTimer;
+  const m=world.match,k=m.ko;u.koDown=!!(k?.knocked&&k.loser===world.get(id,'fighter').side&&(m.phase==='DEFEAT_ANIMATION'||m.phase==='ROUND_RESULT'||m.phase==='MATCH_VICTORY'));   // defeated fighter: fly out, then stay down
+  u.koFlight=u.koDown&&st.kbConst&&st.kbDur>0?1-st.kbTime/st.kbDur:1;   // 0..1 along the KO parabola
   u.rotY=world.get(id,'transform').rotY;u.speedRatio=Math.min(1,Math.hypot(b.vx||0,b.vz||0)/(b.moveSpeed||1));
   u.comboStep=at.comboStep;u.attackTime=at.attackTime;u.attackStyle=at.attackStyle;u.chargeTime=ch?ch.time:0;u.chargeStyle=ch?ch.tier:undefined;
   return u;

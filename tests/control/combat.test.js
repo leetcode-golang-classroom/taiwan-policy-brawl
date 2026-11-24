@@ -80,9 +80,10 @@ test('basic combo: step 3 stuns longer and launches', ()=>{
 test('KO ends the round, awards the win and keeps the best-of-three rules', ()=>{
   const w=startedWorld({p:'yu'});arrange(w,{dist:1.5});const re=record(w.world,'roundEnd'),me=record(w.world,'matchEnd');
   w.world.get(w.cpu,'health').hp=5;fire(w,'basic');step(w.world,.8);
-  assert.equal(hp(w,'cpu'),0);assert.equal(re.length,1);assert.equal(re[0].winner,'player');assert.equal(w.world.match.running,false);
-  step(w.world,3);assert.equal(w.world.match.roundNumber,2);assert.equal(hp(w,'cpu'),100);assert.ok(w.world.match.running); // next round, HP reset
-  arrange(w,{dist:1.5});w.world.get(w.cpu,'health').hp=5;w.world.get(w.cpu,'status').stun=1e9;fire(w,'basic');step(w.world,.8);
+  assert.equal(hp(w,'cpu'),0);assert.ok(w.world.match.phase.startsWith('KO_')||w.world.match.phase==='DEFEAT_ANIMATION');   // KO cinematic is still playing
+  step(w.world,4);assert.equal(re.length,1);assert.equal(re[0].winner,'player');assert.equal(w.world.match.running,false);
+  for(let i=0;i<60*8&&w.world.match.roundNumber<2;i++)step(w.world,1/60);assert.equal(w.world.match.roundNumber,2);assert.equal(hp(w,'cpu'),100);assert.ok(w.world.match.running); // next round, HP reset
+  arrange(w,{dist:1.5});w.world.get(w.cpu,'health').hp=5;w.world.get(w.cpu,'status').stun=1e9;fire(w,'basic');step(w.world,6);
   assert.equal(me.length,1);assert.equal(me[0].winner,'player');assert.equal(w.world.match.playerRounds,2);
 });
 test('time-out awards the round to whoever has more HP', ()=>{

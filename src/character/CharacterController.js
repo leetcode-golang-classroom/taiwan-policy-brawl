@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {clone as cloneSkinned} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {loadCharacterAsset} from './CharacterLoader.js';
 import {CharacterAnimator} from './CharacterAnimator.js';
+import {closeShoulders} from './shoulders.js';
+const KO_TUMBLE=new THREE.Euler();
 
 // Upgrades a procedural fighter rig to a real skinned GLB, if one is shipped and ready.
 // The procedural meshes stay as the fallback; they are only hidden once the GLB is in place.
@@ -20,11 +22,13 @@ export function attachRealModel(root,id){
     for(const c of placeholders)if(!keep.has(c))c.visible=false;
     for(const l of root.userData.limbs)l.visible=false;
     root.userData.model=model;root.userData.modelAnimator=new CharacterAnimator(model,gltf.animations||[]);
-    root.userData.modelReady=true;
+    root.userData.bones={};model.traverse(o=>{if(o.isBone)root.userData.bones[o.name]=o;});root.userData.modelReady=true;
   });
 }
 // Called every frame from the presentation layer; no-op for placeholder fighters.
 export function updateRealModel(f,u,dt){
-  const a=f.userData.modelAnimator;if(a)a.update(u,dt);
+  const a=f.userData.modelAnimator;if(a){a.update(u,dt);closeShoulders(f.userData.bones,f.userData.id);
+    if(u.koDown&&!u.grounded&&f.userData.bones?.Hips)f.userData.bones.Hips.quaternion.setFromEuler(KO_TUMBLE.set(-(1.3+Math.PI*2)*u.koFlight,0,0));   // knocked out: the whole body tumbles backward and lands flat (= the Fall pose)
+  }
   return !!a;
 }

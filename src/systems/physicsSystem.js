@@ -9,9 +9,10 @@ export function physicsSystem(world,dt){
     const t=world.get(id,'transform'),b=world.get(id,'body'),st=world.get(id,'status');
     if(st?.frozen)continue;   // hit stop: hold position and arc
     if(st?.kbTime>0){   // knockback: velocity decays linearly, so it eases out instead of popping
-      const h=Math.min(dt,st.kbTime),f=(st.kbTime-h/2)/st.kbDur;   // midpoint of this step: the integral of the linear ramp is exact, whatever the frame rate
+      const h=Math.min(dt,st.kbTime),f=st.kbConst?1:(st.kbTime-h/2)/st.kbDur;   // kbConst: constant horizontal speed (KO parabola)
+         // midpoint of this step: the integral of the linear ramp is exact, whatever the frame rate
       t.x+=st.kbVx*f*h;t.z+=st.kbVz*f*h;
-      st.kbTime=Math.max(0,st.kbTime-dt);if(st.kbTime===0){st.kbVx=0;st.kbVz=0;}
+      st.kbTime=Math.max(0,st.kbTime-dt);if(st.kbTime===0){st.kbVx=0;st.kbVz=0;st.kbConst=false;}
     }
     if(!b.grounded){
       if(st?.chaseTimer>0){clampToArena(t);continue;}   // chase glide: chaseSystem owns the height

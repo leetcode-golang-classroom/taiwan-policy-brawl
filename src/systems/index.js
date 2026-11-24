@@ -5,14 +5,15 @@ import {movementSystem} from './movementSystem.js';
 import {dashSystem,chaseSystem} from './combatSystem.js';
 import {projectileSystem} from './projectileSystem.js';
 import {physicsSystem} from './physicsSystem.js';
-import {roundSystem} from './roundSystem.js';
+import {roundSystem,koSystem} from './roundSystem.js';
 import {defenseSystem} from './defenseSystem.js';
 import {fighterStateSystem} from './fighterStateSystem.js';
 import {comboSystem} from './comboSystem.js';
 import {playerControl} from './playerControl.js';
 
 // One logic tick. Order: timers -> control (intents) -> actions -> movement -> combat -> physics -> round rules.
-export function stepWorld(world,dt,keys={}){
+// dt = logic time (may be scaled during the KO cinematic); realDt = unscaled time for the cinematic clock itself.
+export function stepWorld(world,dt,keys={},realDt=dt){
   statusSystem(world,dt);
   playerControl(world,keys);
   aiControl(world,dt);
@@ -24,6 +25,7 @@ export function stepWorld(world,dt,keys={}){
   projectileSystem(world,dt);
   physicsSystem(world,dt);
   roundSystem(world,dt);
+  koSystem(world,realDt);
   comboSystem(world);
   fighterStateSystem(world);
 }

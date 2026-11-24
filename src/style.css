@@ -162,3 +162,26 @@ html,body{touch-action:manipulation;overscroll-behavior:none;-webkit-text-size-a
 .sfx-ctl{display:inline-flex;align-items:center;gap:6px}.sfx-ctl button{background:#1c2547;color:inherit;border:1px solid #3a4780;border-radius:6px;padding:1px 7px;cursor:pointer;font-size:14px}.sfx-ctl input[type=range]{width:90px;accent-color:#ffb84d}.sfx-ctl output{min-width:2ch;font-variant-numeric:tabular-nums;opacity:.8}.sfx-ctl.muted input,.sfx-ctl.muted output{opacity:.4}
 footer a{color:inherit;text-decoration:underline}footer{line-height:1.7}
 .sfx-ctl button{white-space:nowrap;min-width:5.6em}.sfx-ctl.muted button{background:#4a2330;border-color:#a14b60}
+
+/* KO cinematic overlay (presentation/koCinematic.js) */
+#ko-fx{position:absolute;inset:0;z-index:6;pointer-events:none;display:none;overflow:hidden}
+#ko-fx[data-phase]{display:block}
+.ko-vignette{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,#000b 100%);transition:opacity .25s}
+#ko-fx[data-phase=KO_REPLAY] .ko-vignette,#ko-fx[data-phase=KO_FREEZE] .ko-vignette{opacity:1}
+.ko-banner{position:absolute;left:0;right:0;top:30%;text-align:center;font-size:clamp(54px,12vw,130px);font-weight:900;font-style:italic;letter-spacing:6px;color:#fff3c4;text-shadow:0 6px 0 #c43a4d,0 0 40px #ff7a59;opacity:0}
+#ko-fx[data-phase=KO_TRIGGER] .ko-banner{animation:koPop .35s cubic-bezier(.2,1.6,.4,1) forwards}
+#ko-fx[data-phase=KO_REPLAY] .ko-banner,#ko-fx[data-phase=KO_FREEZE] .ko-banner,#ko-fx[data-phase=DEFEAT_ANIMATION] .ko-banner{opacity:.9;transform:scale(.5) translateY(-150%);transition:all .4s}
+.ko-sub{position:absolute;left:0;right:0;bottom:14%;text-align:center;font-size:clamp(16px,3vw,28px);font-weight:900;color:#ffd36c;text-shadow:0 2px 10px #000;opacity:0;transition:opacity .15s}
+#ko-fx[data-phase=KO_FREEZE] .ko-sub{opacity:1}
+.ko-replay{position:absolute;left:18px;bottom:16px;font-size:13px;font-weight:900;letter-spacing:3px;color:#fff;background:#c43a4dcc;padding:4px 10px;border-radius:6px;opacity:0}
+#ko-fx[data-phase=KO_REPLAY] .ko-replay,#ko-fx[data-phase=KO_FREEZE] .ko-replay{opacity:1;animation:koBlink 1s steps(2) infinite}
+@keyframes koPop{0%{opacity:0;transform:scale(2.4)}100%{opacity:1;transform:scale(1)}}
+@keyframes koBlink{50%{opacity:.35}}
+
+/* Match result banner: keeps the arena visible while the winner celebrates */
+.center-message.compact{justify-content:flex-end;padding-bottom:6%;background:linear-gradient(transparent 40%,#080d20d9);backdrop-filter:none;pointer-events:none}
+.center-message.compact strong{font-size:clamp(34px,6vw,58px)}
+.center-message.compact .winner-name{font-size:clamp(18px,3vw,26px);font-weight:900;color:#fff}
+.center-message.compact button{pointer-events:auto}
+.result-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.result-buttons .secondary{background:#2a3358;color:#e6ecff;box-shadow:none}

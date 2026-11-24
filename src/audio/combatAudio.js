@@ -11,6 +11,7 @@ const rnd = ([a, b]) => a + Math.random() * (b - a);
 export function initCombatAudio(world, sound = realSound) {   // `sound` is injectable so tests can record what would be played
   const { playVariant, loop, preload, stopAll } = sound;
   const charId = id => world.get(id, 'fighter')?.charId;
+  const sideChar = side => [...world.query('fighter')].map(i => world.get(i, 'fighter')).find(f => f.side === side)?.charId;
   const on = (n, f) => world.events.on(n, e => { try { f(e); } catch { /* audio must never break the game */ } });
   const loops = new Map();     // fighter id -> {handle, tier}
   const struckAt = new Map();  // fighter id -> world.time of the last strike cue (so attackStart can fall back if the strike frame was skipped)
@@ -91,6 +92,10 @@ export function initCombatAudio(world, sound = realSound) {   // `sound` is inje
   on('slamLand', e => fire(E.KNOCKDOWN, charId(e.targetId)));
   on('land', e => { if (e.hard) fire(E.KNOCKDOWN, charId(e.id), { volMul: .8 }); });
   on('defenseStart', e => fire(E.DEFENSE, charId(e.id), { volMul: .45, pitch: 1.25 }));   // shield-up cue
+  // KO cinematic: the freeze-frame impact gets the heaviest layers; the loser's landing and the victory cue reuse existing palette sounds
+  on('koImpact', e => { stopAllLoops(); fire(E.ULTIMATE_IMPACT, sideChar(e.winner)); fire(E.ULTIMATE_EXPLOSION, sideChar(e.winner)); fire(E.KNOCKDOWN, sideChar(e.loser), { volMul: .9, pitch: .85 }); });
+  on('phase_change', e => { if (e.phase === 'DEFEAT_ANIMATION') fire(E.HIT_HEAVY, sideChar(world.match.ko?.loser), { volMul: .8 }); });
+  on('victoryStart', e => fire(E.ULTIMATE_RELEASE, sideChar(e.winner), { volMul: .85 }));
   on('roundStart', () => { stopAllLoops(); stopAll(.05); preloadMatch(); });
   on('roundEnd', () => { stopAllLoops(); });
   on('matchEnd', () => { stopAllLoops(); });

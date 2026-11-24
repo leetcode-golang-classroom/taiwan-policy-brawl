@@ -78,3 +78,12 @@ test('L: ultimate layers play in order over several frames (start, release, impa
   assert.equal(r.loops.filter(l=>l.o.priority===4).length,1);
   assert.ok(r.log.find(l=>l.ids===paletteOf('cleric').ultimateExplosion).delay>0,'explosion offset from impact');
 });
+test('KO cinematic: freeze impact, defeat landing and victory each voice a cue once; no loop survives', ()=>{
+  const r=rig('yu');const pal=paletteOf('yu');
+  r.world.get(r.cpu,'health').hp=5;pressAttack(r.world,'player','basic');
+  r.world.events.on('ko',e=>r.world.events.emit('koImpact',{winner:e.winner,loser:e.loser}));   // koImpact normally comes from the presentation layer
+  for(let i=0;i<60*12&&r.world.match.phase!=='MATCH_VICTORY';i++){r.frame();if(r.world.match.phase==='ROUND_RESULT'&&r.world.match.roundNumber<2&&i>60*9)break;}
+  assert.equal(r.field('ultimateImpact').length,1,'koImpact voices the winner ultimate impact once');
+  assert.ok(r.log.some(l=>l.ids===paletteOf('cleric').knockdown||l.ids===pal.knockdown),'loser knockdown cue');
+  assert.ok(r.loops.every(l=>l.stopped));
+});
