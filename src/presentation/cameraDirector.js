@@ -12,7 +12,7 @@ export const CAM={
 };
 const ease=(rate,dt)=>1-Math.exp(-rate*dt);
 
-export function createCameraRig(){return{radius:13,yawOff:0,pitchOff:0,fx:0,fz:0,fy:1.05,power:0,ult:0,yawDir:1,init:false};}
+export function createCameraRig(){return{radius:13,yawOff:0,pitchOff:0,fx:0,fz:0,fy:1.05,power:0,ult:0,yawDir:1,init:false,ko:null};}
 
 export function cameraEvent(rig,name,e){
   if(name==='hit'&&!e.blocked){
@@ -35,13 +35,18 @@ export function updateCameraRig(rig,world,dt){
   let yaw=0,pitch=0,fyT=fy;
   if(rig.power>0){radius*=CAM.powerMul;yaw=CAM.powerYaw*rig.yawDir;}
   if(rig.ult>0){radius*=CAM.ultMul;yaw=CAM.ultYaw;pitch=CAM.ultPitch;fyT+=CAM.ultFocusY;}
+  if(rig.ko){   // KO cinematic: frame the lethal hit and push in (set each frame by presentation/koCinematic)
+    radius=rig.ko.radius;yaw=rig.ko.yaw;pitch=rig.ko.pitch;fyT=rig.ko.y;
+    if(rig.init){const k=r=>ease(r,dt);rig.fx+=(rig.ko.x-rig.fx)*k(CAM.rate.focus);rig.fz+=(rig.ko.z-rig.fz)*k(CAM.rate.focus);}
+  }
   if(!rig.init){Object.assign(rig,{radius,yawOff:yaw,pitchOff:pitch,fx,fz,fy:fyT,init:true});}
   else{
     const k=r=>ease(r,dt);
     rig.radius+=(radius-rig.radius)*k(CAM.rate.radius);
     rig.yawOff+=(yaw-rig.yawOff)*k(CAM.rate.yaw);
     rig.pitchOff+=(pitch-rig.pitchOff)*k(CAM.rate.pitch);
-    rig.fx+=(fx-rig.fx)*k(CAM.rate.focus);rig.fz+=(fz-rig.fz)*k(CAM.rate.focus);rig.fy+=(fyT-rig.fy)*k(CAM.rate.focus);
+    if(!rig.ko){rig.fx+=(fx-rig.fx)*k(CAM.rate.focus);rig.fz+=(fz-rig.fz)*k(CAM.rate.focus);}
+    rig.fy+=(fyT-rig.fy)*k(CAM.rate.focus);
   }
   return rig;
 }

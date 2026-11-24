@@ -19,3 +19,10 @@ test('reactions and asset helpers',()=>{
   assert.equal(assetUrl('mech','fighter.glb','/x/'),'/x/assets/characters/character-01/fighter.glb');
   assert.equal(CLIPS.length,21);
 });
+
+test('a knocked-out fighter is thrown (Knockback) and then lies down (Fall), never back to Idle', async ()=>{
+  const {pickClip}=await import('../../src/character/CharacterAnimator.js');
+  const base={koDown:true,grounded:false,airHit:true,stun:5,landTimer:.3,hitReact:0,phase:'idle'};
+  assert.equal(pickClip(base),'Knockback');
+  assert.equal(pickClip({...base,grounded:true,airHit:false}),'Fall');
+});

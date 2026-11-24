@@ -1,6 +1,6 @@
 import {fighterOf,ENERGY} from '../ecs/entities.js';
 import {applyRemoteCommand,moveFromKeys} from '../systems/playerControl.js';
-import {startMatch,endRound} from '../systems/roundSystem.js';
+import {startMatch,endRound,triggerKO,isKoPhase} from '../systems/roundSystem.js';
 
 // Online match = host-authoritative hybrid. Both browsers run the full simulation (so every skill / VFX plays locally)
 // with BOTH fighters human-driven: local keys + the peer's forwarded commands. The host then streams state snapshots
@@ -24,8 +24,9 @@ export function startNetSession(world,peer,role,{getKeys,onMessage,onEnd}){
   },MOVE_MS));
   if(role==='host'){
     timers.push(setInterval(()=>peer.sendFast({t:'snap',...snapshot(world)}),SNAP_MS));
-    const forward=e=>peer.send({t:'end',winner:e.roundWinner||e.winner,reason:e.reason,pr:e.playerRounds,cr:e.cpuRounds});
-    world.events.on('roundEnd',forward);world.events.on('matchEnd',forward);
+    const forward=final=>e=>peer.send({t:'end',winner:e.roundWinner||e.winner,reason:e.reason,pr:e.playerRounds,cr:e.cpuRounds,final});   // host verdict: match over or just a round
+    world.events.on('ko',e=>peer.send({t:'ko',winner:e.winner}));   // guest plays the same cinematic; scoring still waits for 'end'
+    world.events.on('roundEnd',forward(false));world.events.on('matchEnd',forward(true));
   }
 
   // --- incoming ---
@@ -34,9 +35,10 @@ export function startNetSession(world,peer,role,{getKeys,onMessage,onEnd}){
       case 'mv':net.remoteMove.x=+m.x||0;net.remoteMove.z=+m.z||0;break;
       case 'cmd':applyRemoteCommand(world,m);break;
       case 'snap':if(role==='guest')applySnapshot(world,m);break;
+      case 'ko':if(role==='guest')triggerKO(world,m.winner);break;
       case 'end':if(role==='guest'){   // snapshots may already carry the new score: rewind it so endRound counts exactly once
         const mt=world.match;mt.playerRounds=m.pr-(m.winner==='player'?1:0);mt.cpuRounds=m.cr-(m.winner==='cpu'?1:0);
-        endRound(world,m.winner,m.reason);}break;
+        endRound(world,m.winner,m.reason,{final:!!m.final});}break;
       case 'start':startMatch(world);break;
       case 'reqStart':if(role==='host'){startMatch(world);peer.send({t:'start'});}break;
       default:onMessage?.(m);
@@ -72,6 +74,7 @@ function snapshot(world){
 }
 // Blend the host's state in: small drift is eased out, big drift (teleport, new round) snaps.
 function applySnapshot(world,s){
+  if(isKoPhase(world.match.phase))return;   // the KO cinematic drives both fighters locally; the host's 'end' message settles the score
   for(const [side,d] of [['player',s.p],['cpu',s.c]]){
     const id=fighterOf(world,side);if(id===undefined||!d)continue;
     const t=world.get(id,'transform'),b=world.get(id,'body'),st=world.get(id,'status'),a=world.get(id,'attacker');

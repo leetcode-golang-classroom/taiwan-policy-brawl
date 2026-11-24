@@ -5,6 +5,7 @@ import {CLIPS,findClip} from './CharacterRegistry.js';
 // animation can never replace an unfinished attack. `u` is the read-only fighter state built in presentation/animation.js.
 export function pickClip(u){
   if(u.victory)return 'Victory';
+  if(u.koDown)return u.grounded&&!u.airHit?'Fall':'Knockback';   // KO: thrown out, then lying on the ground until the next round
   if(!u.grounded&&u.airHit)return 'Knockback';
   if(u.landTimer>0&&u.grounded)return 'Landing';
   if(u.hitReact>0)return 'Hit';

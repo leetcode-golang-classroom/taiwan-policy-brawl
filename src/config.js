@@ -130,6 +130,15 @@ export const SKILL_ENERGY_BONUS=8;
 // forward lunge while an attack animation plays: units/second (per character, per tier)
 export const LUNGE={mech:{skill:5.5,default:1.2},yu:{skill:5.5,default:1.2}};
 export const MATCH={roundTime:99,transition:2.8,maxRounds:3,winsNeeded:2};
+// KO cinematic timeline (seconds on the cinematic clock = real time). Phases run back to back; the round is scored once, when DEFEAT ends.
+//  trigger: the real aftermath of the lethal hit   replay: slow-motion visual re-enactment of the last `clip` seconds of play
+//  freeze: impact freeze on the lethal frame       defeat: loser flies / drops, camera eases home
+// scale = per-phase time scale for the fighters/physics (`logic`), their animation clock (`anim`; replay derives it from clip/replay) and particles (`vfx`).
+// HUD, round timer, UI, audio and the network always run on real time.
+export const KO={trigger:.35,replay:1.25,freeze:.3,defeat:2.3,clip:.35,
+  scale:{KO_TRIGGER:{logic:.5,anim:.5,vfx:.5},KO_REPLAY:{logic:0,anim:null,vfx:.27},KO_FREEZE:{logic:0,anim:0,vfx:.08},DEFEAT_ANIMATION:{logic:.55,anim:.55,vfx:.55}},
+  knock:{launch:6,push:5.5,downStun:4},   // slow-motion fly-out: flight (~1.2 logic s) fits inside the defeat phase (2.3 s x .55)
+  cam:{radius:6.8,pitch:-.5,yaw:.22}};              // push-in target while the cinematic runs
 export const AI={chaseStop:2.15,farDist:4,nearSpeed:1.05,farSpeed:2.15,meleeBasic:2.45,meleeSkill:4.4,rangedMax:6,
   jumpMin:2.8,jumpMax:6,jumpChance:.035,dodgeRange:7,defendRange:5.5,projectileWarn:4.5,
   // PHASE 14 rhythm. reaction: the CPU notices a threat only after reactMin..reactMax seconds (a J's 0.22 s charge is too fast to react to,

@@ -31,6 +31,7 @@ export function initVfxEvents(world){
   const on=(n,f)=>world.events.on(n,f);
   for(const n of ['hit','chargeStart','slamLand'])on(n,e=>cameraEvent(camRig,n,e));   // Phase 10: combat camera
 
+  on('koFlash',e=>bodyFlash.set(e.id,{start:world.time,dur:e.dur,peak:e.peak}));   // KO impact freeze: the loser glows white until the defeat animation fades it
   on('attackStart',e=>{
     syncView(world,e.attackerId);syncView(world,e.targetId);
     showMoveName(side(e.attackerId),e.tier,charId(e.attackerId));

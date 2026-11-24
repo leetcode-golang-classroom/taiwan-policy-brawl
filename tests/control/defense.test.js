@@ -61,7 +61,7 @@ test('a dodging target is not affected by guard bookkeeping (evade first)', ()=>
 });
 test('round reset clears guard and cooldown', ()=>{
   const w=startedWorld();pressDefend(w.world,'player');step(w.world,2);
-  assert.ok(def(w).cooldown>0);w.world.get(w.cpu,'health').hp=0;step(w.world,4);
+  assert.ok(def(w).cooldown>0);w.world.get(w.cpu,'health').hp=0;step(w.world,8.5);
   assert.equal(def(w).cooldown,0);assert.equal(def(w).active,false);
 });
 test('CPU uses I when the player winds up an attack nearby, and respects the cooldown', ()=>{

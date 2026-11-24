@@ -19,6 +19,7 @@ export function damage(world,targetId,amount,sourceId){
   const h=world.get(targetId,'health'),before=h.hp;
   h.hp=Math.max(0,h.hp-amount);
   const dealt=before-h.hp;
+  if(dealt>0)world.match.lastHit={attackerId:sourceId,targetId,charId:world.get(sourceId,'fighter').charId,tier:'skill',skillId:null,amount:dealt,pos:bodyCenter(world,targetId),dir:null,launched:false,slam:false,time:world.time};   // newest damage wins: the KO cinematic reads this
   const e=world.get(sourceId,'energy');e.value=Math.min(100,e.value+amount*e.gain);
   const st=world.get(targetId,'status');
   st.hitReact=HIT.reactTime;st.hitSide=world.get(sourceId,'fighter').side==='player'?1:-1;st.stun=HIT.baseStun;
@@ -83,6 +84,7 @@ export function resolveHit(world,attackerId,targetId,skill,{dir,onHit,reflected=
   if(def.broken)st.stun=Math.max(st.stun,DEFENSE.breakStun);
   if(dealt>0)st.stun=Math.min(st.stun,HIT.maxStun);
   world.events.emit('hit',{attackerId,targetId,skill,roll,amount:dealt,blocked:def.blocked,reduced:!!def.reduced,launched,slam,perfect:!!def.perfect,broken:!!def.broken,counter,airHits:st.airHits,hitStop});
+  if(dealt>0){const lh=world.match.lastHit;if(lh&&lh.targetId===targetId&&lh.time===world.time)Object.assign(lh,{tier:skill.tier,skillId:skill.id,dir:{x:d.x,z:d.z},knockPower:push,launched,slam});}   // enrich the record damage() just made
   if(dealt>0)onHit?.(dealt);
   return dealt>0;
 }
