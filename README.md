@@ -15,7 +15,7 @@ pnpm install
 pnpm dev          # 開發模式，http://localhost:5173
 pnpm run build    # 正式建置到 dist/
 pnpm preview      # 預覽建置結果
-pnpm test         # 單元測試（Entity 與 Control，182 項）
+pnpm test         # 單元測試（Entity 與 Control，228 項）
 ```
 
 網址加上 `?debug` 會把 ECS world 掛到 `window.__PB`，僅供測試使用。
@@ -30,6 +30,16 @@ pnpm test         # 單元測試（Entity 與 Control，182 項）
 ## 觸控操作（手機）
 
 窄螢幕或觸控裝置上，戰鬥畫面左下會出現**圓環搖桿**（拖曳旋鈕八方向移動，放開即停），右下有**跳躍／閃避**按鈕。右下角疊在畫面上的六顆按鈕（防禦 I、大招 L、跳躍、閃避、技能 K、普攻 J，會同步冷卻與可用狀態），以及下方四張技能卡都可直接點擊。這些都只是把輸入送進同一組 Control 函式，與鍵盤等價。只用 headless Chrome 的模擬觸控驗證過（搖桿推動角色、點卡片觸發攻擊與冷卻），**沒有在真實手機上試過**；搖桿是依偏移量量化成 WASD 八方向，沒有類比速度；沒有多指手勢的專門處理。
+
+## Audio Assets（戰鬥音效）
+
+戰鬥音效全部來自 **[150 Combat Sound Effects](https://opengameart.org/content/150-combat-sound-effects)（CC0 1.0）**，未使用其他音效庫。完整來源、作者、使用的原始檔名與修改方式見 [`LICENSES/AUDIO.md`](LICENSES/AUDIO.md)；遊戲頁尾也有來源標示。
+
+- `src/audio/soundManager.js`：Web Audio 播放引擎（預載、隨機變體不連續重複、音高變化、單音冷卻、同時發聲上限 20 與優先權搶佔、循環音、音量／靜音存 localStorage `pb.sfx.v1`，與 BGM 設定分開）。AudioContext 在第一次使用者操作時啟動；音檔尚未載入時播放直接略過，不會拖慢戰鬥。
+- `src/audio/sfxConfig.js`：音效事件（`SFX_EVENT`）、播放規則（音量／音高／優先權）、9 名角色的音效表。
+- `src/audio/combatAudio.js`：訂閱 `world.events`（`chargeStart`／`phase`／`attackStart`／`hit`／`land`…）並發出音效事件。不使用 `setTimeout`：揮擊在 `strike` 階段、命中在 `hit` 事件（與 Hit Stop 同一邏輯幀）、蓄力循環每幀跟著 `attacker.charge` 進度，蓄力結束／被打斷即停止。
+- 處理後的音檔在 `public/audio/combat/`，由 `tools/prepare-combat-sfx.py` 從本機的原始素材包（放在 `assets-src/audio/150gameeffectsounds/`，不進版控）重新產生。
+- 音量：戰鬥畫面下方操作說明列的滑桿與靜音鈕，或按 `N` 靜音；背景音樂旁有同樣的按鈕，或按 `B`。
 
 ## 操作
 

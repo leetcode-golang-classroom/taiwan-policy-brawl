@@ -2,3 +2,8 @@ node_modules/
 dist/
 *.zip
 .DS_Store
+# 150 Combat Sound Effects source pack (56 MB): kept locally only; the game uses the processed subset in public/audio/combat
+assets-src/audio/*
+!assets-src/audio/150gameeffectsounds/
+assets-src/audio/150gameeffectsounds/*
+!assets-src/audio/150gameeffectsounds/LICENSES.txt

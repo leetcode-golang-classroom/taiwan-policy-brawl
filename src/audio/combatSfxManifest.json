@@ -1,0 +1,146 @@
+{
+ "punch_m0": {
+  "src": "01_combat_melee/impact_punch_medium_000_48kHz_16bit_0.36s_bd322da3_s02.wav",
+  "dir": "melee"
+ },
+ "small_1": {
+  "src": "01_combat_melee/SmallImpact_01_s01.wav",
+  "dir": "melee"
+ },
+ "small_2": {
+  "src": "01_combat_melee/SmallImpact_02_s01.wav",
+  "dir": "melee"
+ },
+ "small_3": {
+  "src": "01_combat_melee/SmallImpact_03_s01.wav",
+  "dir": "melee"
+ },
+ "impact_1": {
+  "src": "01_combat_melee/Impact_01_s01.wav",
+  "dir": "melee"
+ },
+ "impact_2": {
+  "src": "01_combat_melee/Impact_02_s01.wav",
+  "dir": "melee"
+ },
+ "blast_3": {
+  "src": "03_explosions_destruction/BlastImpact_03_s01.wav",
+  "dir": "explosion"
+ },
+ "break_1": {
+  "src": "03_explosions_destruction/Break_01_s01.wav",
+  "dir": "explosion"
+ },
+ "break_2": {
+  "src": "03_explosions_destruction/Break_02_s01.wav",
+  "dir": "explosion"
+ },
+ "glass_1": {
+  "src": "03_explosions_destruction/BreakGlass_01_s01.wav",
+  "dir": "explosion"
+ },
+ "zap_electro": {
+  "src": "04_magic_spells/ElectroZap_s01.wav",
+  "dir": "magic"
+ },
+ "zap_energy": {
+  "src": "04_magic_spells/EnergyZap_s01.wav",
+  "dir": "magic"
+ },
+ "zap_heavy": {
+  "src": "04_magic_spells/HeavyZap_s01.wav",
+  "dir": "magic"
+ },
+ "zap_power": {
+  "src": "04_magic_spells/PowerZap_01_s01.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "fire_1": {
+  "src": "04_magic_spells/Fire Spell Impact 1_s06.wav",
+  "maxDur": 1.1,
+  "dir": "magic"
+ },
+ "fire_3": {
+  "src": "04_magic_spells/Fire Spell Impact 3_s06.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "water_1": {
+  "src": "04_magic_spells/Water Spell Impact 1_s06.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "water_3": {
+  "src": "04_magic_spells/Water Spell Impact 3_s06.wav",
+  "maxDur": 1.1,
+  "dir": "magic"
+ },
+ "earth_2": {
+  "src": "04_magic_spells/Earth Spell Impact 2_s07.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "earth_4": {
+  "src": "04_magic_spells/Earth Spell Impact 4_s07.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "wind_1": {
+  "src": "04_magic_spells/Wind Spell Impact 1_s07.wav",
+  "maxDur": 1.1,
+  "dir": "magic"
+ },
+ "plant_2": {
+  "src": "04_magic_spells/Plant Spell Impact 2_s07.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "ice_1": {
+  "src": "04_magic_spells/Ice Spell Impact 1_s06.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "lightning_1": {
+  "src": "04_magic_spells/Lightning Spell Impact 1_s06.wav",
+  "maxDur": 1.2,
+  "dir": "magic"
+ },
+ "lightning_3": {
+  "src": "04_magic_spells/Lightning Spell Impact 3_s06.wav",
+  "maxDur": 1.2,
+  "dir": "magic"
+ },
+ "heal_2": {
+  "src": "04_magic_spells/Healing Spell Impact 2_s08.wav",
+  "maxDur": 1,
+  "dir": "magic"
+ },
+ "heal_10": {
+  "src": "04_magic_spells/Healing Spell Impact 10_s08.wav",
+  "maxDur": 1.1,
+  "dir": "magic"
+ },
+ "heal_15": {
+  "src": "04_magic_spells/Healing Spell Impact 15_s08.wav",
+  "maxDur": 0.8,
+  "dir": "magic"
+ },
+ "heal_5": {
+  "src": "04_magic_spells/Healing Spell Impact 5_s08.wav",
+  "maxDur": 0.9,
+  "dir": "magic"
+ },
+ "loop_charge_12": {
+  "src": "04_magic_spells/Retro Charge StereoUP 12_s05.wav",
+  "maxDur": 1.2,
+  "loop": true,
+  "dir": "charge"
+ },
+ "loop_magic_11": {
+  "src": "04_magic_spells/Retro Charge Magic 11_s05.wav",
+  "maxDur": 1.1,
+  "loop": true,
+  "dir": "charge"
+ }
+}

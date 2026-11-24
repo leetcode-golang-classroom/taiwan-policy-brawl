@@ -6,7 +6,8 @@ const KEY='pb.bgm.v2',DEFAULT_VOL=.45,FADE=.9;   // FADE: seconds
 export const bgmState={muted:false,volume:DEFAULT_VOL};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');if(typeof s.muted==='boolean')bgmState.muted=s.muted;if(Number.isFinite(s.volume))bgmState.volume=Math.min(1,Math.max(0,s.volume));}catch{}
 let el=null,want=false,fade=0,raf=0,last=0;   // fade: 0 (silent) .. 1 (full)
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(bgmState));}catch{}};
+const listeners=new Set();export const onBgmChange=f=>{listeners.add(f);return ()=>listeners.delete(f);};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(bgmState));}catch{}for(const f of listeners)f(bgmState);};
 function ensure(){
   if(el)return el;
   el=new Audio();el.src=SRC;el.loop=true;el.preload='none';el.volume=0;   // lazy: nothing is downloaded until a match starts
