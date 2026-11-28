@@ -8,12 +8,12 @@ import {startedWorld,step,arrange,record,hp} from '../helpers.js';
 const calm=w=>{const c=w.world.get(w.cpu,'defense');c.cooldown=1e9;const s=w.world.get(w.cpu,'status');s.dodgeCooldown=1e9;};
 
 test('defense: startup is NOT protective, then the guard works, then a recovery with no actions', ()=>{
-  const w=startedWorld({p:'cleric',c:'cleric'});arrange(w,{dist:1.5});const cs=w.world.get(w.cpu,'status');
+  const w=startedWorld({p:'mech',c:'mech'});arrange(w,{dist:1.5});const cs=w.world.get(w.cpu,'status');
   const d=w.world.get(w.cpu,'defense');d.active=true;d.timer=DEFENSE.duration-.6;d.startup=DEFENSE.startup;
-  const h0=hp(w,'cpu');resolveHit(w.world,w.player,w.cpu,getSkill('cleric','basic'));
-  assert.equal(h0-hp(w,'cpu'),9,'full damage during startup');
-  cs.hitStop=0;d.startup=0;const h1=hp(w,'cpu');resolveHit(w.world,w.player,w.cpu,getSkill('cleric','basic'));
-  assert.ok(h1-hp(w,'cpu')<9,'reduced once the guard is up');
+  const h0=hp(w,'cpu');resolveHit(w.world,w.player,w.cpu,getSkill('mech','basic'));
+  assert.equal(h0-hp(w,'cpu'),10,'full damage during startup');
+  cs.hitStop=0;d.startup=0;const h1=hp(w,'cpu');resolveHit(w.world,w.player,w.cpu,getSkill('mech','basic'));
+  assert.ok(h1-hp(w,'cpu')<10,'reduced once the guard is up');
 });
 test('defense: startup then ready event, ends with a recovery that blocks attacking and re-guarding', ()=>{
   const w=startedWorld();arrange(w,{dist:9});const ready=record(w.world,'defenseReady'),d=w.world.get(w.player,'defense');
@@ -30,15 +30,15 @@ test('defense: projectile is blocked only once the guard is up; cooldown starts 
   step(w.world,DEFENSE.duration+.05);assert.ok(d.cooldown>DEFENSE.cooldown-.3);
 });
 test('dodge: invulnerable window, then a vulnerable recovery that still ends the dodge', ()=>{
-  const w=startedWorld({p:'cleric',c:'cleric'});arrange(w,{dist:1.5});calm(w);
+  const w=startedWorld({p:'mech',c:'mech'});arrange(w,{dist:1.5});calm(w);
   w.world.get(w.cpu,'status').stun=0;const ps=w.world.get(w.player,'status');
   const evades=record(w.world,'evade');
   pressDodge(w.world,'player',{KeyS:true});step(w.world,.05);
-  const h0=hp(w,'player');resolveHit(w.world,w.cpu,w.player,getSkill('cleric','basic'));
+  const h0=hp(w,'player');resolveHit(w.world,w.cpu,w.player,getSkill('mech','basic'));
   assert.equal(hp(w,'player'),h0,'no damage during the invulnerable window');assert.equal(evades.length,1);
   assert.equal(w.world.get(w.cpu,'attacker').hitConfirmed,false,'an evaded attack is not a confirmed hit');
   step(w.world,DODGE.invuln+.05);assert.equal(ps.dodgeInvuln,0);assert.ok(ps.dodgeTimer>0,'still recovering');
-  const h1=hp(w,'player');resolveHit(w.world,w.cpu,w.player,getSkill('cleric','basic'));assert.ok(hp(w,'player')<h1,'vulnerable in recovery');
+  const h1=hp(w,'player');resolveHit(w.world,w.cpu,w.player,getSkill('mech','basic'));assert.ok(hp(w,'player')<h1,'vulnerable in recovery');
   step(w.world,DODGE.duration);assert.equal(ps.dodgeTimer,0);
 });
 test('dodge: slides over time, bounded distance, no permanent invulnerability (cooldown > invuln)', ()=>{
@@ -49,7 +49,7 @@ test('dodge: slides over time, bounded distance, no permanent invulnerability (c
   assert.ok(DODGE.cooldown>DODGE.invuln,'cannot chain invulnerability back-to-back');
 });
 test('dodge cancels the recovery of a released attack but never the startup (no free feint)', ()=>{
-  const w=startedWorld({p:'cleric'});arrange(w,{dist:1.5});calm(w);const a=w.world.get(w.player,'attacker');
+  const w=startedWorld({p:'mech'});arrange(w,{dist:1.5});calm(w);const a=w.world.get(w.player,'attacker');
   pressAttack(w.world,'player','basic');step(w.world,.1);assert.ok(a.charge);
   pressDodge(w.world,'player',{KeyS:true});step(w.world,.02);
   assert.equal(w.world.get(w.player,'status').dodgeTimer,0,'refused during startup');
@@ -59,7 +59,7 @@ test('dodge cancels the recovery of a released attack but never the startup (no 
   assert.ok(w.world.get(w.player,'status').dodgeTimer>0,'dodge cancels the recovery');assert.equal(a.attackTime,0);
 });
 test('a dodge pressed just before it is possible is buffered; attacks are locked early in the dodge', ()=>{
-  const w=startedWorld({p:'cleric'});arrange(w,{dist:1.5});calm(w);const s=w.world.get(w.player,'status');
+  const w=startedWorld({p:'mech'});arrange(w,{dist:1.5});calm(w);const s=w.world.get(w.player,'status');
   s.dodgeCooldown=.1;pressDodge(w.world,'player',{KeyS:true});step(w.world,1/60);assert.equal(s.dodgeTimer,0);
   step(w.world,.15);assert.ok(s.dodgeTimer>0,'fired when the cooldown ended');
   const starts=record(w.world,'chargeStart');pressAttack(w.world,'player','basic');step(w.world,.1);

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {blendPose,stepRunBlend,brakePose} from './poseBlend.js';
 import {updateRealModel} from '../character/CharacterController.js';
-import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT} from '../config.js';
+import {closeShoulders} from '../character/shoulders.js';
+import {chargeDurations,ATTACK_TIME,PHASES,HIT_REACT,GOD_FIST} from '../config.js';
 
 // Maps ECS components onto a read-only "state" layer in front of the rig (limbs/head/body...) stored on the view.
 function stateOf(world,id,f){
@@ -79,9 +80,26 @@ const STEP_POSES={
 };
 // Characters whose basic / air-skill pose is fully authored (their old single SIGNATURE pose must not fight it).
 const customAttack=(u,tier)=>(tier==='basic'||(tier==='skill'&&!u.grounded))&&(u.id==='cleric'||!!STEP_POSES[u.id]);
+const _e=new THREE.Euler();
+// 神選之人 on the skinned model: k 0 = airborne with legs straight and arms wide, k 1 = seated in full lotus with hands in prayer; hit = palms thrust forward.
+function godBones(f,{k,hit}){
+  const b=f.userData.bones,L=(a,c,t)=>a+(c-a)*t,set=(n,x,y,z)=>{if(b[n])b[n].quaternion.setFromEuler(_e.set(x,y,z));};
+  // arms only (legs and hips keep the normal standing clip): wide for the spin-jump -> both palms together -> (palm appears) right hand
+  // stands up in a one-handed Buddhist salute while the left hand rests low
+  const pr=L(-.5,-1.15,k),paz=L(1.25,.32,k);
+  set('UpperArmR',hit?-1.0:pr,0,hit?-.3:-paz);set('LowerArmR',hit?-2.5:L(-.3,-1.9,k),0,0);
+  set('UpperArmL',hit?-.1:pr,0,hit?.4:paz);set('LowerArmL',hit?-.45:L(-.3,-1.9,k),0,0);
+  set('Spine',L(-.1,0,k),0,0);set('Head',L(-.15,0,k),0,0);
+  closeShoulders(b,f.userData.id);
+}
 export function updateAnimations(world,dt){
   for(const id of world.query('view','fighter','status','body','attacker')){const f=world.get(id,'view').obj;const u=stateOf(world,id,f);
-    if(!(u.dodgeTimer>0&&u.id==='cleric'))f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const rb=f.userData.runBlend=stepRunBlend(f.userData.runBlend||0,u.rushTimer>0,dt);const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
+    {const big=u.id==='cleric'&&((u.chargeStyle==='basic'&&u.phase!=='idle')||(u.attackStyle==='basic'&&(u.phase==='strike'||u.phase==='impact')));   // 神選之人: sit in meditation, spin and float
+      f.userData.liftY=THREE.MathUtils.damp(f.userData.liftY||0,big&&u.grounded?GOD_FIST.lift:0,big?10:6,dt);
+      const q0=u.chargeStyle==='basic'?Math.min(1,u.chargeTime/GOD_FIST.tuckTime):1;
+      f.userData.godSpin=big;f.userData.spinY=big?Math.PI*2*THREE.MathUtils.smoothstep(q0,0,1):0;   // exactly one full turn while jumping, then facing the target again
+      f.userData.god=null;}
+    if(!(u.dodgeTimer>0&&u.id==='cleric')&&!f.userData.godSpin)f.userData.spinY=0;const phase=world.time*5+(world.get(id,'fighter').side==='cpu'?1:0),dodging=u.dodgeTimer>0,walking=u.moving&&u.stun<=0&&!dodging;const rb=f.userData.runBlend=stepRunBlend(f.userData.runBlend||0,u.rushTimer>0,dt);const gait=u.movePhase,step=walking&&u.grounded?Math.sin(gait):0,alt=walking&&u.grounded?Math.cos(gait):0;u.head.position.z=0;u.limbs[0].position.y=1.72;u.limbs[2].position.y=1.72;u.limbs[1].position.y=.85;u.limbs[3].position.y=.85;u.head.position.y=2.12+Math.sin(phase)*.025;u.body.position.y=1.25+(u.grounded?Math.abs(Math.sin(phase))*.025:0);u.aura.material.opacity=dodging?1:.7;u.aura.scale.setScalar(u.grounded?(dodging?1.28:1):1.18);
     // Character-specific walk cycles. Limb order: left arm, left leg, right arm, right leg.
     if(u.limbs.length>=4){const arms=[u.limbs[0],u.limbs[2]],legs=[u.limbs[1],u.limbs[3]];let stride=.58,bob=0,lean=0,armSwing=.55,sway=1;   // sway scales the sideways wobble (leg splay, torso roll)
       switch(u.id){
@@ -127,16 +145,18 @@ export function updateAnimations(world,dt){
     } else if(dodging){
       const t=1-u.dodgeTimer/.68,side=Math.sin(t*Math.PI),dir=u.dodgeDirection;
       // Nine readable evasions: dash, float, duck, sidestep, spin, shoulder roll, heavy lean, guard-backstep, hop-back.
-      u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,({mech:-.22,leopard:.08,admiral:.48,mage:-.12,cleric:.18,brawler:-.42,nun:.3,yu:-.08,'bubble':.12}[u.id]||0),18,dt);
-      if(u.id==='mech'){u.body.rotation.x=-.28;u.limbs[0].rotation.z=-1.15;u.limbs[1].rotation.z=1.05;u.limbs[1].rotation.x=-.8;}
+      // 側閃：身體朝閃避方向（相對面向的左／右）側傾，不再向後仰。lat: +1 = 角色右側、-1 = 左側。
+      const dd=u.dodgeDirection||{x:0,z:0},lat=Math.max(-1,Math.min(1,-dd.x*Math.cos(u.rotY)+dd.z*Math.sin(u.rotY))),lean=lat*.34*Math.max(.35,side);
+      u.body.rotation.z=THREE.MathUtils.damp(u.body.rotation.z,lean,18,dt);
+      if(u.id==='mech'){u.body.rotation.x=.04;u.limbs[0].rotation.z=-1.15;u.limbs[1].rotation.z=1.05;u.limbs[1].rotation.x=-.8;}
       else if(u.id==='leopard'){u.body.position.y=1.0+side*.35;u.body.rotation.x=.55;u.head.position.y=1.85+side*.3;u.limbs[0].rotation.x=-1.4;u.limbs[2].rotation.x=-1.4;u.limbs[1].rotation.x=.9;u.limbs[3].rotation.x=.9;}   // leopard side-leap: crouch, forelegs reach, hind legs kick
       else if(u.id==='admiral'){u.body.position.y=.92;u.head.position.y=1.82;u.body.rotation.x=.35;u.limbs[0].rotation.z=-.45;u.limbs[2].rotation.z=.45;}
-      else if(u.id==='mage'){u.body.rotation.x=-.12;u.limbs[0].rotation.z=-1.55;u.limbs[2].rotation.z=.75;u.head.rotation.y=side*.32;}
+      else if(u.id==='mage'){u.body.rotation.x=.04;u.limbs[0].rotation.z=-1.55;u.limbs[2].rotation.z=.75;u.head.rotation.y=side*.32;}
       else if(u.id==='cleric'){f.userData.spinY=(f.userData.spinY||0)+dt*10;u.body.rotation.x=.12;u.limbs[0].rotation.z=-.9;u.limbs[2].rotation.z=.9;}
-      else if(u.id==='brawler'){u.body.rotation.x=-.42;u.limbs[0].rotation.z=-1.9;u.limbs[2].rotation.z=1.45;u.body.position.y=1.18;}
+      else if(u.id==='brawler'){u.body.rotation.x=.05;u.limbs[0].rotation.z=-1.9;u.limbs[2].rotation.z=1.45;u.body.position.y=1.18;}
       else if(u.id==='nun'){u.body.rotation.x=.25;u.limbs[0].rotation.z=-1.25;u.limbs[2].rotation.z=.9;u.body.position.y=1.08;}
       else if(u.id==='yu'){u.body.rotation.x=.18;u.limbs[0].rotation.z=-1.15;u.limbs[2].rotation.z=1.15;u.limbs[1].rotation.x=.35;}
-      else {u.body.rotation.x=-.18;u.limbs[0].rotation.z=-1.25;u.limbs[2].rotation.z=1.05;u.head.rotation.y=-side*.22;}
+      else {u.body.rotation.x=.04;u.limbs[0].rotation.z=-1.25;u.limbs[2].rotation.z=1.05;u.head.rotation.y=-side*.22;}
     }else if(u.landTimer>0&&u.grounded){ // landing reaction after being launched: crouch, arms out, then recover
       const q=u.landTimer/HIT_REACT.landTime,k=Math.sin(Math.min(1,q)*Math.PI*.5);
       u.body.position.y=THREE.MathUtils.damp(u.body.position.y,1.25-.32*k,22,dt);u.head.position.y=2.12-.3*k;u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,.3*k,18,dt);
@@ -215,16 +235,12 @@ export function updateAnimations(world,dt){
         u.limbs[0].rotation.x=THREE.MathUtils.damp(u.limbs[0].rotation.x,-slam*1.2,24,dt);u.limbs[2].rotation.x=THREE.MathUtils.damp(u.limbs[2].rotation.x,-slam*1.2,24,dt);
         u.body.rotation.x=THREE.MathUtils.damp(u.body.rotation.x,slam?.32:-.28,20,dt);
       }
-      if(u.id==='cleric'&&tier==='basic'){ // 聖光連擊: J1 right jab, J2 left palm thrust, J3 rising two-handed light strike (the launcher)
-        const D=THREE.MathUtils.damp,hit=u.phase==='impact',step=u.comboStep||1;
-        if(step===1){u.body.rotation.y=D(u.body.rotation.y,.35,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.12,24,dt);
-          u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-1.58,36,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.05,30,dt);u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-.7,26,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.5,26,dt);}
-        else if(step===2){u.body.rotation.y=D(u.body.rotation.y,-.45,30,dt);u.body.rotation.x=D(u.body.rotation.x,-.18,24,dt);u.body.position.y=1.2;
-          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,-1.62,36,dt);u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-.1,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,.6,26,dt);}
-        else{u.body.rotation.y=D(u.body.rotation.y,0,26,dt);u.body.rotation.x=D(u.body.rotation.x,hit?-.4:.3,26,dt);u.body.position.y=hit?1.42:1.08;u.head.position.y=hit?2.3:1.95;   // crouch, then rise with both hands sweeping up
-          u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-3.0:-.4,30,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,hit?-3.0:-.4,30,dt);
-          u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,hit?-.25:-.5,26,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,hit?.25:.5,26,dt);
-          u.limbs[1].rotation.x=D(u.limbs[1].rotation.x,hit?-.1:.55,24,dt);u.limbs[3].rotation.x=D(u.limbs[3].rotation.x,hit?.2:-.45,24,dt);}
+      if(u.id==='cleric'&&tier==='basic'){ // 神選之人: spin-jump while the arms gather into prayer, then a one-handed salute as the Buddha palm appears (standing, no sitting)
+        const D=THREE.MathUtils.damp,hit=u.phase==='impact'||u.phase==='strike',q=u.chargeStyle==='basic'?Math.min(1,u.chargeTime/GOD_FIST.tuckTime):1,k=THREE.MathUtils.smoothstep(q,.25,.85);f.userData.god={k,hit};
+        u.body.rotation.x=D(u.body.rotation.x,0,20,dt);u.body.rotation.y=D(u.body.rotation.y,0,20,dt);u.body.rotation.z=D(u.body.rotation.z,0,20,dt);
+        const ax=hit?-1.0:-.85*k,az=hit?.3:.5*k+(1-k)*1.1;   // placeholder rig arms
+        u.limbs[0].rotation.x=D(u.limbs[0].rotation.x,hit?-.1:ax,28,dt);u.limbs[2].rotation.x=D(u.limbs[2].rotation.x,ax,28,dt);
+        u.limbs[0].rotation.z=D(u.limbs[0].rotation.z,-az,28,dt);u.limbs[2].rotation.z=D(u.limbs[2].rotation.z,az,28,dt);
       }
       if(u.id==='cleric'&&tier==='skill'&&!u.grounded){ // 天罰: air finisher — both hands raised overhead, then hammered down
         const D=THREE.MathUtils.damp,down=u.phase==='impact';
@@ -363,5 +379,6 @@ export function updateAnimations(world,dt){
     }
     blendPose(u,dt,f.userData.poseBlend||(f.userData.poseBlend={}));
     updateRealModel(f,u,dt);
+    if(f.userData.god&&f.userData.bones?.Hips)godBones(f,f.userData.god);   // real GLB: override the clip with the spin-jump -> cross-legged sit -> palm thrust
     updateGlow(u,world.time,dt);}
 }

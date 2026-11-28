@@ -10,7 +10,7 @@ function launch(w){
   for(let i=0;i<3;i++){cs.stun=1e9;cs.dodgeCooldown=1e9;pressAttack(w.world,'player','basic');step(w.world,.5);}
   return w.world.get(w.cpu,'body');
 }
-const setup=()=>{const w=startedWorld({p:'cleric'});arrange(w,{dist:1.6});w.world.get(w.cpu,'defense').cooldown=1e9;return w;};
+const setup=()=>{const w=startedWorld({p:'mech'});arrange(w,{dist:1.6});w.world.get(w.cpu,'defense').cooldown=1e9;return w;};
 
 test('J3 launches the victim into the air (launcher / airborne hit state)',()=>{
   const w=setup();const b=launch(w);

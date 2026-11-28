@@ -120,6 +120,7 @@ export function attack(world,attackerId,tier,opts={}){
     const t=world.get(targetId,'transform');
     const dir=skill.type==='homing'?normalize({x:t.x-at.x,y:0,z:t.z-at.z}):forwardOf(at);
     const pos={x:at.x+dir.x*.6,y:at.y+1.1,z:at.z+dir.z*.6};
+    if(skill.aim3d){const tc=bodyCenter(world,targetId),d3=normalize({x:tc.x-pos.x,y:tc.y-pos.y,z:tc.z-pos.z});dir.x=d3.x;dir.y=d3.y;dir.z=d3.z;}   // palm thrown from the air homes in on a juggled victim's height
     if(skill.volley){   // several projectiles released together, each hitting one after another with its own knock direction
       info.projectileIds=skill.volley.map((st,i)=>spawnProjectile(world,{ownerId:attackerId,targetId,skill:{...skill,...st},pos,dir,onHit:opts.onHit,wait:st.wait||0,knockAngle:st.angle||0,stage:i}));
       info.projectileId=info.projectileIds[0];

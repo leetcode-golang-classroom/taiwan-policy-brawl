@@ -18,6 +18,81 @@ const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 function fireBurst(c,n=3){for(let i=0;i<n;i++)burst(c,FIRE[i%3],24);}
 const TIER_COLOR={ult:0xffd36c,skill:0x72e4d2,basic:0xffb35c};
 
+// 神選之人: the caster glows, sits in meditation, spins and floats; a colossal gilded Buddha appears behind and a solid Buddha palm is thrown.
+const goldMat=(c,o,w=false)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,depthWrite:false,wireframe:w});
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+// Gilded, lit material (the arena has real lights); `mats` collects them so the caller can fade the whole statue.
+const gild=(c,o,mats,em=0x6a4410)=>{const m=new THREE.MeshPhongMaterial({color:c,emissive:em,shininess:70,specular:0xfff2c0,transparent:true,opacity:o});m.userData={o};mats?.push(m);return m;};
+const part=(parent,geo,mat,x=0,y=0,z=0,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0)=>{const k=new THREE.Mesh(geo,mat);k.position.set(x,y,z);k.scale.set(sx,sy,sz);k.rotation.set(rx,ry,rz);parent.add(k);return k;};
+// A finger / thumb: chained rounded capsules (smooth round tips), each phalange curling slightly toward the palm side.
+function finger(parent,mat,x,y,len,r,rz,curl){
+  const root=new THREE.Group();root.position.set(x,y,0);root.rotation.z=rz;parent.add(root);
+  let node=root;
+  [[.46,1],[.33,.9],[.27,.82]].forEach(([f,rf],i)=>{const L=len*f,rr=r*rf,seg=new THREE.Group();seg.rotation.x=i?curl:curl*.4;node.add(seg);
+    part(seg,new THREE.CapsuleGeometry(rr,L,6,14),mat,0,L/2,0);   // capsule caps make the knuckles and the fingertip round
+    const next=new THREE.Group();next.position.y=L;seg.add(next);node=next;});
+}
+// A realistic open human hand, palm facing +z (the push direction), fingers up: wrist, domed palm, four tapered fingers, a thumb.
+function buildBuddhaPalm(){
+  const g=new THREE.Group(),hand=new THREE.Group(),skin=gild(0xffd57a,.97,null,0x7a5518),pad=gild(0xffe9b0,.97,null,0x8a6a28);hand.position.y=-.2;g.add(hand);
+  part(hand,new THREE.CylinderGeometry(.5,.58,.9,20),skin,0,-1.15,0);                         // wrist
+  part(hand,new THREE.SphereGeometry(1,24,18),skin,0,0,0,.92,1.0,.42);                         // palm body
+  part(hand,new THREE.SphereGeometry(1,20,14),pad,-.45,-.2,.3,.42,.5,.2);part(hand,new THREE.SphereGeometry(1,20,14),pad,.35,-.55,.3,.45,.3,.16);   // thenar / hypothenar pads
+  [[-.62,.82,1.15,.2],[-.21,.95,1.4,.2],[.21,.92,1.32,.2],[.6,.8,1.0,.18]].forEach(([x,y,l,r],i)=>finger(hand,skin,x,y,l,r,(i-1.5)*-.07,.14));   // index, middle, ring, little
+  finger(hand,skin,-.78,-.3,.9,.23,.95,-.1);                                                    // thumb splayed outward
+  const mark=part(hand,new THREE.CircleGeometry(.34,24),goldMat(0xffffff,.9),0,.05,.44);        // glowing lotus mark on the palm
+  const rings=[],halo=new THREE.Group();g.add(halo);
+  for(const [r,z,o] of [[1.9,-.5,.7],[2.4,-1.0,.5],[2.9,-1.5,.35]]){rings.push(part(halo,new THREE.TorusGeometry(r,.05,8,48),goldMat(0xfff1a8,o),0,.4,z));}
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;part(g,new THREE.ConeGeometry(.12,1.6,8),goldMat(0xffc93c,.45),Math.cos(a)*1.2,.4+Math.sin(a)*1.2,-1.8,1,1,1,-Math.PI/2);}   // energy streaks behind the hand
+  g.userData.heading=true;g.userData.lift=1.6;g.userData.update=t=>{rings.forEach((r,i)=>r.scale.setScalar(1+Math.sin(t*18-i*1.2)*.06));mark.scale.setScalar(1+Math.sin(t*14)*.15);};
+  return g;
+}
+// A gilded seated Buddha in the style of a Taiwanese temple Shakyamuni: full, rounded 福相 face with closed eyes and a gentle smile, tight snail-shell
+// curls, ushnisha with a jewel, long ears, a robe draped over one shoulder, left hand in the lap and right hand resting on the knee, seated
+// in full lotus on a tiered lotus throne with a flaming halo. Fully solid 3D; `mats` are faded together by the caller.
+function buildTathagata(mats){
+  const g=new THREE.Group(),gold=gild(0xffcf4a,.82,mats),light=gild(0xffe48a,.85,mats),deep=gild(0xd99a22,.85,mats),robe=gild(0xd8522a,.8,mats,0x5a1a08),glow=goldMat(0xfff3b8,.22);mats.push(glow);glow.userData={o:.22};
+  // tiered lotus throne: round base, stacked petal rings
+  part(g,new THREE.CylinderGeometry(3.3,3.6,.6,40),deep,0,.3,0);part(g,new THREE.CylinderGeometry(2.9,3.2,.35,40),gold,0,.78,0);
+  for(const [R,y,n,sz,tilt] of [[3.0,1.05,18,.62,.55],[2.55,1.25,14,.55,.4]])for(let i=0;i<n;i++){const a=i/n*Math.PI*2;
+    const pt=part(g,new THREE.SphereGeometry(1,12,10),light,Math.cos(a)*R,y,Math.sin(a)*R,.3,.1+sz*.25,sz*.55);pt.rotation.set(0,-a+Math.PI/2,0);pt.rotateX(-tilt);}   // lotus petal, tilted outward
+  part(g,new THREE.CylinderGeometry(2.3,2.5,.3,40),gold,0,1.3,0);
+  // crossed legs: a broad flattened ellipsoid with two round knees and folded robe hem
+  part(g,new THREE.SphereGeometry(1,28,18),gold,0,1.95,.05,2.6,.85,1.5);
+  part(g,new THREE.SphereGeometry(1,20,14),gold,-2.0,2.05,.65,.85,.62,.78);part(g,new THREE.SphereGeometry(1,20,14),gold,2.0,2.05,.65,.85,.62,.78);
+  part(g,new THREE.TorusGeometry(2.15,.12,8,40,Math.PI),robe,0,2.1,.95,1,.35,1,Math.PI/2,0,0);                    // hem draped over the lap
+  // torso: full, rounded, slightly tapering up to broad shoulders
+  const prof=[[0,0],[1.5,.0],[1.75,.9],[1.65,1.9],[1.9,2.9],[1.5,3.45],[.8,3.7],[0,3.75]].map(p=>new THREE.Vector2(p[0],p[1]));
+  part(g,new THREE.LatheGeometry(prof,36),gold,0,2.35,0,1,1,.78);
+  part(g,new THREE.SphereGeometry(1,20,14),gold,-1.9,5.2,0,.62,.55,.55);part(g,new THREE.SphereGeometry(1,20,14),gold,1.9,5.2,0,.62,.55,.55);   // rounded shoulders
+  // robe over the left shoulder, crossing the chest diagonally, with the right shoulder bare
+  part(g,new THREE.TorusGeometry(1.75,.2,10,40,Math.PI*.95),robe,.1,4.0,.55,1,1.15,.55,0,0,Math.PI*.55);
+  part(g,new THREE.CylinderGeometry(.75,.95,.35,24),robe,-1.2,5.2,.0,1,1,.75,0,0,.25);
+  for(let i=0;i<3;i++)part(g,new THREE.TorusGeometry(1.5-i*.12,.05,6,30,Math.PI*.8),deep,0,3.0+i*.55,.78,1,.5,.35,0,0,Math.PI*1.1);   // chest folds
+  // arms: left hand rests palm-up in the lap (meditation mudra), right hand rests on the right knee
+  part(g,new THREE.CapsuleGeometry(.34,1.6,6,12),gold,-2.05,4.1,.15,1,1,1,0,0,.12);part(g,new THREE.CapsuleGeometry(.34,1.6,6,12),gold,2.1,4.05,.2,1,1,1,0,0,-.12);
+  part(g,new THREE.CapsuleGeometry(.3,1.1,6,12),gold,-1.55,2.85,.95,1,1,1,1.0,0,-.55);                                  // left forearm into the lap
+  part(g,new THREE.SphereGeometry(1,20,14),light,-.5,2.8,1.45,.75,.2,.5);                                                // left palm up in the lap
+  part(g,new THREE.CapsuleGeometry(.3,1.0,6,12),gold,2.35,3.0,.7,1,1,1,.7,0,-.2);                                       // right forearm toward the knee
+  part(g,new THREE.SphereGeometry(1,20,14),light,2.3,2.65,1.35,.42,.3,.55);                                              // right hand on the knee
+  // head: full round face, neck, long ears, features
+  part(g,new THREE.CylinderGeometry(.55,.7,.6,16),gold,0,5.55,0);
+  part(g,new THREE.SphereGeometry(1,32,24),gold,0,6.5,.05,1.12,1.18,1.05);
+  for(const sd of [-1,1]){part(g,new THREE.CapsuleGeometry(.17,.95,6,10),light,sd*1.2,6.2,.05,1,1,.6,0,0,sd*.08);}       // long earlobes
+  for(const sd of [-1,1])part(g,new THREE.TorusGeometry(.2,.04,6,14,Math.PI),deep,sd*.42,6.5,1.07,1.1,.5,1,0,0,Math.PI);    // closed, downcast eyes
+  part(g,new THREE.SphereGeometry(.07,10,8),light,0,6.95,1.12);                                                           // 白毫 (urna)
+  part(g,new THREE.SphereGeometry(1,14,10),gold,0,6.45,1.12,.12,.2,.14);                                                  // nose
+  part(g,new THREE.TorusGeometry(.26,.04,6,16,Math.PI),deep,0,6.05,1.07,1,.55,1,0,0,Math.PI);                              // gentle smile
+  // snail-shell curls over the crown (Fibonacci spread on the upper hemisphere) + ushnisha with a jewel
+  const curl=new THREE.SphereGeometry(.13,8,6);
+  for(let i=0;i<120;i++){const y=.12+.88*i/119,r=Math.sqrt(1-y*y),a=i*2.39996;part(g,curl,deep,Math.cos(a)*r*1.12,6.5+y*1.2,.05+Math.sin(a)*r*1.05+.0,1,1,1);}
+  part(g,new THREE.SphereGeometry(1,20,14),gold,0,7.85,.05,.55,.45,.55);part(g,new THREE.SphereGeometry(.14,10,8),light,0,8.3,.05);   // ushnisha and jewel
+  // flaming halo behind the head + body mandorla glow
+  part(g,new THREE.TorusGeometry(2.6,.09,10,60),light,0,6.7,-1.3);part(g,new THREE.TorusGeometry(2.25,.06,8,60),gold,0,6.7,-1.3);
+  part(g,new THREE.CircleGeometry(2.55,48),glow,0,6.7,-1.35);part(g,new THREE.CircleGeometry(4.8,48),glow,0,4.2,-1.6);
+  for(let i=0;i<28;i++){const a=i/28*Math.PI*2,rr=2.9+(i%2)*.4;part(g,new THREE.ConeGeometry(.16,.9+(i%2)*.4,8),light,Math.cos(a)*rr,6.7+Math.sin(a)*rr,-1.3,1,1,1,0,0,a-Math.PI/2);}   // flame tongues
+  return g;
+}
 function disposeOrb(o){scene.remove(o);o.traverse(c=>{c.geometry?.dispose();c.material?.dispose();});}
 export function initVfxEvents(world){
   const bodyFlash=new Map();   // fighter id -> {start,dur,peak}: white-hot body tint right after a hit
@@ -49,7 +124,10 @@ export function initVfxEvents(world){
     slashEffect(A,T,e.tier,sink,{noBeam:e.skill.type==='homing'});
     if(e.projectileId!=null){
       const entry={meshes:sink,orb:null};
-      if(!sink.length){ // projectile without authored visuals: a glowing orb that follows the logical projectile
+      if(e.skill.id==='cleric'&&e.tier==='basic'){   // 神選之人 fist follows the logical projectile
+        const p=world.get(e.projectileId,'projectile');entry.orb=buildBuddhaPalm();entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
+        burst(up(A.position,1.2),0xfff1a8,26);
+      } else if(!sink.length){ // projectile without authored visuals: a glowing orb that follows the logical projectile
         const p=world.get(e.projectileId,'projectile');
         entry.orb=new THREE.Mesh(new THREE.SphereGeometry(Math.max(.25,e.skill.radius*.5),14,12),new THREE.MeshBasicMaterial({color:e.skill.id==='cleric'?0xfff1a8:0xffd36c,transparent:true,opacity:.95}));
         entry.orb.position.set(p.pos.x,p.pos.y,p.pos.z);scene.add(entry.orb);
@@ -79,6 +157,12 @@ export function initVfxEvents(world){
     }
   });
   on('guardCounter',e=>{showCombatFeedback(side(e.id),'counter');const A=obj(e.id);if(A)burst(up(A.position,1.2),0x7dff9a,26);});
+  on('comboBreak',e=>{   // 空中斷招: a shockwave ring + white burst where the victim tore free
+    syncView(world,e.id);const T=obj(e.id);if(!T)return;
+    showCombatFeedback(side(e.id),'evade');burst(up(T.position,.9),0xffffff,26);burst(up(T.position,.9),0x8cdcff,18);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.9,.08,8,28),new THREE.MeshBasicMaterial({color:0xcff4ff,transparent:true,opacity:.9,depthWrite:false}));
+    ring.position.copy(T.position).add(new THREE.Vector3(0,.9,0));ring.rotation.x=Math.PI/2;addFx(ring,.4,'ring');
+  });
   on('comboHit',e=>{   // J3 launcher: a pillar of light in the character's colour under the target (聖光升擊 / 數位升擊)
     const col=LAUNCHER_COLOR[charId(e.attackerId)];if(e.step!==3||col==null)return;const T=obj(e.targetId);if(!T)return;
       const c=up(T.position,.1);burst(c,col,34);
@@ -173,12 +257,22 @@ export function initVfxEvents(world){
     const streak=new THREE.Mesh(new THREE.BoxGeometry(.12,.06,1.4),new THREE.MeshBasicMaterial({color:0xbfe6ff,transparent:true,opacity:.7,depthWrite:false}));
     streak.position.copy(F.position).add(new THREE.Vector3(-e.dir.x*.7,.2,-e.dir.z*.7));streak.rotation.y=Math.atan2(e.dir.x,e.dir.z);addFx(streak,.3,'fade');
   });
+  const shields=[];   // transient presentation: {g,F(parent),t0,dur,shell,core,mats}
+  function godShield(F,id){   // body radiates golden light, and a giant Tathagata rises behind the caster
+    const g=new THREE.Group(),shell=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,14),goldMat(0xff9d1a,.16)),core=new THREE.Mesh(new THREE.SphereGeometry(.8,16,12),goldMat(0xffc850,.14));shell.material.blending=core.material.blending=THREE.AdditiveBlending;
+    g.add(shell,core);g.position.y=1.15;F.add(g);shields.push({g,F,t0:world.time,dur:.9,shell,core});
+    const mats=[],bud=buildTathagata(mats),fw=new THREE.Vector3(Math.sin(F.rotation.y),0,Math.cos(F.rotation.y));
+    bud.position.copy(F.position).addScaledVector(fw,-1.5);bud.position.y=1.3;bud.rotation.y=F.rotation.y;bud.scale.setScalar(.34);scene.add(bud);
+    shields.push({g:bud,F:scene,t0:world.time,dur:1.3,mats});
+    burst(up(F.position,1.1),0xfff1a8,22);addCameraShake(.25,.3);
+  }
   on('chargeStart',e=>{
     syncView(world,e.id);const F=obj(e.id);if(!F)return;
     const color=TIER_COLOR[e.tier];
     dropRing(e.id);   // a new charge can start before update() has dropped the previous one (chained J, cancels): never orphan the old ring
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.065,8,40),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthWrite:false}));
     ring.rotation.x=Math.PI/2;scene.add(ring);rings.set(e.id,ring);
+    if(charId(e.id)==='cleric'&&e.tier==='basic')godShield(F,e.id);
     showMoveName(side(e.id),e.tier,charId(e.id));
     $('#move-callout-type').textContent='蓄力中 · '+(e.tier==='ult'?'必殺技':e.tier==='skill'?'特殊招式':'普通攻擊');
     burst(up(F.position,1),color,e.tier==='ult'?18:10);
@@ -237,9 +331,16 @@ export function initVfxEvents(world){
       const q=Math.min(1,ch.time/ch.duration);
       ring.position.set(t.x,t.y+.12+q*.18,t.z);ring.scale.setScalar(.8+q*1.25);ring.material.opacity=.45+q*.5;
     }
+    for(let i=shields.length-1;i>=0;i--){
+      const sh=shields[i],q=(world.time-sh.t0)/sh.dur;
+      if(q>=1){sh.F.remove(sh.g);sh.g.traverse(c=>{c.geometry?.dispose();c.material?.dispose();});shields.splice(i,1);continue;}
+      if(sh.mats){const k=Math.min(1,q*5)*(q>.65?(1-q)/.35:1);for(const m of sh.mats)m.opacity=m.userData.o*k;sh.g.position.y=1.3+q*.2;continue;}
+      const pulse=1+Math.sin(world.time*26)*.06;
+      sh.shell.scale.setScalar((.9+q*.5)*pulse);sh.shell.material.opacity=.2*(1-q*.7);sh.core.scale.setScalar(pulse*(1+q*.4));sh.core.material.opacity=.16*(1-q*.8);
+    }
     for(const [id,entry] of bound){
       if(!entry.orb)continue;const p=world.get(id,'projectile');if(!p)continue;
-      const o=entry.orb;o.position.set(p.pos.x,p.pos.y,p.pos.z);
+      const o=entry.orb;o.position.set(p.pos.x,p.pos.y+(o.userData.lift?o.userData.lift*Math.max(0,1-p.travelled/3.5):0),p.pos.z);
       if(o.userData.update){o.visible=!(p.wait>0);if(o.userData.heading)o.rotation.y=Math.atan2(p.dir.x,p.dir.z);o.userData.update(world.time);}
     }
   };

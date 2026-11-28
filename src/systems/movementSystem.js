@@ -1,4 +1,4 @@
-import {DODGE,DEFENSE,RUSH,MOVE,INPUT_BUFFER} from '../config.js';
+import {DODGE,DEFENSE,RUSH,MOVE,INPUT_BUFFER,BREAK} from '../config.js';
 import {LUNGE} from '../config.js';
 import {opponentOf} from '../ecs/entities.js';
 import {normalize,horizontalLength} from '../ecs/math.js';
@@ -11,10 +11,24 @@ export function jump(world,id){
   world.events.emit('jump',{id});return true;
 }
 // direction: {x,z} or null (null = sidestep perpendicular to the opponent)
+// Air combo breaker: only while juggled (airborne + stunned, not mid-slam) and with enough energy.
+export function comboBreak(world,id){
+  const s=world.get(id,'status'),b=world.get(id,'body'),e=world.get(id,'energy'),t=world.get(id,'transform');
+  if(!s.airHit||s.stun<=0||s.slamBy!=null||s.airHits<BREAK.minAirHits||!e||e.value<BREAK.cost)return false;
+  e.value-=BREAK.cost;
+  s.stun=0;s.hitReact=0;s.airHit=false;s.airHits=0;s.chaseTimer=0;
+  s.dodgeInvuln=BREAK.invuln;s.dodgeCooldown=BREAK.cooldown;s.dodgeTimer=0;
+  const o=world.get(opponentOf(world,id),'transform'),away=normalize({x:t.x-o.x,y:0,z:t.z-o.z});
+  s.kbVx=away.x*BREAK.push/.2;s.kbVz=away.z*BREAK.push/.2;s.kbTime=s.kbDur=.2;b.vy=Math.max(b.vy,2);   // short hop away, then a normal fall
+  world.events.emit('comboBreak',{id,pos:{x:t.x,y:t.y,z:t.z}});
+  return true;
+}
 export function performDodge(world,id,direction){
   const s=world.get(id,'status'),b=world.get(id,'body'),t=world.get(id,'transform'),f=world.get(id,'fighter'),a=world.get(id,'attacker');
   // Dodge-cancel rule: a dodge may cancel the RECOVERY of a released attack, never its startup (a.charge) - no free feints.
-  if(!world.match.running||s.dodgeCooldown>0||!b.grounded||s.rootTrap>0||a.charge)return false;
+  if(!world.match.running||s.dodgeCooldown>0||s.rootTrap>0||a.charge)return false;
+  if(!b.grounded)return comboBreak(world,id);
+
   let move=direction?{x:direction.x,y:0,z:direction.z}:{x:0,y:0,z:0};
   if(horizontalLength(move)<.001){
     const o=world.get(opponentOf(world,id),'transform');
