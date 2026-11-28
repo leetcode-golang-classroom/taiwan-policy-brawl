@@ -19,7 +19,7 @@ test('cancel path: only the launcher (J3) cancels into K/L; J1/J2 cancel into J 
   assert.equal(canStart(a(1,{hitConfirmed:false}),'basic',false,st),false,'a whiff never cancels');
 });
 test('full route: J J J launcher -> chase -> air J hits (decaying) -> air K slam, with the combo counted end to end',()=>{
-  const w=startedWorld({p:'cleric',c:'leopard'});arrange(w,{dist:1.6});
+  const w=startedWorld({p:'mech',c:'leopard'});arrange(w,{dist:1.6});
   const W=w.world,cpu=w.cpu,keep=()=>{const br=W.get(cpu,'brain');br.attackCd=br.skillCd=br.jumpCd=1e9;br.ultAt=null;br.counterAt=null;const s=W.get(cpu,'status');s.dodgeCooldown=1e9;W.get(cpu,'defense').cooldown=1e9;};
   const hits=record(W,'hit'),launch=record(W,'comboHit'),chases=record(W,'chase'),slams=record(W,'slamLand'),combos=record(W,'combo');
   // 1) ground chain into the launcher
