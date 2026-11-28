@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
 import {startNetSession,requestStart} from '../../src/net/netplay.js';
 import {applyRemoteCommand,pressAttack,pressJump,pressDefend} from '../../src/systems/playerControl.js';
@@ -12,11 +12,13 @@ function pair(){
   const peer=(me,other)=>({send:m=>other.h.forEach(f=>f(JSON.parse(JSON.stringify(m)))),sendFast:m=>other.h.forEach(f=>f(JSON.parse(JSON.stringify(m)))),onMessage:f=>me.h.push(f),onClose:f=>me.c.push(f),close:()=>{if(me.closed)return;me.closed=true;me.c.forEach(f=>f());if(!other.closed){other.closed=true;other.c.forEach(f=>f());}}});
   return [peer(A,B),peer(B,A)];
 }
+const live=[];
+after(()=>live.forEach(S=>S.end()));   // a failing assertion must not leave the 50 ms snapshot timers alive (node would hang to the CI timeout)
 function setup(p='cleric',c='cleric'){
   const [pa,pb]=pair(),H=makeWorld({p,c}),G=makeWorld({p,c});
   const hs=startNetSession(H.world,pa,'host',{getKeys:()=>({}),onEnd(){}}),gs=startNetSession(G.world,pb,'guest',{getKeys:()=>({}),onEnd(){}});
   requestStart(H.world);
-  return {H,G,hs,gs,end(){hs.end('x');gs.end('x');}};
+  const S={H,G,hs,gs,end(){hs.end('x');gs.end('x');}};live.push(S);return S;
 }
 const tick=(S,sec)=>{for(let i=0;i<sec*60;i++){stepWorld(S.H.world,1/60,{});stepWorld(S.G.world,1/60,{});}};
 const place=(w,d)=>{const pt=w.world.get(w.player,'transform'),ct=w.world.get(w.cpu,'transform');pt.x=-d/2;pt.z=0;pt.rotY=Math.PI/2;ct.x=d/2;ct.z=0;ct.rotY=-Math.PI/2;};
@@ -28,7 +30,7 @@ test('online: no AI runs on either side, so CPU-only logic (chase/guard AI) neve
   S.end();
 });
 test('online: the remote seat can chase, air-combo, slam and guard through forwarded commands only',()=>{
-  const S=setup();place(S.H,1.6);
+  const S=setup('mech','mech');place(S.H,1.6);
   const cpu=S.H.cpu,player=S.H.player,W=S.H.world;
   W.get(cpu,'defense').cooldown=1e9;W.get(cpu,'status').dodgeCooldown=1e9;
   // P1 (host seat) launches P2 (remote seat); P1 chases with SPACE, then a guest command arrives for the remote seat
@@ -40,7 +42,7 @@ test('online: the remote seat can chase, air-combo, slam and guard through forwa
   // remote seat guards via the network command and gets a counter window on a block
   applyRemoteCommand(W,{k:'f'});tick(S,.5);   // late guard (> perfect window)
   const d=W.get(cpu,'defense');d.active=true;d.timer=1;d.startup=0;
-  resolveHit(W,player,cpu,getSkill('cleric','skill'));
+  resolveHit(W,player,cpu,getSkill('mech','skill'));
   assert.ok(d.counter>0||!d.active);
   S.end();
 });
