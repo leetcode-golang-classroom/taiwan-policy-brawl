@@ -35,7 +35,7 @@ const SKILL_OVERRIDES={
       volley:[{wait:0,angle:-1.1,knockback:2.2,launch:0},{wait:.22,angle:1.1,knockback:2.2,launch:0},{wait:.44,angle:0,knockback:3.4,launch:6.5}]},ult:{type:'projectile',speed:8.2,range:8.5,radius:1.3}},
   // 開卷有益 / SoR 教學 / 百年樹人: all instant area hits (the books, words, pyramid light and vines are presentation).
   mage:{basic:{name:'開卷有益',type:'area',range:7.5,damage:10,cooldown:.6,knockback:.9,launch:0,stun:.25},skill:{name:'SoR 教學',type:'area',range:8,damage:19,knockback:2.4,launch:3.5,stun:.7,stepIn:0},ult:{name:'百年樹人',range:8,knockback:1.6,launch:10,stun:1.1}},
-  cleric:{basic:{range:3.1},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
+  cleric:{basic:{name:'神選之人',type:'projectile',damage:10,speed:11,range:8.5,radius:1.3,knockback:.8,stun:.2,aim3d:true},skill:{name:'神的啟示',type:'area',range:8,damage:20,knockback:3.4,launch:7.2,stun:.9,stepIn:0},ult:{name:'火箭工程',type:'area',range:8,knockback:1.2,launch:11,stun:1.1}},
   // 紫氣東來: a dragon-shaped qi blast; knockback follows the projectile's heading at the moment it hits.
   yu:{basic:{name:'乾坤之動',damage:6,range:2.6,knockback:.5,cooldown:.7},skill:{name:'紫氣東來',type:'projectile',damage:19,range:11,speed:12,radius:1.1,knockback:3.4,launch:2.2,stun:.6,stepIn:0},ult:{name:'百川匯海'}},
   // 生育大改革 / 市警大升級 / 警局長照護: instant area hits (figures, slaps, gunfire and crowds are presentation).
@@ -56,6 +56,10 @@ export const cooldownDurations={basic:SKILL_DEFAULTS.basic.cooldown,skill:SKILL_
 // attackAfter: attacks (counter-attacks) are locked for this long after the dodge starts; a press just before it is buffered.
 export const DODGE={duration:.68,invuln:.42,cooldown:1.1,slide:.2,attackAfter:.5,defaultDistance:2.1,
   distance:{mech:2.55,leopard:2.25,admiral:1.9,mage:2.35,cleric:2.2,brawler:2.0,nun:1.9,yu:2.15,'bubble':2.2}};
+// 空中斷招 (combo breaker): a juggled victim (airborne + stunned) may press Shift to burn `cost` energy and escape the chain: stun and juggle
+// state clear, brief invulnerability, a shove away from the attacker. `cooldown` shares the dodge cooldown so it cannot be spammed.
+// It is an escape option only - J chains and their damage stay uncapped.
+export const BREAK={cost:30,invuln:.4,cooldown:3,push:4.5,minAirHits:1};
 // 乾坤之動 (08 basic): a tai-chi stance that reflects incoming attacks for `duration` seconds after it is released.
 export const REFLECT={duration:.5,charId:'yu'};
 // maxStun: hit stun is re-computed (not summed) on every hit and can never exceed this, so nobody is stun-locked forever.
@@ -77,6 +81,8 @@ export const COMBO_STEPS=Object.freeze([
   Object.freeze({chargeBonus:0,   stun:.42, launch:0,   stepIn:.75, cancels:Object.freeze(['J','K'])}),
   Object.freeze({chargeBonus:.12, stun:.62, launch:3.3, stepIn:.75, cancels:Object.freeze(['K','L'])}),
 ]);
+// 神選之人 (cleric J): the cleric sits cross-legged, spins and floats `lift` units up while a giant Buddha appears behind and the palm is thrown.
+export const GOD_FIST={lift:1.7,spin:14,tuckTime:.4};
 export const COMBO={window:.92,steps:COMBO_STEPS};
 // PHASE 8 per-character combo routes. A character listed here replaces the generic J1-J2-J3 data (and may tune the air juggle);
 // everyone else keeps the defaults. 神職人員 (cleric) 聖光連擊: J1 jab -> J2 palm -> J3 rising-light launcher (higher than the generic one),
@@ -101,9 +107,9 @@ export const COMBO_BY_CHAR=Object.freeze({
   // 09 家庭計畫推廣員 (disruptor): wide area chain, mid launcher.
   bubble:F([step(0,0,0,0,K),step(0,.4,0,0,K),step(.08,.6,4.2,0,KL)]),
   cleric:Object.freeze([
-    Object.freeze({chargeBonus:0,  stun:0,   launch:0,   stepIn:.55,cancels:Object.freeze(['J','K'])}),
-    Object.freeze({chargeBonus:0,  stun:.42, launch:0,   stepIn:.85,cancels:Object.freeze(['J','K'])}),
-    Object.freeze({chargeBonus:.1, stun:.7,  launch:5.4, stepIn:.9, cancels:Object.freeze(['K','L'])}),
+    Object.freeze({chargeBonus:.2, stun:0,   launch:0,   stepIn:0,cancels:Object.freeze(['J','K'])}),
+    Object.freeze({chargeBonus:.2, stun:.42, launch:0,   stepIn:0,cancels:Object.freeze(['J','K'])}),
+    Object.freeze({chargeBonus:.24,stun:.7,  launch:5.4, stepIn:0,cancels:Object.freeze(['K','L'])}),
   ]),
 });
 export const comboStepsFor=id=>COMBO_BY_CHAR[id]||COMBO_STEPS;

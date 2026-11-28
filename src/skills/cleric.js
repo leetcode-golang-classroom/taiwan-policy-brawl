@@ -3,6 +3,7 @@ import {burst,delay,throwProjectile} from '../vfx/VFXSystem.js';
 
 const FIRE=[0xff4a1c,0xff8a1f,0xffc93c];
 export function skillCleric({fighter,target,projectile,mesh},type){
+    if(type==='basic')return;   // 神選之人: light shield + the giant fist are driven by vfxEvents (chargeStart / projectile)
     const ground=target.position.clone();
     if(type==='skill'){
       // 神的啟示: Tatun volcano erupts under the opponent, throwing them up in flames.

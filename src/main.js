@@ -64,4 +64,4 @@ const netUI=initNetUI({onConnect:(peer,role)=>{
 $('#mode-cpu').addEventListener('click',()=>{if(session)session.end('已切換為對戰電腦');});
 $('#mode-online').addEventListener('click',()=>{if(session)return;note('');netUI.open();});
 netUI.fromLink();   // opened via an invite link (#join=CODE)
-if(location.search.includes('debug'))window.__PB={world};   // test hook: ?debug
+if(location.search.includes('debug'))window.__PB={world,scene};   // test hook: ?debug

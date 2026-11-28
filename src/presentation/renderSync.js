@@ -13,7 +13,7 @@ export function syncView(world,id,dt=1/60){
     else if(jump>=MAX_JUMP||!world.match?.running){s.ox=0;s.oz=0;}
     s.px=t.x;s.pz=t.z;
     const k=Math.exp(-dt*3/GLIDE);s.ox*=k;s.oz*=k;if(Math.abs(s.ox)<1e-3)s.ox=0;if(Math.abs(s.oz)<1e-3)s.oz=0;
-    o.position.set(t.x+s.ox,t.y,t.z+s.oz);
+    o.position.set(t.x+s.ox,t.y+(o.userData.liftY||0),t.z+s.oz);
   } else o.position.set(t.x,t.y,t.z);
   o.rotation.y=t.rotY+(o.userData.spinY||0);
 }

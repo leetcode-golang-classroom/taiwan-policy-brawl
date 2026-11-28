@@ -43,13 +43,13 @@ test('dash attack: a stunned dasher is interrupted and deals no damage', ()=>{
   assert.equal(hp(w,'cpu'),100);
 });
 test('area / melee hitbox is closed once its Active window has passed (no late hit)', ()=>{
-  const w=startedWorld({p:'cleric'});arrange(w,{dist:9});calm(w);const hits=record(w.world,'hit');
+  const w=startedWorld({p:'mech'});arrange(w,{dist:9});calm(w);const hits=record(w.world,'hit');
   pressAttack(w.world,'player','basic');step(w.world,.22+ACTIVE_TIME.basic+.1);
   w.world.get(w.cpu,'transform').x=-6.5+1.5;step(w.world,.5);
   assert.equal(hits.length,0,'walking into the spot after the window does not hit');
 });
 test('launch: a launching hit lifts the victim, who falls back under gravity', ()=>{
-  const w=startedWorld({p:'cleric'});arrange(w,{dist:2});calm(w);const t=w.world.get(w.cpu,'transform');let peak=0;
+  const w=startedWorld({p:'mech'});arrange(w,{dist:2});calm(w);const t=w.world.get(w.cpu,'transform');let peak=0;
   pressAttack(w.world,'player','skill');
   for(let i=0;i<150;i++){step(w.world,1/60);peak=Math.max(peak,t.y);}
   assert.ok(peak>.8,'was lifted: '+peak);assert.equal(t.y,0);assert.equal(w.world.get(w.cpu,'body').grounded,true);

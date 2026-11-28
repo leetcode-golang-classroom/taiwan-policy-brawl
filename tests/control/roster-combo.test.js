@@ -17,23 +17,24 @@ test('every character has its own route data (launcher present, cancel only from
 // Scripted route per character: J J J (press on each hit) -> launcher -> chase -> air J -> air K slam.
 for(const r of roster){
   test(`${r.id}: ground chain -> launcher -> chase -> air combo -> slam finisher`,()=>{
-    const w=startedWorld({p:r.id,c:'cleric'});arrange(w,{dist:1.8});
+    const w=startedWorld({p:r.id,c:r.id==='cleric'?'leopard':'cleric'});arrange(w,{dist:1.8});
     const W=w.world,cpu=w.cpu,cb=W.get(cpu,'body'),cs=W.get(cpu,'status');
-    const keep=()=>{cs.dodgeCooldown=1e9;W.get(cpu,'defense').cooldown=1e9;};
+    const keep=()=>{const br=W.get(cpu,'brain');br.attackCd=br.skillCd=br.jumpCd=1e9;br.ultAt=null;br.counterAt=null;cs.dodgeCooldown=1e9;W.get(cpu,'defense').cooldown=1e9;};
     const hits=record(W,'hit'),launch=record(W,'comboHit'),chases=record(W,'chase'),slams=record(W,'slamLand');
     const mine=()=>hits.filter(h=>h.attackerId===w.player);
     for(let i=0;i<3;i++){keep();const n=mine().length;pressAttack(W,'player','basic');for(let f=0;f<90&&mine().length<n+1;f++){keep();step(W,1/60);}}
     assert.equal(mine().length,3,'J1-J3 connect');
     assert.equal(launch.filter(e=>e.step===3).length,1,'launcher fires');
     assert.ok(!cb.grounded,'victim airborne');
-    pressJump(W,'player');step(W,.3);
+    W.get(w.player,'status').stun=0;pressJump(W,'player');step(W,.3);
     assert.ok(chases.length>=1,'chase dash');
     // air combo (the victim is held in the juggle window)
-    const hold=()=>{keep();const t=W.get(cpu,'transform');if(t.y<1.2){t.y=2;cb.grounded=false;cb.vy=2;}cs.stun=Math.max(cs.stun,.9);cs.airHit=true;
+    const hold=()=>{keep();W.get(w.player,'status').stun=0;const t=W.get(cpu,'transform');if(t.y<1.2){t.y=2;cb.grounded=false;cb.vy=2;}cs.stun=Math.max(cs.stun,.9);cs.airHit=true;
       const pt=W.get(w.player,'transform'),pb=W.get(w.player,'body');if(pt.y<1.2){pt.y=2;pb.grounded=false;pb.vy=1;}};
     const before=mine().length;
     for(let i=0;i<3;i++){hold();pressAttack(W,'player','basic');step(W,.45);}
     assert.ok(mine().length>before,'air hits connect');
+    for(let f=0;f<45;f++){hold();step(W,1/60);}   // let the last palm / blow land before the finisher
     hold();W.get(cpu,'status').airHits=Math.max(1,W.get(cpu,'status').airHits);pressAttack(W,'player','skill');
     for(let f=0;f<150&&!slams.length;f++){if(f<140)hold();step(W,1/60);}   // the juggle holds both fighters up until the K connects, then the slam falls on its own
     step(W,.5);
